@@ -282,3 +282,20 @@ html[dir="rtl"] {
     }
   }
 }
+.text,
+.icon-bag {
+  color: black;
+}
+.register_option {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  button {
+    border: none;
+  }
+}
+
+.error {
+  color: red;
+}

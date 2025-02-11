@@ -15,7 +15,6 @@ export const metadata = {
 export default function page() {
   return (
     <>
-      <Header2 />
       <Hero />
       <FlatTitle />
       <div className="container">
@@ -28,7 +27,6 @@ export default function page() {
         <div className="line"></div>
       </div>
       <ShopGram />
-      <Footer1 />
     </>
   );
 }

@@ -26,10 +26,11 @@ import ToolbarBottom from "@/components/modals/ToolbarBottom";
 import ToolbarShop from "@/components/modals/ToolbarShop";
 
 import { usePathname } from "next/navigation";
-import NewsletterModal from "@/components/modals/NewsletterModal";
 import ShareModal from "@/components/modals/ShareModal";
 import ScrollTop from "@/components/common/ScrollTop";
 import RtlToggle from "@/components/common/RtlToggle";
+import Header22 from "@/components/headers/Header22";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -153,39 +154,43 @@ export default function RootLayout({ children }) {
     initializeDirection();
   }, []); // Only runs once on component mount
 
+  const queryClient = new QueryClient();
+
   return (
-    <html lang="en">
-      <body className="preload-wrapper">
-        <div className="preload preload-container" id="preloader">
-          <div className="preload-logo">
-            <div className="spinner"></div>
-          </div>
-        </div>{" "}
-        <Context>
-          <div id="wrapper">{children}</div>
-          <RtlToggle />
-          <HomesModal /> <QuickView />
-          <QuickAdd />
-          <ProductSidebar />
-          <Compare />
-          <ShopCart />
-          <AskQuestion />
-          <BlogSidebar />
-          <ColorCompare />
-          <DeliveryReturn />
-          <FindSize />
-          <Login />
-          <MobileMenu />
-          <Register />
-          <ResetPass />
-          <SearchModal />
-          <ToolbarBottom />
-          <ToolbarShop />
-          <NewsletterModal />
-          <ShareModal />{" "}
-        </Context>
-        <ScrollTop />
-      </body>
-    </html>
+    <QueryClientProvider client={queryClient}>
+      <html lang="en">
+        <body className="preload-wrapper">
+          <div className="preload preload-container" id="preloader">
+            <div className="preload-logo">
+              <div className="spinner"></div>
+            </div>
+          </div>{" "}
+          <Context>
+            <Header22 />
+            <div id="wrapper">{children}</div>
+            <RtlToggle />
+            <HomesModal /> <QuickView />
+            <QuickAdd />
+            <ProductSidebar />
+            <Compare />
+            <ShopCart />
+            <AskQuestion />
+            <BlogSidebar />
+            <ColorCompare />
+            <DeliveryReturn />
+            <FindSize />
+            <Login />
+            <MobileMenu />
+            <Register />
+            <ResetPass />
+            <SearchModal />
+            <ToolbarBottom />
+            <ToolbarShop />
+            <ShareModal />{" "}
+          </Context>
+          <ScrollTop />
+        </body>
+      </html>
+    </QueryClientProvider>
   );
 }

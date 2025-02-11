@@ -1,37 +1,28 @@
-import Features from "@/components/common/Features";
-import ShopGram from "@/components/common/ShopGram";
-import Testimonials from "@/components/common/Testimonials";
-import Footer1 from "@/components/footers/Footer1";
-import Header1 from "@/components/headers/Header1";
-import Topbar1 from "@/components/headers/Topbar1";
-import Brands from "@/components/homes/home-1/Brands";
+import Brands from "@/components/common/Brands";
+import Features from "@/components/common/Features2";
+import Collections from "@/components/homes/home-gaming-accessories/Collections";
+import Hero from "@/components/homes/home-gaming-accessories/Hero";
+import Lookbook from "@/components/homes/home-gaming-accessories/Lookbook";
+import Marquee from "@/components/homes/home-gaming-accessories/Marquee";
+import Products from "@/components/homes/home-gaming-accessories/Products";
+import Products2 from "@/components/homes/home-gaming-accessories/Products2";
+import Products3 from "@/components/homes/home-gaming-accessories/Products3";
+import Store from "@/components/homes/home-gaming-accessories/Store";
+import Testimonials from "@/components/homes/home-gaming-accessories/Testimonials";
+import React from "react";
 
-import Categories from "@/components/homes/home-1/Categories";
-
-import Hero from "@/components/homes/home-1/Hero";
-import Lookbook from "@/components/homes/home-1/Lookbook";
-import Marquee from "@/components/homes/home-1/Marquee";
-import Products from "@/components/homes/home-1/Products";
-
-export const metadata = {
-  title: "Home 1 || Ecomus - Ultimate Nextjs Ecommerce Template",
-  description: "Ecomus - Ultimate Nextjs Ecommerce Template",
-};
-export default function Home() {
+export default function page() {
   return (
     <>
-      <Topbar1 />
-      <Header1 />
-      <Hero />
-      <Marquee />
-      <Categories />
-      <Products />
-      <Lookbook />
-      <Testimonials />
-      <Brands />
-      <ShopGram />
-      <Features />
-      <Footer1 />
+      <div className="home-gaming-accessories color-primary-14">
+        <Hero />
+        <Features bgColor="flat-spacing-3 flat-iconbox line" />
+        <Collections />
+        <Products2 />
+        <Lookbook />
+        <Products3 />
+        <Store />
+      </div>
     </>
   );
 }

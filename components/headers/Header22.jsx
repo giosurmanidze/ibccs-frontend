@@ -3,16 +3,19 @@ import React from "react";
 import Nav from "./Nav";
 import Image from "next/image";
 import Link from "next/link";
-import { products44 } from "@/data/products";
 import CartLength from "../common/CartLength";
+import { useGetCategories } from "@/hooks/useGetCategories";
 
 export default function Header22() {
+  const { data } = useGetCategories();
+
+  console.log(data);
   return (
     <header
       id="header"
       className="header-default header-style-2 header-style-4"
     >
-      <div className="main-header line-1 bg_dark-2">
+      <div className="main-header line-1 ">
         <div className="container">
           <div className="row wrapper-header align-items-center">
             <div className="col-md-4 col-3 tf-lg-hidden">
@@ -41,7 +44,7 @@ export default function Header22() {
                 <Image
                   alt="logo"
                   className="logo"
-                  src="/images/logo/logo-white.svg"
+                  src="/images/logo/ibccs logo.avif"
                   width={136}
                   height={21}
                 />
@@ -61,7 +64,7 @@ export default function Header22() {
                 <div className="search-suggests-results">
                   <div className="search-suggests-results-inner">
                     <ul>
-                      {products44.map((product, index) => (
+                      {data?.map((product, index) => (
                         <li key={index}>
                           <Link
                             className="search-result-item"
@@ -76,19 +79,19 @@ export default function Header22() {
                               />
                             </div>
                             <div className="box-content">
-                              <p className="title link">{product.title}</p>
+                              <p className="title link">{product.name}</p>
                               {product.hasOldPrice ? (
                                 <div className="d-flex gap-10">
                                   <span className="old-price">
                                     ${product.oldPrice.toFixed(2)}
                                   </span>
                                   <span className="new-price">
-                                    ${product.price.toFixed(2)}
+                                    ${product.base_price}
                                   </span>
                                 </div>
                               ) : (
                                 <div className="price">
-                                  ${product.price.toFixed(2)}
+                                  ${product.base_price}
                                 </div>
                               )}
                             </div>
@@ -114,32 +117,14 @@ export default function Header22() {
                 </li>
                 <li className="nav-account">
                   <a
-                    href="#login"
-                    data-bs-toggle="modal"
+                    href="/login" 
                     className="nav-icon-item align-items-center gap-10 text-white"
                   >
                     <i className="icon icon-account" />
                     <span className="text">Login</span>
                   </a>
                 </li>
-                <li className="nav-compare">
-                  <Link
-                    href={`/compare`}
-                    className="nav-icon-item align-items-center gap-10 text-white"
-                  >
-                    <i className="icon icon-compare" />
-                    <span className="text">Compare</span>
-                  </Link>
-                </li>
-                <li className="nav-wishlist">
-                  <Link
-                    href={`/wishlist`}
-                    className="nav-icon-item align-items-center gap-10 text-white"
-                  >
-                    <i className="icon icon-heart" />
-                    <span className="text">Wishlist</span>
-                  </Link>
-                </li>
+
                 <li className="nav-cart cart-lg line-left-1">
                   <a
                     href="#shoppingCart"
@@ -175,75 +160,168 @@ export default function Header22() {
                       fill="currentColor"
                     />
                   </svg>
-                  Browse All Categories
+                  All Categories
                 </a>
                 <div className="list-categories-inner toolbar-shop-mobile">
                   <ul className="nav-ul-mb" id="wrapper-menu-navigation">
-                    <li className="nav-mb-item">
-                      <Link
-                        href={`/shop-default`}
-                        className="tf-category-link mb-menu-link"
-                      >
-                        <div className="image">
-                          <Image
-                            alt=""
-                            src="/images/shop/cate/cate1.jpg"
-                            width={40}
-                            height={48}
-                          />
-                        </div>
-                        <span className="link">Accessories</span>
-                      </Link>
-                    </li>
-                    <li className="nav-mb-item">
-                      <Link
-                        href={`/shop-default`}
-                        className="tf-category-link mb-menu-link"
-                      >
-                        <div className="image">
-                          <Image
-                            alt=""
-                            src="/images/shop/cate/cate2.jpg"
-                            width={40}
-                            height={48}
-                          />
-                        </div>
-                        <span className="link">Dog</span>
-                      </Link>
-                    </li>
-                    <li className="nav-mb-item">
-                      <Link
-                        href={`/shop-default`}
-                        className="tf-category-link mb-menu-link"
-                      >
-                        <div className="image">
-                          <Image
-                            alt=""
-                            src="/images/shop/cate/cate3.jpg"
-                            width={40}
-                            height={43}
-                          />
-                        </div>
-                        <span className="link">Grocery</span>
-                      </Link>
-                    </li>
-                    <li className="nav-mb-item">
-                      <Link
-                        href={`/shop-default`}
-                        className="tf-category-link mb-menu-link"
-                      >
-                        <div className="image">
-                          <Image
-                            alt=""
-                            src="/images/shop/cate/cate4.png"
-                            width={40}
-                            height={48}
-                          />
-                        </div>
-                        <span className="link">Handbag</span>
-                      </Link>
-                    </li>
-                    <li className="nav-mb-item">
+                    {data?.map((d) => {
+                      if (
+                        Array.isArray(d?.services) &&
+                        d.services.length === 0
+                      ) {
+                        return (
+                          <li className="nav-mb-item" key={d?.id || d?.name}>
+                            <Link
+                              href={`/shop-default`}
+                              className="tf-category-link mb-menu-link"
+                            >
+                              <div className="image">
+                                <Image
+                                  alt="img"
+                                  src="/images/shop/cate/cate2.jpg"
+                                  width={40}
+                                  height={48}
+                                />
+                              </div>
+                              <span className="link">{d.name}</span>
+                            </Link>
+                          </li>
+                        );
+                      } else {
+                        d.services.map((s) => {
+                          <li className="nav-mb-item">
+                            <a
+                              href="#cate-menu-one"
+                              className="tf-category-link has-children collapsed mb-menu-link"
+                              data-bs-toggle="collapse"
+                              aria-expanded="true"
+                              aria-controls="cate-menu-one"
+                            >
+                              <div className="image">
+                                <Image
+                                  alt="img"
+                                  src="/images/shop/cate/cate5.jpg"
+                                  width={40}
+                                  height={48}
+                                />
+                              </div>
+                              <span className="link">{s.name}</span>
+                              <span className="btn-open-sub" />
+                            </a>
+                            <div
+                              id="cate-menu-one"
+                              className="collapse list-cate"
+                            >
+                              <ul
+                                className="sub-nav-menu"
+                                id="cate-menu-navigation"
+                              >
+                                <li>
+                                  <a
+                                    href="#cate-shop-one"
+                                    className="tf-category-link has-children sub-nav-link collapsed"
+                                    data-bs-toggle="collapse"
+                                    aria-expanded="true"
+                                    aria-controls="cate-shop-one"
+                                  >
+                                    <div className="image">
+                                      <Image
+                                        alt="img"
+                                        src="/images/shop/cate/cate6.jpg"
+                                        width={40}
+                                        height={49}
+                                      />
+                                    </div>
+                                    <span>Mens</span>
+                                    <span className="btn-open-sub" />
+                                  </a>
+                                </li>
+                                <li></li>
+                              </ul>
+                            </div>
+                          </li>;
+                        });
+                      }
+                    })}
+
+                    {Array.isArray(data?.services) && (
+                      <>
+                        {" "}
+                        <li className="nav-mb-item">
+                          <a
+                            href="#cate-menu-one"
+                            className="tf-category-link has-children collapsed mb-menu-link"
+                            data-bs-toggle="collapse"
+                            aria-expanded="true"
+                            aria-controls="cate-menu-one"
+                          >
+                            <div className="image">
+                              <Image
+                                alt="img"
+                                src="/images/shop/cate/cate5.jpg"
+                                width={40}
+                                height={48}
+                              />
+                            </div>
+                            <span className="link">Fashion</span>
+                            <span className="btn-open-sub" />
+                          </a>
+                          <div
+                            id="cate-menu-one"
+                            className="collapse list-cate"
+                          >
+                            <ul
+                              className="sub-nav-menu"
+                              id="cate-menu-navigation"
+                            >
+                              <li>
+                                <a
+                                  href="#cate-shop-one"
+                                  className="tf-category-link has-children sub-nav-link collapsed"
+                                  data-bs-toggle="collapse"
+                                  aria-expanded="true"
+                                  aria-controls="cate-shop-one"
+                                >
+                                  <div className="image">
+                                    <Image
+                                      alt="img"
+                                      src="/images/shop/cate/cate6.jpg"
+                                      width={40}
+                                      height={49}
+                                    />
+                                  </div>
+                                  <span>Mens</span>
+                                  <span className="btn-open-sub" />
+                                </a>
+                              </li>
+                              <li></li>
+                            </ul>
+                          </div>
+                        </li>
+                        <li className="nav-mb-item">
+                          <a
+                            href="#cate-menu-two"
+                            className="tf-category-link has-children collapsed mb-menu-link"
+                            data-bs-toggle="collapse"
+                            aria-expanded="true"
+                            aria-controls="cate-menu-two"
+                          >
+                            <div className="image">
+                              <Image
+                                alt="img"
+                                src="/images/shop/cate/cate6.jpg"
+                                width={40}
+                                height={49}
+                              />
+                            </div>
+                            <span className="link">Men</span>
+                            <span className="btn-open-sub" />
+                          </a>
+                        </li>
+                      </>
+                    )}
+
+                    {/* <li className="nav-mb-item">
                       <a
                         href="#cate-menu-one"
                         className="tf-category-link has-children collapsed mb-menu-link"
@@ -253,7 +331,7 @@ export default function Header22() {
                       >
                         <div className="image">
                           <Image
-                            alt=""
+                            alt="img"
                             src="/images/shop/cate/cate5.jpg"
                             width={40}
                             height={48}
@@ -274,7 +352,7 @@ export default function Header22() {
                             >
                               <div className="image">
                                 <Image
-                                  alt=""
+                                  alt="img"
                                   src="/images/shop/cate/cate6.jpg"
                                   width={40}
                                   height={49}
@@ -283,99 +361,8 @@ export default function Header22() {
                               <span>Mens</span>
                               <span className="btn-open-sub" />
                             </a>
-                            <div id="cate-shop-one" className="collapse">
-                              <ul className="sub-nav-menu sub-menu-level-2">
-                                <li>
-                                  <Link
-                                    href={`/shop-default`}
-                                    className="tf-category-link sub-nav-link"
-                                  >
-                                    <div className="image">
-                                      <Image
-                                        alt=""
-                                        src="/images/shop/cate/cate1.jpg"
-                                        width={40}
-                                        height={48}
-                                      />
-                                    </div>
-                                    <span>Accessories</span>
-                                  </Link>
-                                </li>
-                                <li>
-                                  <Link
-                                    href={`/shop-default`}
-                                    className="tf-category-link sub-nav-link"
-                                  >
-                                    <div className="image">
-                                      <Image
-                                        alt=""
-                                        src="/images/shop/cate/cate8.jpg"
-                                        width={40}
-                                        height={48}
-                                      />
-                                    </div>
-                                    <span>Shoes</span>
-                                  </Link>
-                                </li>
-                              </ul>
-                            </div>
                           </li>
-                          <li>
-                            <a
-                              href="#cate-shop-two"
-                              className="tf-category-link has-children sub-nav-link collapsed"
-                              data-bs-toggle="collapse"
-                              aria-expanded="true"
-                              aria-controls="cate-shop-two"
-                            >
-                              <div className="image">
-                                <Image
-                                  alt=""
-                                  src="/images/shop/cate/cate9.jpg"
-                                  width={40}
-                                  height={49}
-                                />
-                              </div>
-                              <span>Womens</span>
-                              <span className="btn-open-sub" />
-                            </a>
-                            <div id="cate-shop-two" className="collapse">
-                              <ul className="sub-nav-menu sub-menu-level-2">
-                                <li>
-                                  <Link
-                                    href={`/shop-default`}
-                                    className="tf-category-link sub-nav-link"
-                                  >
-                                    <div className="image">
-                                      <Image
-                                        alt=""
-                                        src="/images/shop/cate/cate4.png"
-                                        width={40}
-                                        height={48}
-                                      />
-                                    </div>
-                                    <span>Handbag</span>
-                                  </Link>
-                                </li>
-                                <li>
-                                  <Link
-                                    href={`/shop-default`}
-                                    className="tf-category-link sub-nav-link"
-                                  >
-                                    <div className="image">
-                                      <Image
-                                        alt=""
-                                        src="/images/shop/cate/cate7.jpg"
-                                        width={40}
-                                        height={41}
-                                      />
-                                    </div>
-                                    <span>Tee</span>
-                                  </Link>
-                                </li>
-                              </ul>
-                            </div>
-                          </li>
+                          <li></li>
                         </ul>
                       </div>
                     </li>
@@ -389,7 +376,7 @@ export default function Header22() {
                       >
                         <div className="image">
                           <Image
-                            alt=""
+                            alt="img"
                             src="/images/shop/cate/cate6.jpg"
                             width={40}
                             height={49}
@@ -398,43 +385,7 @@ export default function Header22() {
                         <span className="link">Men</span>
                         <span className="btn-open-sub" />
                       </a>
-                      <div id="cate-menu-two" className="collapse list-cate">
-                        <ul className="sub-nav-menu" id="cate-menu-navigation1">
-                          <li>
-                            <Link
-                              href={`/shop-default`}
-                              className="tf-category-link sub-nav-link"
-                            >
-                              <div className="image">
-                                <Image
-                                  alt=""
-                                  src="/images/shop/cate/cate1.jpg"
-                                  width={40}
-                                  height={48}
-                                />
-                              </div>
-                              <span>Accessories</span>
-                            </Link>
-                          </li>
-                          <li>
-                            <Link
-                              href={`/shop-default`}
-                              className="tf-category-link sub-nav-link"
-                            >
-                              <div className="image">
-                                <Image
-                                  alt=""
-                                  src="/images/shop/cate/cate8.jpg"
-                                  width={40}
-                                  height={48}
-                                />
-                              </div>
-                              <span>Shoes</span>
-                            </Link>
-                          </li>
-                        </ul>
-                      </div>
-                    </li>
+                    </li> */}
                     <li className="nav-mb-item">
                       <Link
                         href={`/shop-default`}
@@ -442,7 +393,7 @@ export default function Header22() {
                       >
                         <div className="image">
                           <Image
-                            alt=""
+                            alt="img"
                             src="/images/shop/cate/cate7.jpg"
                             width={40}
                             height={41}
@@ -458,7 +409,7 @@ export default function Header22() {
                       >
                         <div className="image">
                           <Image
-                            alt=""
+                            alt="img"
                             src="/images/shop/cate/cate8.jpg"
                             width={40}
                             height={48}
@@ -477,7 +428,7 @@ export default function Header22() {
                       >
                         <div className="image">
                           <Image
-                            alt=""
+                            alt="img"
                             src="/images/shop/cate/cate9.jpg"
                             width={40}
                             height={49}
@@ -495,7 +446,7 @@ export default function Header22() {
                             >
                               <div className="image">
                                 <Image
-                                  alt=""
+                                  alt="img"
                                   src="/images/shop/cate/cate4.png"
                                   width={40}
                                   height={48}
@@ -511,7 +462,7 @@ export default function Header22() {
                             >
                               <div className="image">
                                 <Image
-                                  alt=""
+                                  alt="img"
                                   src="/images/shop/cate/cate7.jpg"
                                   width={40}
                                   height={41}
@@ -538,14 +489,6 @@ export default function Header22() {
               <nav className="box-navigation text-center">
                 <ul className="box-nav-ul d-flex align-items-center justify-content-center gap-30">
                   <Nav textColor="text-white" />
-                  <li className="menu-item">
-                    <a
-                      href="https://themeforest.net/item/ecomus-ultimate-html5-template/53417990?s_rank=3"
-                      className="item-link text-white"
-                    >
-                      Buy now
-                    </a>
-                  </li>
                 </ul>
               </nav>
             </div>

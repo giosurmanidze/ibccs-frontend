@@ -5,13 +5,20 @@ import { useState } from "react";
 import Pagination from "../common/Pagination";
 import ShopFilter from "./ShopFilter";
 import Sorting from "./Sorting";
+import { useGetCategory } from "@/hooks/useCategory";
+import { useSearchParams } from "next/navigation";
 
 export default function ShopDefault() {
   const [gridItems, setGridItems] = useState(4);
   const [products, setProducts] = useState([]);
   const [finalSorted, setFinalSorted] = useState([]);
 
-  
+  const searchParams = useSearchParams();
+  const cateoryId = searchParams.get("categoryId");
+
+  const { data: category } = useGetCategory(cateoryId);
+
+  console.log("category", category);
 
   return (
     <>
@@ -46,15 +53,21 @@ export default function ShopDefault() {
             </ul>
             <div className="tf-control-sorting d-flex justify-content-end">
               <div className="tf-dropdown-sort" data-bs-toggle="dropdown">
-                <Sorting setFinalSorted={setFinalSorted} products={products} />
+                <Sorting
+                  setFinalSorted={setFinalSorted}
+                  category={category?.services}
+                />
               </div>
             </div>
           </div>
           <div className="wrapper-control-shop">
             <div className="meta-filter-shop" />
-            <ProductGrid allproducts={finalSorted} gridItems={gridItems} />
+            <ProductGrid
+              allproducts={category?.services}
+              gridItems={gridItems}
+            />
             {/* pagination */}
-            {finalSorted.length ? (
+            {category?.services?.length ? (
               <ul className="tf-pagination-wrap tf-pagination-list tf-pagination-btn">
                 <Pagination />
               </ul>

@@ -9,7 +9,6 @@ import { useGetCategories } from "@/hooks/useGetCategories";
 export default function Header22() {
   const { data } = useGetCategories();
 
-  console.log(data);
   return (
     <header
       id="header"

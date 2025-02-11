@@ -71,10 +71,12 @@ export default function ShopCart() {
                     {cartProducts.map((elm, i) => (
                       <div key={i} className="tf-mini-cart-item">
                         <div className="tf-mini-cart-image">
-                          <Link href={`/product-detail/${elm.id}`}>
+                          <Link
+                            href={`/product-detail/${elm.id}?categoryId=${elm.category_id}`}
+                          >
                             <Image
                               alt="image"
-                              src={elm.imgSrc}
+                              src={`http://localhost:8000/storage/${elm.icon}`}
                               width={668}
                               height={932}
                               style={{ objectFit: "cover" }}
@@ -84,14 +86,11 @@ export default function ShopCart() {
                         <div className="tf-mini-cart-info">
                           <Link
                             className="title link"
-                            href={`/product-detail/${elm.id}`}
+                            href={`/product-detail/${elm.id}?categoryId=${elm.category_id}`}
                           >
-                            {elm.title}
+                            {elm.name}
                           </Link>
-                          <div className="meta-variant">Light gray</div>
-                          <div className="price fw-6">
-                            ${elm.price?.toFixed(2)}
-                          </div>
+                          <div className="price fw-6">${elm.base_price}</div>
                           <div className="tf-mini-cart-btns">
                             <div className="wg-quantity small">
                               <span
@@ -150,62 +149,6 @@ export default function ShopCart() {
                         </div>
                       </div>
                     )}
-                  </div>
-                  <div className="tf-minicart-recommendations">
-                    <div className="tf-minicart-recommendations-heading">
-                      <div className="tf-minicart-recommendations-title">
-                        You may also like
-                      </div>
-                      <div className="sw-dots small style-2 cart-slide-pagination spdsc1" />
-                    </div>
-                    <Swiper
-                      dir="ltr"
-                      modules={[Pagination]}
-                      pagination={{
-                        clickable: true,
-                        clickable: true,
-                        el: ".spdsc1",
-                      }}
-                      className="swiper tf-cart-slide"
-                    >
-                      {products1.slice(0, 2).map((elm, i) => (
-                        <SwiperSlide key={i} className="swiper-slide">
-                          <div className="tf-minicart-recommendations-item">
-                            <div className="tf-minicart-recommendations-item-image">
-                              <Link href={`/product-detail/${elm.id}`}>
-                                <Image
-                                  alt="image"
-                                  src={elm.imgSrc}
-                                  width={720}
-                                  height={1005}
-                                />
-                              </Link>
-                            </div>
-                            <div className="tf-minicart-recommendations-item-infos flex-grow-1">
-                              <Link
-                                className="title"
-                                href={`/product-detail/${1}`}
-                              >
-                                {elm.title}
-                              </Link>
-                              <div className="price">
-                                ${elm.price.toFixed(2)}
-                              </div>
-                            </div>
-                            <div className="tf-minicart-recommendations-item-quickview">
-                              <a
-                                href="#quick_view"
-                                data-bs-toggle="modal"
-                                onClick={() => setQuickViewItem(elm)}
-                                className="btn-show-quickview quickview hover-tooltip"
-                              >
-                                <span className="icon icon-view" />
-                              </a>
-                            </div>
-                          </div>
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
                   </div>
                 </div>
               </div>

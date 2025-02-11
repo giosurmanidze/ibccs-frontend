@@ -31,6 +31,7 @@ import ScrollTop from "@/components/common/ScrollTop";
 import RtlToggle from "@/components/common/RtlToggle";
 import Header22 from "@/components/headers/Header22";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Footer2 from "@/components/footers/Footer2";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -189,6 +190,7 @@ export default function RootLayout({ children }) {
             <ShareModal />{" "}
           </Context>
           <ScrollTop />
+          <Footer2 />
         </body>
       </html>
     </QueryClientProvider>

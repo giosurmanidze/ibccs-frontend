@@ -1,12 +1,7 @@
-import { products1 } from "@/data/products";
 import React from "react";
-import { ProductCard } from "../shopCards/ProductCard";
-import Productcard23 from "../shopCards/Productcard23";
+import Shopcard28 from "../shopCards/ProductCard28";
 
-export default function ProductGrid({
-  gridItems = 4,
-  allproducts = products1,
-}) {
+export default function ProductGrid({ gridItems = 4, allproducts }) {
   return (
     <>
       <div
@@ -17,27 +12,15 @@ export default function ProductGrid({
           marginBottom: "24px",
         }}
       >
-        {allproducts.length} product(s) found
+        {allproducts?.length} product(s) found
       </div>
-      {gridItems == 1 ? (
-        <div className="grid-layout" data-grid="grid-list">
-          {/* card product 1 */}
-          {allproducts.map((elm, i) => (
-            <Productcard23 product={elm} key={i} />
-          ))}
-          {/* card product 2 */}
-        </div>
-      ) : (
-        <div
-          className="grid-layout wrapper-shop"
-          data-grid={`grid-${gridItems}`}
-        >
-          {/* card product 1 */}
-          {allproducts.map((elm, i) => (
-            <ProductCard product={elm} key={i} />
-          ))}
-        </div>
-      )}
+
+      <div className="grid-layout wrapper-shop" data-grid={`grid-${gridItems}`}>
+        {/* card product 1 */}
+        {allproducts?.map((elm, i) => (
+          <Shopcard28 product={elm} key={i} />
+        ))}
+      </div>
     </>
   );
 }

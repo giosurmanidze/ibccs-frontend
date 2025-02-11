@@ -1,28 +1,27 @@
 "use client";
-import { products1 } from "@/data/products";
 import { sortingOptions } from "@/data/shop";
 import React, { useEffect, useState } from "react";
 
-export default function Sorting({ products = products1, setFinalSorted }) {
+export default function Sorting({ category, setFinalSorted }) {
   const [selectedOptions, setSelectedOptions] = useState(sortingOptions[0]);
 
-  useEffect(() => {
-    if (selectedOptions.text == "Default") {
-      setFinalSorted([...products]);
-    } else if (selectedOptions.text == "Alphabetically, A-Z") {
-      setFinalSorted(
-        [...products].sort((a, b) => a.title.localeCompare(b.title))
-      );
-    } else if (selectedOptions.text == "Alphabetically, Z-A") {
-      setFinalSorted(
-        [...products].sort((a, b) => b.title.localeCompare(a.title))
-      );
-    } else if (selectedOptions.text == "Price, low to high") {
-      setFinalSorted([...products].sort((a, b) => a.price - b.price));
-    } else if (selectedOptions.text == "Price, high to low") {
-      setFinalSorted([...products].sort((a, b) => b.price - a.price));
-    }
-  }, [products, selectedOptions]);
+  // useEffect(() => {
+  //   if (selectedOptions.text == "Default") {
+  //     setFinalSorted([...category]);
+  //   } else if (selectedOptions.text == "Alphabetically, A-Z") {
+  //     setFinalSorted(
+  //       [...category].sort((a, b) => a.title.localeCompare(b.title))
+  //     );
+  //   } else if (selectedOptions.text == "Alphabetically, Z-A") {
+  //     setFinalSorted(
+  //       [...category].sort((a, b) => b.title.localeCompare(a.title))
+  //     );
+  //   } else if (selectedOptions.text == "Price, low to high") {
+  //     setFinalSorted([...category].sort((a, b) => a.price - b.price));
+  //   } else if (selectedOptions.text == "Price, high to low") {
+  //     setFinalSorted([...category].sort((a, b) => b.price - a.price));
+  //   }
+  // }, [category, selectedOptions]);
 
   return (
     <>

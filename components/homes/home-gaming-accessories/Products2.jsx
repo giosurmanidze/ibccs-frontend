@@ -1,12 +1,13 @@
 "use client";
 import Shopcard28 from "@/components/shopCards/ProductCard28";
+import { useGetServices } from "@/hooks/useGetServices";
 
-import { products68 } from "@/data/products";
 import React from "react";
 import { Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 export default function Products2() {
+  const { data: product } = useGetServices();
   return (
     <section className="flat-spacing-15">
       <div className="container">
@@ -46,9 +47,9 @@ export default function Products2() {
               nextEl: ".pnbpn21",
             }}
           >
-            {products68.map((product, i) => (
+            {product?.map((pro, i) => (
               <SwiperSlide key={i}>
-                <Shopcard28 product={product} />
+                <Shopcard28 product={pro} />
               </SwiperSlide>
             ))}
           </Swiper>

@@ -19,6 +19,81 @@
     }
   }
 }
+.card {
+  width: 100%; /* Make each card take full width available in each slide */
+  height: auto; /* Adjust the height based on content */
+  margin: 0 auto; /* Center the card horizontally */
+  padding: 15px; /* Padding inside the card */
+  border: 1px solid #ddd; /* Border around the card */
+  border-radius: 8px; /* Rounded corners */
+  box-sizing: border-box; /* Ensures padding doesn't affect width */
+  width: 230px;
+  height: 254px;
+}
+
+.swiper-slide {
+  display: flex;
+  justify-content: center; /* Center align cards within the slide */
+  align-items: center; /* Vertically center content */
+}
+
+.swiper {
+  display: flex; /* Flex layout for Swiper */
+  justify-content: space-between; /* Space between slides */
+}
+
+.card {
+  --border-radius: 0.75rem;
+  --primary-color: #7257fa;
+  --secondary-color: #3c3852;
+
+  font-family: "Arial";
+  cursor: pointer;
+  border-radius: var(--border-radius);
+  background: #f1f1f3;
+  box-shadow: 0px 8px 16px 0px rgb(0 0 0 / 3%);
+  position: relative;
+}
+
+.card > * + * {
+  margin-top: 1.1em;
+}
+
+.card .card__content {
+  color: var(--secondary-color);
+  font-size: 0.86rem;
+}
+
+.card .card__title {
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.card .card__date {
+  color: #6e6b80;
+  font-size: 0.8rem;
+}
+#header .header-bottom .tf-list-categories .categories-title {
+  background-color: #5ca595;
+}
+#header .header-bottom .box-right .phone {
+  color: #5ca595;
+}
+.card .card__arrow {
+  position: absolute;
+  background: var(--primary-color);
+  padding: 0.4rem;
+  border-top-left-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+  bottom: 0;
+  right: 0;
+  transition: 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 #wrapper-menu-navigation ul li {
   position: relative !important;
 }
@@ -58,9 +133,9 @@
   }
 }
 .activeMenu {
-  color: var(--primary) !important;
+  color: #5ca595 !important;
   .demo-name {
-    color: var(--primary) !important;
+    color: #5ca595 !important;
   }
 }
 .tfSubscribeMsg {
@@ -192,7 +267,7 @@ html[dir="rtl"] {
 }
 .item-link.activeMenu::before {
   width: 100% !important;
-  background-color: var(--primary) !important;
+  background-color: #5ca595 !important;
 }
 .pswp__img {
   // height: fit-content !important;

@@ -1,18 +1,21 @@
 "use client";
 
 import { sliderData7 } from "@/data/heroslides";
+import { useGetService } from "@/hooks/useGetService";
 import Image from "next/image";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 export default function Hero() {
+  const { data: services } = useGetService();
+
   return (
-    <section className="flat-spacing-5 slider-gaming-accessories">
+    <section className=" flat-spacing-5 slider-gaming-accessories">
       <Image
         className="lazyload"
-        data-src="/images/slider/bg-slider-gaming-accessories.jpg"
+        data-src="/images/logo/businessman-hand-holding-blocks.jpeg"
         alt="collection-img"
-        src="/images/slider/bg-slider-gaming-accessories.jpg"
+        src="/images/logo/banner.avif"
         width={2000}
         height={855}
       />
@@ -31,7 +34,7 @@ export default function Hero() {
               <div className="collection-item-v4 style-2 hover-img">
                 <div className="collection-inner">
                   <Link
-                    href={`/shop-collection-sub`} // Directly add the link here
+                    href={`/shop-collection-sub`} 
                     className="collection-image img-style radius-10 o-hidden"
                   >
                     <Image

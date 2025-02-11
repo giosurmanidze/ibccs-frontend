@@ -17,7 +17,6 @@ import { openCartModal } from "@/utlis/openCartModal";
 
 export default function DetailsOuterZoom({ product }) {
   const [currentColor, setCurrentColor] = useState(colors[0]);
-  const [currentSize, setCurrentSize] = useState(sizeOptions[1]);
   const [quantity, setQuantity] = useState(1);
 
   const handleColor = (color) => {
@@ -106,10 +105,9 @@ export default function DetailsOuterZoom({ product }) {
                           {isAddedToCartProducts(product?.id)
                             ? "Already Added"
                             : "Add to cart"}{" "}
-                          -{" "}
                         </span>
                         <span className="tf-qty-price">
-                          ${(product?.price * quantity).toFixed(2)}
+                          ${(product?.base_price * quantity).toFixed(2)}
                         </span>
                       </a>
                       <a

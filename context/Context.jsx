@@ -1,7 +1,7 @@
 "use client";
 import { allProducts } from "@/data/products";
+import { useGetServices } from "@/hooks/useGetServices";
 import { openCartModal } from "@/utlis/openCartModal";
-// import { openCart } from "@/utlis/toggleCart";
 import React, { useEffect } from "react";
 import { useContext, useState } from "react";
 const dataContext = React.createContext();
@@ -10,6 +10,8 @@ export const useContextElement = () => {
 };
 
 export default function Context({ children }) {
+  const { data: services } = useGetServices();
+
   const [cartProducts, setCartProducts] = useState([]);
   const [wishList, setWishList] = useState([1, 2, 3]);
   const [compareItem, setCompareItem] = useState([1, 2, 3]);
@@ -18,7 +20,7 @@ export default function Context({ children }) {
   const [totalPrice, setTotalPrice] = useState(0);
   useEffect(() => {
     const subtotal = cartProducts.reduce((accumulator, product) => {
-      return accumulator + product.quantity * product.price;
+      return accumulator + product.quantity * product.base_price;
     }, 0);
     setTotalPrice(subtotal);
   }, [cartProducts]);
@@ -26,7 +28,7 @@ export default function Context({ children }) {
   const addProductToCart = (id, qty) => {
     if (!cartProducts.filter((elm) => elm.id == id)[0]) {
       const item = {
-        ...allProducts.filter((elm) => elm.id == id)[0],
+        ...services.filter((elm) => elm.id == id)[0],
         quantity: qty ? qty : 1,
       };
       setCartProducts((pre) => [...pre, item]);

@@ -1,5 +1,5 @@
 "use client";
-import { collectionData12 } from "@/data/categories";
+import { useGetCategories } from "@/hooks/useGetCategories";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -7,6 +7,8 @@ import { Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 export default function Collections() {
+  const { data: categories } = useGetCategories();
+
   return (
     <section className="flat-spacing-10 flat-testimonial">
       <div className="container">
@@ -15,18 +17,19 @@ export default function Collections() {
             className="title fw-6 wow fadeInUp font-readex-pro text_black-3"
             data-wow-delay="0s"
           >
-            Shop by Category
+            კატეგორიები
           </span>
         </div>
-        <div className="hover-sw-nav bg_dark-2 padding-content radius-10">
+        <div className="hover-sw-nav padding-content radius-10">
           <Swiper
             dir="ltr"
             className="swiper tf-sw-testimonial"
-            spaceBetween={70}
+            spaceBetween={20}
             breakpoints={{
-              1024: { slidesPerView: 6 },
-              768: { slidesPerView: 4 },
-              0: { slidesPerView: 2 },
+              1024: { slidesPerView: 4 }, // 4 cards on larger screens
+              768: { slidesPerView: 3 }, // 3 cards on medium screens
+              480: { slidesPerView: 2 }, // 2 cards on smaller screens
+              0: { slidesPerView: 1 }, // 1 card on extra small screens
             }}
             modules={[Pagination, Navigation]}
             pagination={{
@@ -38,38 +41,31 @@ export default function Collections() {
               nextEl: ".snbncoll1",
             }}
           >
-            {collectionData12.map((item, index) => (
+            {categories?.map((item, index) => (
               <SwiperSlide key={index}>
-                <div className="collection-item-circle has-bg hover-img bg_dark-2">
-                  <Link
-                    href={`/shop-collection-sub`}
-                    className="collection-image mw-100 img-style radius-5"
-                  >
+                <Link
+                  href={`/shop-default?categoryId=${item.id}`}
+                  className="card p-3"
+                >
+                  <span>
                     <Image
                       className="lazyload"
                       data-src={item.imgSrc}
                       alt="collection-img"
-                      src={item.imgSrc}
-                      width={160}
-                      height={160}
+                      src={`http://localhost:8000/storage/${item.icon}`}
+                      width={60}
+                      height={60}
                     />
-                  </Link>
-                  <div className="collection-content text-center">
-                    <Link
-                      href={`/shop-collection-sub`}
-                      className="link title fw-6 text_white"
-                    >
-                      {item.title}
-                    </Link>
-                  </div>
-                </div>
+                  </span>
+                  <p class="card__title"> {item.name}</p>
+                </Link>
               </SwiperSlide>
             ))}
           </Swiper>
-          <div className="nav-sw nav-next-slider nav-next-testimonial lg bg_dark-2 snbpcoll1">
+          <div className="nav-sw nav-next-slider nav-next-testimonial lg snbpcoll1">
             <span className="icon icon-arrow-left" />
           </div>
-          <div className="nav-sw nav-prev-slider nav-prev-testimonial lg bg_dark-2 snbncoll1">
+          <div className="nav-sw nav-prev-slider nav-prev-testimonial lg snbncoll1">
             <span className="icon icon-arrow-right" />
           </div>
           <div className="sw-dots style-2 sw-pagination-testimonial justify-content-center spdcoll1" />

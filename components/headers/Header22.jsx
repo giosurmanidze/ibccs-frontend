@@ -175,268 +175,83 @@ export default function Header22() {
                               href={`/shop-default`}
                               className="tf-category-link mb-menu-link"
                             >
-                              <div className="image">
+                              <div>
                                 <Image
-                                  alt="/images/shop/cate/cate5.jpg"
-                                  src="/images/shop/cate/cate2.jpg"
+                                  alt="img"
+                                  src="/images/item/ballot.png"
                                   width={40}
                                   height={48}
                                 />
                               </div>
-                              <span className="link">{d.name}</span>
+                              <span className="link">
+                                {d.name.length > 50
+                                  ? `${d.name.substring(0, 50)}...`
+                                  : d.name}
+                              </span>
                             </Link>
                           </li>
                         );
                       } else {
-                        d.services.map((s) => {
-                          <li className="nav-mb-item">
+                        const uniqueId = `cate-menu-${d.id || d.name}`;
+                        return (
+                          <li className="nav-mb-item" key={d?.id || d?.name}>
                             <a
-                              href="#cate-menu-one"
+                              href={`#${uniqueId}`}
                               className="tf-category-link has-children collapsed mb-menu-link"
                               data-bs-toggle="collapse"
-                              aria-expanded="true"
-                              aria-controls="cate-menu-one"
+                              aria-expanded="false"
+                              aria-controls={uniqueId}
                             >
-                              <div className="image">
+                              <div>
                                 <Image
-                                  alt="/images/shop/cate/cate5.jpg"
-                                  src="/images/shop/cate/cate5.jpg"
-                                  width={40}
-                                  height={48}
+                                  alt="img"
+                                  src="/images/item/ballot.png"
+                                  width={30}
+                                  height={38}
                                 />
                               </div>
-                              <span className="link">{s.name}</span>
+                              <span className="link">
+                                {d.name.length > 25
+                                  ? `${d.name.substring(0, 20)}...`
+                                  : d.name}
+                              </span>
                               <span className="btn-open-sub" />
                             </a>
-                            <div
-                              id="cate-menu-one"
-                              className="collapse list-cate"
-                            >
+                            <div id={uniqueId} className="collapse list-cate">
                               <ul
                                 className="sub-nav-menu"
-                                id="cate-menu-navigation"
+                                id={`cate-menu-navigation-${d.id || d.name}`}
                               >
-                                <li>
-                                  <a
-                                    href="#cate-shop-one"
-                                    className="tf-category-link has-children sub-nav-link collapsed"
-                                    data-bs-toggle="collapse"
-                                    aria-expanded="true"
-                                    aria-controls="cate-shop-one"
-                                  >
-                                    <div className="image">
-                                      <Image
-                                        alt="/images/shop/cate/cate5.jpg"
-                                        src="/images/shop/cate/cate6.jpg"
-                                        width={40}
-                                        height={49}
-                                      />
-                                    </div>
-                                    <span>Mens</span>
-                                    <span className="btn-open-sub" />
-                                  </a>
-                                </li>
-                                <li></li>
+                                {Array.isArray(d?.services) &&
+                                  d?.services.map((s, key) => (
+                                    <li key={s.id || key}>
+                                      <Link
+                                        href={`/product-detail/${s.id}?categoryId=${s.category_id}`}
+                                        className="tf-category-link sub-nav-link"
+                                      >
+                                        <div>
+                                          <Image
+                                            alt="img"
+                                            src="/images/item/ballot.png"
+                                            width={30}
+                                            height={38}
+                                          />
+                                        </div>
+                                        <span>
+                                          {s.name.length > 25
+                                            ? `${s.name.substring(0, 20)}...`
+                                            : s.name}
+                                        </span>
+                                      </Link>
+                                    </li>
+                                  ))}
                               </ul>
                             </div>
-                          </li>;
-                        });
+                          </li>
+                        );
                       }
                     })}
-
-                    {Array.isArray(data?.services) && (
-                      <>
-                        {" "}
-                        <li className="nav-mb-item">
-                          <a
-                            href="#cate-menu-one"
-                            className="tf-category-link has-children collapsed mb-menu-link"
-                            data-bs-toggle="collapse"
-                            aria-expanded="true"
-                            aria-controls="cate-menu-one"
-                          >
-                            <div className="image">
-                              <Image
-                                alt="/images/shop/cate/cate5.jpg"
-                                src="/images/shop/cate/cate5.jpg"
-                                width={40}
-                                height={48}
-                              />
-                            </div>
-                            <span className="link">Fashion</span>
-                            <span className="btn-open-sub" />
-                          </a>
-                          <div
-                            id="cate-menu-one"
-                            className="collapse list-cate"
-                          >
-                            <ul
-                              className="sub-nav-menu"
-                              id="cate-menu-navigation"
-                            >
-                              <li>
-                                <a
-                                  href="#cate-shop-one"
-                                  className="tf-category-link has-children sub-nav-link collapsed"
-                                  data-bs-toggle="collapse"
-                                  aria-expanded="true"
-                                  aria-controls="cate-shop-one"
-                                >
-                                  <div className="image">
-                                    <Image
-                                      alt="/images/shop/cate/cate5.jpg"
-                                      src="/images/shop/cate/cate6.jpg"
-                                      width={40}
-                                      height={49}
-                                    />
-                                  </div>
-                                  <span>Mens</span>
-                                  <span className="btn-open-sub" />
-                                </a>
-                              </li>
-                              <li></li>
-                            </ul>
-                          </div>
-                        </li>
-                        <li className="nav-mb-item">
-                          <a
-                            href="#cate-menu-two"
-                            className="tf-category-link has-children collapsed mb-menu-link"
-                            data-bs-toggle="collapse"
-                            aria-expanded="true"
-                            aria-controls="cate-menu-two"
-                          >
-                            <div className="image">
-                              <Image
-                                alt="/images/shop/cate/cate5.jpg"
-                                src="/images/shop/cate/cate6.jpg"
-                                width={40}
-                                height={49}
-                              />
-                            </div>
-                            <span className="link">Men</span>
-                            <span className="btn-open-sub" />
-                          </a>
-                        </li>
-                      </>
-                    )}
-
-                    {/* <li className="nav-mb-item">
-                      <a
-                        href="#cate-menu-one"
-                        className="tf-category-link has-children collapsed mb-menu-link"
-                        data-bs-toggle="collapse"
-                        aria-expanded="true"
-                        aria-controls="cate-menu-one"
-                      >
-                        <div className="image">
-                          <Image
-                            alt="/images/shop/cate/cate5.jpg"
-                            src="/images/shop/cate/cate5.jpg"
-                            width={40}
-                            height={48}
-                          />
-                        </div>
-                        <span className="link">Fashion</span>
-                        <span className="btn-open-sub" />
-                      </a>
-                      <div id="cate-menu-one" className="collapse list-cate">
-                        <ul className="sub-nav-menu" id="cate-menu-navigation">
-                          <li>
-                            <a
-                              href="#cate-shop-one"
-                              className="tf-category-link has-children sub-nav-link collapsed"
-                              data-bs-toggle="collapse"
-                              aria-expanded="true"
-                              aria-controls="cate-shop-one"
-                            >
-                              <div className="image">
-                                <Image
-                                  alt="/images/shop/cate/cate5.jpg"
-                                  src="/images/shop/cate/cate6.jpg"
-                                  width={40}
-                                  height={49}
-                                />
-                              </div>
-                              <span>Mens</span>
-                              <span className="btn-open-sub" />
-                            </a>
-                          </li>
-                          <li></li>
-                        </ul>
-                      </div>
-                    </li>
                     <li className="nav-mb-item">
-                      <a
-                        href="#cate-menu-two"
-                        className="tf-category-link has-children collapsed mb-menu-link"
-                        data-bs-toggle="collapse"
-                        aria-expanded="true"
-                        aria-controls="cate-menu-two"
-                      >
-                        <div className="image">
-                          <Image
-                            alt="/images/shop/cate/cate5.jpg"
-                            src="/images/shop/cate/cate6.jpg"
-                            width={40}
-                            height={49}
-                          />
-                        </div>
-                        <span className="link">Men</span>
-                        <span className="btn-open-sub" />
-                      </a>
-                    </li> */}
-                    <li className="nav-mb-item">
-                      <Link
-                        href={`/shop-default`}
-                        className="tf-category-link mb-menu-link"
-                      >
-                        <div className="image">
-                          <Image
-                            alt="/images/shop/cate/cate5.jpg"
-                            src="/images/shop/cate/cate7.jpg"
-                            width={40}
-                            height={41}
-                          />
-                        </div>
-                        <span className="link">Tee</span>
-                      </Link>
-                    </li>
-                    <li className="nav-mb-item">
-                      <Link
-                        href={`/shop-default`}
-                        className="tf-category-link mb-menu-link"
-                      >
-                        <div className="image">
-                          <Image
-                            alt="/images/shop/cate/cate5.jpg"
-                            src="/images/shop/cate/cate8.jpg"
-                            width={40}
-                            height={48}
-                          />
-                        </div>
-                        <span className="link">Shoes</span>
-                      </Link>
-                    </li>
-                    <li className="nav-mb-item">
-                      <a
-                        href="#cate-menu-three"
-                        className="tf-category-link has-children collapsed mb-menu-link"
-                        data-bs-toggle="collapse"
-                        aria-expanded="true"
-                        aria-controls="cate-menu-three"
-                      >
-                        <div className="image">
-                          <Image
-                            alt="/images/shop/cate/cate5.jpg"
-                            src="/images/shop/cate/cate9.jpg"
-                            width={40}
-                            height={49}
-                          />
-                        </div>
-                        <span className="link">Women</span>
-                        <span className="btn-open-sub" />
-                      </a>
                       <div id="cate-menu-three" className="collapse list-cate">
                         <ul className="sub-nav-menu" id="cate-menu-navigation2">
                           <li>

@@ -10,7 +10,6 @@ export const metadata = {
 export default function notFound() {
   return (
     <>
-      <Header1 />
       <section className="page-404-wrap">
         <div className="container">
           <div className="row">
@@ -38,7 +37,6 @@ export default function notFound() {
           </div>
         </div>
       </section>
-      <Footer1 />
     </>
   );
 }

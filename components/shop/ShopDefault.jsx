@@ -10,6 +10,9 @@ export default function ShopDefault() {
   const [gridItems, setGridItems] = useState(4);
   const [products, setProducts] = useState([]);
   const [finalSorted, setFinalSorted] = useState([]);
+
+  
+
   return (
     <>
       <section className="flat-spacing-2">

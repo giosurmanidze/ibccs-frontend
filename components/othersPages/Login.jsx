@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form"; // Import useForm
 import { yupResolver } from "@hookform/resolvers/yup"; // Import yupResolver for validation
 import * as yup from "yup"; // Import yup for schema validation
 import { toast } from "react-toastify"; // Import toast for notifications
-import axios from "axios"; // Import axios for making HTTP requests
 import "react-toastify/dist/ReactToastify.css"; // Import toast CSS
+import axiosInstance from "@/config/axios";
 
 // Define the validation schema with Yup
 const validationSchema = yup.object().shape({
@@ -28,7 +28,6 @@ const emailShecma = yup.object().shape({
 });
 
 export default function Login() {
-  // Initialize react-hook-form with yup validation
   const {
     register,
     handleSubmit,
@@ -49,7 +48,7 @@ export default function Login() {
   const onSubmit = async (data) => {
     try {
       // Simulate a login API request
-      const response = await axios.post("/api/login", data); // Replace with your login API
+      const response = await axiosInstance.post("login", data); // Replace with your login API
       console.log("Login successful:", response.data);
       toast.success("Login successful!");
       // Handle success, like saving the token or redirecting
@@ -58,8 +57,19 @@ export default function Login() {
       toast.error("Login failed. Please try again.");
     }
   };
-  const ResetSubmit = (data) => {
-    console.log(data);
+  const ResetSubmit = async (data) => {
+    try {
+      // Simulate a login API request
+      const response = await axiosInstance.post("forgot-password", {
+        email: data["email"],
+      });
+      console.log("Login successful:", response.data);
+      toast.success("Login successful!");
+      // Handle success, like saving the token or redirecting
+    } catch (error) {
+      console.error("Login failed:", error);
+      toast.error("Login failed. Please try again.");
+    }
   };
 
   return (
@@ -81,7 +91,7 @@ export default function Login() {
                       placeholder=" "
                       type="email"
                       autoComplete="abc@xyz.com"
-                      id="property3"
+                      id="property5"
                       name="email"
                       {...registerEmail("email")}
                     />

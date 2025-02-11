@@ -78,7 +78,7 @@ export default function QuickView() {
                     <SwiperSlide className="swiper-slide" key={index}>
                       <div className="item">
                         <Image
-                          alt={""}
+                          alt="img"
                           src={product}
                           width={720}
                           height={1045}

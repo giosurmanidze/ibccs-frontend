@@ -27,7 +27,7 @@ export default function Testimonials() {
               <div className="d-flex gap-8 align-items-end">
                 <p className="text-base">1,206 reviews on</p>
                 <Image
-                  alt=""
+                  alt="img"
                   src="/images/item/test-trust.png"
                   width="138"
                   height="34"

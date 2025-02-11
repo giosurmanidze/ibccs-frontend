@@ -14,7 +14,7 @@ export default function BuyXgetY() {
             <div className="pr-item-info">
               <div className="thumbnails">
                 <Image
-                  alt=""
+                  alt="img"
                   src="/images/products/gaming-detail1.jpg"
                   width={713}
                   height={713}
@@ -46,7 +46,7 @@ export default function BuyXgetY() {
             <div className="pr-item-info">
               <div className="thumbnails">
                 <Image
-                  alt=""
+                  alt="img"
                   src="/images/products/headphone-2.png"
                   width={533}
                   height={399}

@@ -35,7 +35,7 @@ export default function Features() {
                   <div className="tf-icon-box style-lg text-center">
                     <div className="icon">
                       <Image
-                        alt=""
+                        alt="img"
                         src={slide.src}
                         width={slide.width}
                         height={slide.height}
@@ -70,7 +70,7 @@ export default function Features() {
                 <div className="tf-icon-box style-lg text-center">
                   <div className="icon">
                     <Image
-                      alt=""
+                      alt="img"
                       src={slide.src}
                       width={slide.width}
                       height={slide.height}

@@ -68,7 +68,7 @@ export default function Testimonials() {
                         <Image
                           className="lazyload"
                           data-src={item.imgSrc}
-                          alt=""
+                          alt="img"
                           width={360}
                           height={540}
                           src={item.imgSrc}

@@ -12,7 +12,8 @@ export default function Testimonials() {
           <span className="title fw-6">Customer Reviews</span>
         </div>
         <div className="wrap-carousel">
-          <Swiper dir='ltr' 
+          <Swiper
+            dir="ltr"
             spaceBetween={30}
             slidesPerView={3}
             breakpoints={{
@@ -53,7 +54,7 @@ export default function Testimonials() {
                         <Image
                           className="lazyload"
                           data-src={testimonial.imgSrc}
-                          alt=""
+                          alt="img"
                           src={testimonial.imgSrc}
                           width={360}
                           height={360}

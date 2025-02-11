@@ -11,7 +11,7 @@ export default function Process() {
       <Image
         className=""
         data-src="/images/collections/bg-personalized-pod-2.png"
-        alt=""
+        alt="img"
         src="/images/collections/bg-personalized-pod-2.png"
         width={2000}
         height={770}

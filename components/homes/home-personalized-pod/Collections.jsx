@@ -8,7 +8,7 @@ export default function Collections() {
       <Image
         className=""
         data-src="/images/collections/bg-personalized-pod-1.jpg"
-        alt=""
+        alt="img"
         src="/images/collections/bg-personalized-pod-1.jpg"
         width={2800}
         height={1083}

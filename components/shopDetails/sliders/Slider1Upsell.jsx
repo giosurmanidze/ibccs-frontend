@@ -116,7 +116,7 @@ export default function Slider1Upsell({
               <Image
                 className="lazyload"
                 data-src={slide.src}
-                alt={""}
+                 alt="img"
                 src={slide.src} // Optional fallback for non-lazy loading
                 width={slide.width}
                 height={slide.height}

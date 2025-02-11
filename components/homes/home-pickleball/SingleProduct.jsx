@@ -253,31 +253,31 @@ export default function SingleProduct() {
                   </div>
                   <div className="tf-payment">
                     <Image
-                      alt=""
+                      alt="img"
                       src="/images/payments/visa.png"
                       width={48}
                       height={30}
                     />
                     <Image
-                      alt=""
+                      alt="img"
                       src="/images/payments/img-1.png"
                       width={49}
                       height={30}
                     />
                     <Image
-                      alt=""
+                      alt="img"
                       src="/images/payments/img-2.png"
                       width={48}
                       height={30}
                     />
                     <Image
-                      alt=""
+                      alt="img"
                       src="/images/payments/img-3.png"
                       width={57}
                       height={30}
                     />
                     <Image
-                      alt=""
+                      alt="img"
                       src="/images/payments/img-4.png"
                       width={49}
                       height={30}

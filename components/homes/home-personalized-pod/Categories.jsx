@@ -8,7 +8,7 @@ export default function Categories() {
       <Image
         className=""
         data-src="/images/collections/bg-personalized-pod-3.png"
-        alt=""
+        alt="img"
         src="/images/collections/bg-personalized-pod-3.png"
         width={2000}
         height={1101}

@@ -257,7 +257,7 @@ export default function Slider5({
               <Image
                 className="lazyload"
                 data-src={slide.src}
-                alt={""}
+                alt="img"
                 src={slide.src}
                 width={slide.width}
                 height={slide.height}
@@ -296,7 +296,7 @@ export default function Slider5({
                       src={slide.modelSrc}
                       camera-controls="true"
                       data-shopify-feature="1.12"
-                      alt={""}
+                      alt="img"
                       poster={slide.src}
                       className="tf-model-viewer-ui disabled"
                       tabindex="1"

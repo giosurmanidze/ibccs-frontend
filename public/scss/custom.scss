@@ -365,28 +365,135 @@ html[dir="rtl"] {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: 100%; /* Make it flexible */
+  max-width: 250px; /* Set a reasonable max width */
 
   button {
-    border: none;
+    font-size: 1rem;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    width: 100%;
+  }
+}
+.active-button {
+  background-color: #5ca595 !important;
+}
+.text_white {
+  color: #3c3852 !important;
+}
+
+@media (max-width: 768px) {
+  .register_option {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    max-width: 100%;
+  }
+
+  .register_option button {
+    flex: 1;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .register_option {
+    flex-direction: column;
+  }
+
+  .register_option button {
+    font-size: 0.85rem;
+    padding: 6px 10px;
   }
 }
 
 .error {
   color: red;
 }
+/* Center the password change form */
+.password-change-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh; /* Full screen height */
+  padding: 20px;
+}
 
+.password-change-page form {
+  background: #ffffff; /* White background */
+  padding: 20px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px; /* Prevents it from being too wide */
+  text-align: center; /* Center text */
+  .tf-field {
+    margin-top: 1rem;
+  }
+}
+.search-suggests-results {
+  
+}
+.nav-account {
+  span {
+    margin-left: 10px;
+  }
+  button {
+    border: none;
+    background: black;
+    color: white !important;
+    padding: 2px 7px;
+    margin-left: 15px;
+  }
+  a {
+    transition: color 0.3s ease-in-out !important;
 
+    &:hover {
+      color: #5ca595 !important;
+      text-decoration: underline !important;
+    }
+  }
+}
+.success-page {
+  height: 70vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
+/* Input fields styling */
+.password-change-page .tf-field {
+  width: 100%;
+  text-align: left;
+}
 
+/* Button Styling */
+.password-change-page .tf-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
+  padding: 12px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
 
+.password-change-page .tf-btn:hover {
+  background-color: #5ca595;
+}
 
+/* 📱 Mobile Responsiveness */
+@media (max-width: 768px) {
+  .password-change-page form {
+    width: 90%;
+    padding: 15px;
+  }
 
-
-
-
-
-
-
-
-
-
+  .password-change-page .tf-btn {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+}

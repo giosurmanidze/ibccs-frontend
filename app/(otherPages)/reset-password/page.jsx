@@ -60,9 +60,9 @@ export default function Page() {
 
   return (
     <div className="container password-change-page">
+      <ToastContainer />
       <form onSubmit={handleSubmit(onSubmit)}>
         <h5>Please enter new password</h5>
-        <ToastContainer />
         <div className="tf-field style-1 mb_15">
           <input
             className="tf-field-input tf-input"

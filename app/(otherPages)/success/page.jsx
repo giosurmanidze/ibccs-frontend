@@ -1,7 +1,7 @@
-"use client"
+"use client";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import axios from "axios";
+import axiosInstance from "@/config/axios";
 
 export default function page() {
   const searchParams = useSearchParams();
@@ -9,8 +9,8 @@ export default function page() {
 
   useEffect(() => {
     if (email) {
-      axios
-        .post("http://localhost:8000/api/email/verify", { email })
+      axiosInstance
+        .post("/email/verify", { email })
         .then((response) => {
           console.log("Verification successful:", response.data);
         })
@@ -18,11 +18,11 @@ export default function page() {
           console.error("Error verifying email:", error);
         });
     }
-  }, [email]); 
+  }, [email]);
 
   return (
     <div className="success-page">
-      <h3>Verification completed successfully!</h3>
+      <h3>Verification completed successfully! ✔</h3>
     </div>
   );
 }

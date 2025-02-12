@@ -1,13 +1,43 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Nav from "./Nav";
 import Image from "next/image";
 import Link from "next/link";
 import CartLength from "../common/CartLength";
 import { useGetCategories } from "@/hooks/useGetCategories";
+import { useAuth } from "@/context/AuthContext";
+import axiosInstance from "@/config/axios";
 
 export default function Header22() {
-  const { data } = useGetCategories();
+  const { data: categories } = useGetCategories();
+  const { user, logout } = useAuth();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSearch = async (event) => {
+    const query = event.target.value;
+    setSearchTerm(query);
+
+    if (query.trim() !== "") {
+      setIsLoading(true);
+
+      try {
+        const response = await axiosInstance.get(
+          `/services/search?name=${query}`
+        );
+
+        setData(response.data);
+      } catch (error) {
+        console.error("Error fetching search results:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setData([]);
+    }
+  };
 
   return (
     <header
@@ -55,11 +85,60 @@ export default function Header22() {
                   onSubmit={(e) => e.preventDefault()}
                   className="search-box"
                 >
-                  <input type="text" placeholder="Search product" />
-                  <button className="tf-btn">
+                  <input
+                    type="text"
+                    placeholder="Search product"
+                    value={searchTerm}
+                    onChange={handleSearch} // Trigger search on input change
+                  />
+                  <button className="tf-btn" type="button">
                     <i className="icon icon-search" />
                   </button>
                 </form>
+
+                {searchTerm && data.length > 0 && (
+                  <div className="search-suggests-results">
+                    <div className="search-suggests-results-inner">
+                      <ul>
+                        {data.map((product, index) => (
+                          <li key={index}>
+                            <hr />
+                            <Link
+                              href={`/product-detail/${product.id}?categoryId=${product.category_id}`}
+                            >
+                              <div className="img-box">
+                                <Image
+                                  alt="img"
+                                  src={`http://localhost:8000/storage/${product.icon}`}
+                                  width={30}
+                                  height={30}
+                                />
+                              </div>
+                              <div className="box-content">
+                                <p className="title link">{product.name}</p>
+
+                                <div className="price">
+                                  ${product.base_price}
+                                </div>
+                              </div>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+                {isLoading && searchTerm && (
+                  <div className="search-suggests-results">
+                    <p>Loading...</p>
+                  </div>
+                )}
+
+                {searchTerm && data.length === 0 && !isLoading && (
+                  <div className="search-suggests-results">
+                    <p>No results found.</p>
+                  </div>
+                )}
               </div>
             </div>
             <div className="col-md-4 col-3">
@@ -74,16 +153,30 @@ export default function Header22() {
                     <i className="icon icon-search" />
                   </a>
                 </li>
-                <li className="nav-account">
-                  <a
-                    href="/login"
-                    className="nav-icon-item align-items-center gap-10 text-white"
-                  >
+                {!user ? (
+                  <li className="nav-account">
+                    <a
+                      href="/login"
+                      className="nav-icon-item align-items-center  text-white"
+                    >
+                      <span className="text">Login</span>
+                    </a>
+                    <a
+                      href="/register"
+                      className="nav-icon-item align-items-center  text-white"
+                    >
+                      <span className="text">Register</span>
+                    </a>
+                  </li>
+                ) : (
+                  <li className="nav-account">
                     <i className="icon icon-account" />
-                    <span className="text">Login</span>
-                  </a>
-                </li>
-
+                    <span className="text">
+                      {user.name} {user.lastname}
+                    </span>
+                    <button onClick={logout}>Logout</button>
+                  </li>
+                )}
                 <li className="nav-cart cart-lg line-left-1">
                   <a
                     href="#shoppingCart"
@@ -123,7 +216,7 @@ export default function Header22() {
                 </a>
                 <div className="list-categories-inner toolbar-shop-mobile">
                   <ul className="nav-ul-mb" id="wrapper-menu-navigation">
-                    {data?.map((d) => {
+                    {categories?.map((d) => {
                       if (
                         Array.isArray(d?.services) &&
                         d.services.length === 0

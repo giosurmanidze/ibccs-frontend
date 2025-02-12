@@ -31,6 +31,7 @@ import RtlToggle from "@/components/common/RtlToggle";
 import Header22 from "@/components/headers/Header22";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Footer2 from "@/components/footers/Footer2";
+import { AuthProvider } from "@/context/AuthContext";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -152,7 +153,7 @@ export default function RootLayout({ children }) {
     };
 
     initializeDirection();
-  }, []); // Only runs once on component mount
+  }, []); 
 
   const queryClient = new QueryClient();
 
@@ -166,26 +167,28 @@ export default function RootLayout({ children }) {
             </div>
           </div>{" "}
           <Context>
-            <Header22 />
-            <div id="wrapper">{children}</div>
-            <RtlToggle />
-            <HomesModal /> <QuickView />
-            <QuickAdd />
-            <ProductSidebar />
-            <Compare />
-            <ShopCart />
-            <AskQuestion />
-            <ColorCompare />
-            <DeliveryReturn />
-            <FindSize />
-            <Login />
-            <MobileMenu />
-            <Register />
-            <ResetPass />
-            <SearchModal />
-            <ToolbarBottom />
-            <ToolbarShop />
-            <ShareModal />{" "}
+            <AuthProvider>
+              <Header22 />
+              <div id="wrapper">{children}</div>
+              <RtlToggle />
+              <HomesModal /> <QuickView />
+              <QuickAdd />
+              <ProductSidebar />
+              <Compare />
+              <ShopCart />
+              <AskQuestion />
+              <ColorCompare />
+              <DeliveryReturn />
+              <FindSize />
+              <Login />
+              <MobileMenu />
+              <Register />
+              <ResetPass />
+              <SearchModal />
+              <ToolbarBottom />
+              <ToolbarShop />
+              <ShareModal />
+            </AuthProvider>
           </Context>
           <ScrollTop />
           <Footer2 />

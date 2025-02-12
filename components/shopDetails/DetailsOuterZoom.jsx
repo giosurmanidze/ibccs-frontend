@@ -2,12 +2,7 @@
 import React, { useState } from "react";
 
 import Image from "next/image";
-import CountdownComponent from "../common/Countdown";
-import {
-  colors,
-  paymentImages,
-  sizeOptions,
-} from "@/data/singleProductOptions";
+import { colors, paymentImages } from "@/data/singleProductOptions";
 import StickyItem from "./StickyItem";
 import Quantity from "./Quantity";
 

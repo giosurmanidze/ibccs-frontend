@@ -2,15 +2,20 @@
 
 import { products1 } from "@/data/products";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { ProductCard } from "../shopCards/ProductCard";
 import { Navigation, Pagination } from "swiper/modules";
+import Shopcard28 from "../shopCards/ProductCard28";
+import { useGetCategory } from "@/hooks/useCategory";
+import { useSearchParams } from "next/navigation";
 
 export default function Products() {
+  const searchParams = useSearchParams();
+  const categoryId = searchParams.get("categoryId");
+  const { data } = useGetCategory(categoryId);
   return (
     <section className="flat-spacing-1 pt_0">
       <div className="container">
         <div className="flat-title">
-          <span className="title">People Also Bought</span>
+          <span className="title">სერვისები ამ კატეგორიაში</span>
         </div>
         <div className="hover-sw-nav hover-sw-2">
           <Swiper
@@ -37,9 +42,9 @@ export default function Products() {
             }}
             pagination={{ clickable: true, el: ".spd307" }}
           >
-            {products1.slice(0, 8).map((product, i) => (
+            {data?.services.map((product, i) => (
               <SwiperSlide key={i} className="swiper-slide">
-                <ProductCard product={product} />
+                <Shopcard28 product={product} />
               </SwiperSlide>
             ))}
           </Swiper>

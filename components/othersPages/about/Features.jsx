@@ -1,8 +1,6 @@
 "use client";
-
-import { iconBoxes4 } from "@/data/features";
 import { Pagination } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
+import { Swiper } from "swiper/react";
 
 export default function Features() {
   return (
@@ -37,7 +35,8 @@ export default function Features() {
                 modules={[Pagination]}
                 pagination={{ clickable: true, el: ".spd303" }}
               >
-                {iconBoxes4.map((box, index) => (
+                test
+                {/* {iconBoxes4.map((box, index) => (
                   <SwiperSlide key={index}>
                     <div className="tf-icon-box text-center">
                       <div className="icon">
@@ -49,7 +48,7 @@ export default function Features() {
                       </div>
                     </div>
                   </SwiperSlide>
-                ))}
+                ))} */}
                 <div className="sw-dots style-2 sw-pagination-mb justify-content-center spd303" />
               </Swiper>
             </div>

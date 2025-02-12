@@ -60,46 +60,6 @@ export default function Header22() {
                     <i className="icon icon-search" />
                   </button>
                 </form>
-                <div className="search-suggests-results">
-                  <div className="search-suggests-results-inner">
-                    <ul>
-                      {data?.map((product, index) => (
-                        <li key={index}>
-                          <Link
-                            className="search-result-item"
-                            href={`/product-detail/${product.id}`}
-                          >
-                            <div className="img-box">
-                              <Image
-                                alt={product.imgAlt}
-                                src={product.imgSrc}
-                                width={product.imgWidth}
-                                height={product.imgHeight}
-                              />
-                            </div>
-                            <div className="box-content">
-                              <p className="title link">{product.name}</p>
-                              {product.hasOldPrice ? (
-                                <div className="d-flex gap-10">
-                                  <span className="old-price">
-                                    ${product.oldPrice.toFixed(2)}
-                                  </span>
-                                  <span className="new-price">
-                                    ${product.base_price}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="price">
-                                  ${product.base_price}
-                                </div>
-                              )}
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
               </div>
             </div>
             <div className="col-md-4 col-3">

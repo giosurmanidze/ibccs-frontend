@@ -15,7 +15,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 1,
       src: firstImage || "/images/shop/products/p-d1.png",
-      alt: "",
+      alt: "img",
       width: 770,
       height: 1075,
       dataValue: "beige",
@@ -23,7 +23,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 2,
       src: "/images/shop/products/hmgoepprod.jpg",
-      alt: "",
+      alt: "img",
       width: 713,
       height: 1070,
       dataValue: "beige",
@@ -63,7 +63,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 7,
       src: "/images/shop/products/hmgoepprod6.jpg",
-      alt: "",
+      alt: "img",
       width: 768,
       height: 1152,
       dataValue: "black",
@@ -71,7 +71,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 8,
       src: "/images/shop/products/hmgoepprod7.jpg",
-      alt: "",
+      alt: "img",
       width: 713,
       height: 1070,
       dataValue: "black",
@@ -79,7 +79,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 9,
       src: "/images/shop/products/hmgoepprod8.jpg",
-      alt: "",
+      alt: "img",
       width: 713,
       height: 1070,
       dataValue: "black",
@@ -87,7 +87,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 10,
       src: "/images/shop/products/hmgoepprod9.jpg",
-      alt: "",
+      alt: "img",
       width: 768,
       height: 1152,
       dataValue: "black",
@@ -95,7 +95,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 11,
       src: "/images/shop/products/hmgoepprod10.jpg",
-      alt: "",
+      alt: "img",
       width: 713,
       height: 1070,
       dataValue: "blue",
@@ -103,7 +103,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 12,
       src: "/images/shop/products/hmgoepprod11.jpg",
-      alt: "",
+      alt: "img",
       width: 713,
       height: 1070,
       dataValue: "blue",
@@ -111,7 +111,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 13,
       src: "/images/shop/products/hmgoepprod12.jpg",
-      alt: "",
+      alt: "img",
       width: 768,
       height: 1152,
       dataValue: "blue",
@@ -119,7 +119,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 14,
       src: "/images/shop/products/hmgoepprod13.jpg",
-      alt: "",
+      alt: "img",
       width: 768,
       height: 1152,
       dataValue: "blue",
@@ -127,7 +127,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 15,
       src: "/images/shop/products/hmgoepprod14.jpg",
-      alt: "",
+      alt: "img",
       width: 768,
       height: 1152,
       dataValue: "white",
@@ -135,7 +135,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 16,
       src: "/images/shop/products/hmgoepprod15.jpg",
-      alt: "",
+      alt: "img",
       width: 768,
       height: 1152,
       dataValue: "white",
@@ -143,7 +143,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 17,
       src: "/images/shop/products/hmgoepprod16.jpg",
-      alt: "",
+      alt: "img",
       width: 768,
       height: 1152,
       dataValue: "white",
@@ -151,7 +151,7 @@ export default function SliderWithGalleryPopup({
     {
       id: 18,
       src: "/images/shop/products/hmgoepprod17.jpg",
-      alt: "",
+      alt: "img",
       width: 768,
       height: 1152,
       dataValue: "white",
@@ -192,7 +192,7 @@ export default function SliderWithGalleryPopup({
               <Image
                 className="lazyload"
                 data-src={slide.src}
-                alt="img"
+                alt={slide.alt}
                 src={slide.src} // Optional fallback for non-lazy loading
                 width={slide.width}
                 height={slide.height}

@@ -13,7 +13,6 @@ import QuickAdd from "@/components/modals/QuickAdd";
 import Compare from "@/components/modals/Compare";
 import ShopCart from "@/components/modals/ShopCart";
 import AskQuestion from "@/components/modals/AskQuestion";
-import BlogSidebar from "@/components/modals/BlogSidebar";
 import ColorCompare from "@/components/modals/ColorCompare";
 import DeliveryReturn from "@/components/modals/DeliveryReturn";
 import FindSize from "@/components/modals/FindSize";
@@ -176,7 +175,6 @@ export default function RootLayout({ children }) {
             <Compare />
             <ShopCart />
             <AskQuestion />
-            <BlogSidebar />
             <ColorCompare />
             <DeliveryReturn />
             <FindSize />

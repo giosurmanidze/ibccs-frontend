@@ -102,7 +102,7 @@ export default function Login() {
                       Email *
                     </label>
                     {errors.email && (
-                      <p className="error">{errorsEmail.email.message}</p>
+                      <p className="error">{errorsEmail?.email.message}</p>
                     )}
                   </div>
                   <div className="mb_20">

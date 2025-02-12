@@ -1,6 +1,5 @@
 "use client";
 import Products from "@/components/shopDetails/Products";
-import RecentProducts from "@/components/shopDetails/RecentProducts";
 import ShopDetailsTab from "@/components/shopDetails/ShopDetailsTab";
 import React from "react";
 import Link from "next/link";
@@ -36,7 +35,6 @@ export default function page() {
       <DetailsOuterZoom product={product} />
       <ShopDetailsTab />
       <Products />
-      <RecentProducts />
     </>
   );
 }

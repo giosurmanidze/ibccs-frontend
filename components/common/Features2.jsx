@@ -1,8 +1,7 @@
 "use client";
 
-import { iconBoxes3 } from "@/data/features";
 import { Pagination } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
+import { Swiper } from "swiper/react";
 
 export default function Features({ bgColor = "bg_grey-7", titleFont = "" }) {
   return (
@@ -24,7 +23,7 @@ export default function Features({ bgColor = "bg_grey-7", titleFont = "" }) {
             modules={[Pagination]}
             pagination={{ clickable: true, el: ".spd104" }}
           >
-            {iconBoxes3.map((box, index) => (
+            {/* {iconBoxes3.map((box, index) => (
               <SwiperSlide key={index}>
                 <div className="tf-icon-box style-row">
                   <div className="icon bg_white">
@@ -36,7 +35,8 @@ export default function Features({ bgColor = "bg_grey-7", titleFont = "" }) {
                   </div>
                 </div>
               </SwiperSlide>
-            ))}
+            ))} */}
+            test
           </Swiper>
           <div className="sw-dots style-2 sw-pagination-mb justify-content-center spd104" />
         </div>

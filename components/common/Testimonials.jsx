@@ -2,7 +2,6 @@
 import Image from "next/image";
 import { testimonials } from "@/data/testimonials";
 import React from "react";
-import Link from "next/link";
 import { Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 

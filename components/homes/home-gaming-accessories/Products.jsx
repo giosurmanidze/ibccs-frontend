@@ -1,7 +1,7 @@
 "use client";
 
 import CountdownComponent from "@/components/common/Countdown";
-import ProductCard33 from "@/components/shopCards/ProductCard33";
+import Shopcard28 from "@/components/shopCards/ProductCard28";
 import { products68 } from "@/data/products";
 import React from "react";
 import { Pagination } from "swiper/modules";
@@ -70,7 +70,7 @@ export default function Products() {
           >
             {products68.map((product, i) => (
               <SwiperSlide key={i}>
-                <ProductCard33 product={product} />
+                <Shopcard28 product={product} />
               </SwiperSlide>
             ))}
           </Swiper>

@@ -61,6 +61,7 @@ export default function OrderDetails() {
           <Image
             alt="product"
             src="/images/products/brown.jpg"
+            data-src="img"
             width="720"
             height="1005"
           />

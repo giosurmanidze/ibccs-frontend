@@ -1,11 +1,8 @@
 "use client";
 import { useContextElement } from "@/context/Context";
-import { products1 } from "@/data/products";
 import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
-import { Pagination } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
 export default function ShopCart() {
   const { cartProducts, totalPrice, setCartProducts, setQuickViewItem } =
     useContextElement();

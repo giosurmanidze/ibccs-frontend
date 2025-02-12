@@ -20,11 +20,6 @@ export default function Cart() {
   return (
     <section className="flat-spacing-11">
       <div className="container">
-        {/* <div className="tf-page-cart text-center mt_140 mb_200">
-              <h5 className="mb_24">Your cart is empty</h5>
-              <p className="mb_24">You may check out all the available products and buy some in the shop</p>
-              <Link href={`/shop-default`} className="tf-btn btn-sm radius-3 btn-fill btn-icon animate-hover-btn">Return to shop<i className="icon icon-arrow1-top-left"></i></Link>
-          </div> */}
         <div className="tf-cart-countdown">
           <div className="title-left">
             <svg
@@ -71,7 +66,7 @@ export default function Cart() {
                         >
                           <Image
                             alt="img-product"
-                            src={elm.imgSrc}
+                            src={`http://localhost:8000/storage/${elm.icon}`}
                             width={668}
                             height={932}
                           />
@@ -96,9 +91,7 @@ export default function Cart() {
                         className="tf-cart-item_price"
                         cart-data-title="Price"
                       >
-                        <div className="cart-price">
-                          ${elm.price.toFixed(2)}
-                        </div>
+                        <div className="cart-price">${elm.base_price}</div>
                       </td>
                       <td
                         className="tf-cart-item_quantity"
@@ -158,7 +151,7 @@ export default function Cart() {
                           className="cart-total"
                           style={{ minWidth: "60px" }}
                         >
-                          ${(elm.price * elm.quantity).toFixed(2)}
+                          ${(elm.base_price * elm.quantity).toFixed(2)}
                         </div>
                       </td>
                     </tr>

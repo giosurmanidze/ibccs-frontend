@@ -1,8 +1,6 @@
 "use client";
-import { galleryImages } from "@/data/gallery";
 import React from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import Image from "next/image";
+import { Swiper } from "swiper/react";
 import { Pagination } from "swiper/modules";
 export default function ShopGram() {
   return (
@@ -31,7 +29,7 @@ export default function ShopGram() {
             modules={[Pagination]}
             pagination={{ clickable: true, el: ".spd304" }}
           >
-            {galleryImages.map((image, index) => (
+            {/* {galleryImages.map((image, index) => (
               <SwiperSlide key={index}>
                 <div className="gallery-item hover-img">
                   <div className="img-style">
@@ -45,7 +43,7 @@ export default function ShopGram() {
                   </div>
                 </div>
               </SwiperSlide>
-            ))}
+            ))} */}
           </Swiper>
           <div className="sw-dots sw-pagination-gallery justify-content-center spd304" />
         </div>

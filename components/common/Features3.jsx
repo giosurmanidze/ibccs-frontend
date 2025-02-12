@@ -1,5 +1,4 @@
 "use client";
-import { iconBoxes7 } from "@/data/features";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
@@ -16,7 +15,8 @@ export default function Features3() {
               data-space="15"
             >
               <div className="swiper-wrapper wrap-iconbox">
-                {iconBoxes7.map((box, index) => (
+                test
+                {/* {iconBoxes7.map((box, index) => (
                   <div className="swiper-slide" key={index}>
                     <div className="tf-icon-box style-row">
                       <div className="icon bg_571729">
@@ -30,7 +30,7 @@ export default function Features3() {
                       </div>
                     </div>
                   </div>
-                ))}
+                ))} */}
               </div>
             </div>
             <Swiper

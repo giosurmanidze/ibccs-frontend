@@ -1,6 +1,5 @@
 "use client";
 
-import { products1 } from "@/data/products";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import Shopcard28 from "../shopCards/ProductCard28";
@@ -15,24 +14,24 @@ export default function Products() {
     <section className="flat-spacing-1 pt_0">
       <div className="container">
         <div className="flat-title">
-          <span className="title">სერვისები ამ კატეგორიაში</span>
+          <span className="title">Services in this category</span>
         </div>
         <div className="hover-sw-nav hover-sw-2">
           <Swiper
             dir="ltr"
             className="swiper tf-sw-product-sell wrap-sw-over"
-            slidesPerView={4} // Equivalent to data-preview={4}
-            spaceBetween={30} // Equivalent to data-space-lg={30}
+            slidesPerView={4}
+            spaceBetween={30}
             breakpoints={{
               1024: {
-                slidesPerView: 4, // Equivalent to data-tablet={3}
+                slidesPerView: 4,
               },
               640: {
-                slidesPerView: 3, // Equivalent to data-tablet={3}
+                slidesPerView: 3,
               },
               0: {
-                slidesPerView: 2, // Equivalent to data-mobile={2}
-                spaceBetween: 15, // Equivalent to data-space-md={15}
+                slidesPerView: 2,
+                spaceBetween: 15,
               },
             }}
             modules={[Navigation, Pagination]}

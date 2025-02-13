@@ -230,7 +230,7 @@ export default function Header22() {
                               <div>
                                 <Image
                                   alt="img"
-                                  src="/images/item/ballot.png"
+                                  src={`http://localhost:8000/storage/${d.icon}`}
                                   width={40}
                                   height={48}
                                 />
@@ -257,7 +257,7 @@ export default function Header22() {
                               <div>
                                 <Image
                                   alt="img"
-                                  src="/images/item/ballot.png"
+                                  src={`http://localhost:8000/storage/${d.icon}`}
                                   width={30}
                                   height={38}
                                 />
@@ -284,7 +284,7 @@ export default function Header22() {
                                         <div>
                                           <Image
                                             alt="img"
-                                            src="/images/item/ballot.png"
+                                            src={`http://localhost:8000/storage/${s.icon}`}
                                             width={30}
                                             height={38}
                                           />

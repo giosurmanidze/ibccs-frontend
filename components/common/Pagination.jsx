@@ -2,10 +2,8 @@
 import React, { useState } from "react";
 
 export default function Pagination() {
-  // State to track the active page
   const [activePage, setActivePage] = useState(1);
 
-  // Function to handle page click
   const handlePageClick = (pageNumber) => {
     setActivePage(pageNumber);
   };

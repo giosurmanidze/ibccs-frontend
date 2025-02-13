@@ -16,7 +16,6 @@ export default function ProductGrid({ gridItems = 4, allproducts }) {
       </div>
 
       <div className="grid-layout wrapper-shop" data-grid={`grid-${gridItems}`}>
-        {/* card product 1 */}
         {allproducts?.map((elm, i) => (
           <Shopcard28 product={elm} key={i} />
         ))}

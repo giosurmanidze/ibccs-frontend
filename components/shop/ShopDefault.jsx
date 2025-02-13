@@ -7,6 +7,7 @@ import ShopFilter from "./ShopFilter";
 import Sorting from "./Sorting";
 import { useGetCategory } from "@/hooks/useCategory";
 import { useSearchParams } from "next/navigation";
+import { useGetCategories } from "@/hooks/useGetCategories";
 
 export default function ShopDefault() {
   const [gridItems, setGridItems] = useState(4);
@@ -14,11 +15,25 @@ export default function ShopDefault() {
   const [finalSorted, setFinalSorted] = useState([]);
 
   const searchParams = useSearchParams();
-  const cateoryId = searchParams.get("categoryId");
+  const categoryId = searchParams.get("categoryId");
 
-  const { data: category } = useGetCategory(cateoryId);
+  const { data: category } = useGetCategory(categoryId, {
+    enabled: !!categoryId,
+  });
+
+  const { data: categories } = useGetCategories({
+    enabled: !categoryId,
+  });
 
   console.log("category", category);
+
+  const servicesLength = categoryId
+    ? category?.services?.length
+    : categories?.reduce((acc, cat) => acc + (cat.services?.length || 0), 0);
+
+  const services = categoryId
+    ? category?.services
+    : categories?.flatMap((cat) => cat.services) || [];
 
   return (
     <>
@@ -53,27 +68,18 @@ export default function ShopDefault() {
             </ul>
             <div className="tf-control-sorting d-flex justify-content-end">
               <div className="tf-dropdown-sort" data-bs-toggle="dropdown">
-                <Sorting
-                  setFinalSorted={setFinalSorted}
-                  category={category?.services}
-                />
+                <Sorting setFinalSorted={setFinalSorted} category={services} />
               </div>
             </div>
           </div>
           <div className="wrapper-control-shop">
             <div className="meta-filter-shop" />
-            <ProductGrid
-              allproducts={category?.services}
-              gridItems={gridItems}
-            />
-            {/* pagination */}
-            {category?.services?.length ? (
+            <ProductGrid gridItems={gridItems} allproducts={services} />
+            {/* {servicesLength > 0 && (
               <ul className="tf-pagination-wrap tf-pagination-list tf-pagination-btn">
                 <Pagination />
               </ul>
-            ) : (
-              ""
-            )}
+            )} */}
           </div>
         </div>
       </section>

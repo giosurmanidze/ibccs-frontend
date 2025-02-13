@@ -1,13 +1,14 @@
 "use client";
 import { useContextElement } from "@/context/Context";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 export default function Shopcard28({ product }) {
   const { addProductToCart, isAddedToCartProducts } = useContextElement();
 
   return (
-    <div className="card-product style-8">
+    <Link href={`product-detail/${product.id}?categoryId=${product.category_id}`} className="card-product style-8">
       <div class="bg-white rounded-3xl">
         <div className="d-flex justify-content-center gap-10 flex-column align-items-center px-4 py-5 px-sm-3 py-sm-4">
           <Image
@@ -46,6 +47,6 @@ export default function Shopcard28({ product }) {
           </a>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

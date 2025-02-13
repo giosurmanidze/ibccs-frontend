@@ -215,42 +215,6 @@ export default function QuickView() {
                         ${quickViewItem.price.toFixed(2)}
                       </span>
                     </a>
-                    <a
-                      onClick={() => addToWishlist(quickViewItem.id)}
-                      className="tf-product-btn-wishlist hover-tooltip box-icon bg_white wishlist btn-icon-action"
-                    >
-                      <span
-                        className={`icon icon-heart ${
-                          isAddedtoWishlist(quickViewItem.id) ? "added" : ""
-                        }`}
-                      />
-                      <span className="tooltip">
-                        {isAddedtoWishlist(quickViewItem.id)
-                          ? "Already Wishlisted"
-                          : "Add to Wishlist"}
-                      </span>
-                      <span className="icon icon-delete" />
-                    </a>
-                    <a
-                      href="#compare"
-                      data-bs-toggle="offcanvas"
-                      aria-controls="offcanvasLeft"
-                      onClick={() => addToCompareItem(quickViewItem.id)}
-                      className="tf-product-btn-wishlist hover-tooltip box-icon bg_white compare btn-icon-action"
-                    >
-                      <span
-                        className={`icon icon-compare ${
-                          isAddedtoCompareItem(quickViewItem.id) ? "added" : ""
-                        }`}
-                      />
-                      <span className="tooltip">
-                        {" "}
-                        {isAddedtoCompareItem(quickViewItem.id)
-                          ? "Already Compared"
-                          : "Add to Compare"}
-                      </span>
-                      <span className="icon icon-check" />
-                    </a>
                     <div className="w-100">
                       <a href="#" className="btns-full">
                         Buy with

@@ -5,22 +5,18 @@ import { useEffect, useState } from "react";
 import "../public/scss/main.scss";
 import "photoswipe/dist/photoswipe.css";
 import "rc-slider/assets/index.css";
-import HomesModal from "@/components/modals/HomesModal";
 import Context from "@/context/Context";
 import QuickView from "@/components/modals/QuickView";
 import ProductSidebar from "@/components/modals/ProductSidebar";
 import QuickAdd from "@/components/modals/QuickAdd";
-import Compare from "@/components/modals/Compare";
 import ShopCart from "@/components/modals/ShopCart";
 import AskQuestion from "@/components/modals/AskQuestion";
-import ColorCompare from "@/components/modals/ColorCompare";
 import DeliveryReturn from "@/components/modals/DeliveryReturn";
 import FindSize from "@/components/modals/FindSize";
 import Login from "@/components/modals/Login";
 import MobileMenu from "@/components/modals/MobileMenu";
 import Register from "@/components/modals/Register";
 import ResetPass from "@/components/modals/ResetPass";
-import SearchModal from "@/components/modals/SearchModal";
 import ToolbarBottom from "@/components/modals/ToolbarBottom";
 import ToolbarShop from "@/components/modals/ToolbarShop";
 
@@ -153,7 +149,7 @@ export default function RootLayout({ children }) {
     };
 
     initializeDirection();
-  }, []); 
+  }, []);
 
   const queryClient = new QueryClient();
 
@@ -171,20 +167,17 @@ export default function RootLayout({ children }) {
               <Header22 />
               <div id="wrapper">{children}</div>
               <RtlToggle />
-              <HomesModal /> <QuickView />
+              <QuickView />
               <QuickAdd />
               <ProductSidebar />
-              <Compare />
               <ShopCart />
               <AskQuestion />
-              <ColorCompare />
               <DeliveryReturn />
               <FindSize />
               <Login />
               <MobileMenu />
               <Register />
               <ResetPass />
-              <SearchModal />
               <ToolbarBottom />
               <ToolbarShop />
               <ShareModal />

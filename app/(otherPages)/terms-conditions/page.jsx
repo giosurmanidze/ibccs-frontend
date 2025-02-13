@@ -1,20 +1,8 @@
-import Footer1 from "@/components/footers/Footer1";
-import Header2 from "@/components/headers/Header2";
 import React from "react";
 
 export default function page() {
   return (
     <>
-      <Header2 />
-      <>
-        {/* page-title */}
-        <div className="tf-page-title style-2">
-          <div className="container-full">
-            <div className="heading text-center">Terms &amp; Conditions</div>
-          </div>
-        </div>
-        {/* /page-title */}
-        {/* main-page */}
         <section className="flat-spacing-25">
           <div className="container">
             <div className="tf-main-area-page tf-terms-conditions">
@@ -186,9 +174,6 @@ export default function page() {
             </div>
           </div>
         </section>
-      </>
-
-      <Footer1 />
     </>
   );
 }

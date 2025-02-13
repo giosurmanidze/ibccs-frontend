@@ -212,6 +212,36 @@ export default function Register() {
                 <label className="tf-field-label">Password *</label>
                 <p className="error">{errors.password?.message}</p>
               </div>
+              <p className="text_black-2 mb_20">
+                Your personal data will be used to process your order, support
+                your experience throughout this website, and for other purposes
+                described in our
+                <Link
+                  href={`/privacy-policy`}
+                  className="text-decoration-underline"
+                >
+                  privacy policy
+                </Link>
+                .
+              </p>
+              <div className="box-checkbox fieldset-radio mb_20">
+                <input
+                  required
+                  type="checkbox"
+                  id="check-agree"
+                  className="tf-check"
+                />
+                <label htmlFor="check-agree" className="text_black-2">
+                  I have read and agree to the website
+                  <Link
+                    href={`/terms-conditions`}
+                    className="text-decoration-underline"
+                  >
+                    terms and conditions
+                  </Link>
+                  .
+                </label>
+              </div>
               <div className="mb_20">
                 <button
                   type="submit"

@@ -432,8 +432,29 @@ html[dir="rtl"] {
     margin-top: 1rem;
   }
 }
-.search-suggests-results {
-  
+.tf-cart-item_total {
+  div {
+    height: 30px !important;
+  }
+  .filled_bg {
+    background-color: #5ca595;
+  }
+}
+.box-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  a {
+    margin-left: 5px;
+  }
+}
+.modal-title {
+  font-size: 17px;
+}
+.cart-order {
+  background-color: black !important;
+  color: white !important;
+  cursor: pointer;
 }
 .nav-account {
   span {

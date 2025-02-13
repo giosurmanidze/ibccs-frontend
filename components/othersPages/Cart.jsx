@@ -2,8 +2,20 @@
 import { useContextElement } from "@/context/Context";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import * as yup from "yup";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import axiosInstance from "@/config/axios";
+import { useRouter } from "next/navigation";
+import { toast, ToastContainer } from "react-toastify";
+
 export default function Cart() {
   const { cartProducts, setCartProducts, totalPrice } = useContextElement();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const router = useRouter();
+
   const setQuantity = (id, quantity) => {
     if (quantity >= 1) {
       const item = cartProducts.filter((elm) => elm.id == id)[0];
@@ -15,10 +27,172 @@ export default function Cart() {
     }
   };
   const removeItem = (id) => {
-    setCartProducts((pre) => [...pre.filter((elm) => elm.id != id)]);
+    setCartProducts((pre) => pre.filter((elm) => elm.id !== id));
+
+    let existingOrderDetails =
+      JSON.parse(sessionStorage.getItem("order_details")) || [];
+    existingOrderDetails = existingOrderDetails.filter(
+      (order) => order.service_id !== id
+    );
+
+    sessionStorage.setItem(
+      "order_details",
+      JSON.stringify(existingOrderDetails)
+    );
   };
+
+  const [productData, setProductData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleOpenModal = async (id) => {
+    console.log("Fetching service with ID:", id);
+    setIsModalOpen(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.get(`services/${id}`); // ✅ Await the request
+
+      console.log(response.data);
+      setProductData(response.data); // ✅ Axios stores data in `response.data`
+    } catch (err) {
+      console.error("API Error:", err); // ✅ Log the error for debugging
+      setError(err.response?.data?.message || "Failed to fetch product data"); // ✅ Handle API error messages
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setProductData(null);
+    setError(null);
+  };
+
+  const createValidationSchema = (fields) => {
+    let schemaShape = {};
+
+    fields?.forEach((field) => {
+      if (field.type === "text") {
+        schemaShape[field.name] = yup
+          .string()
+          .required(`${field.name} is required`);
+      } else if (field.type === "dropdown") {
+        schemaShape[field.name] = yup
+          .string()
+          .required(`${field.name} is required`);
+      }
+    });
+
+    return yup.object().shape(schemaShape);
+  };
+
+  // let parsedFields = [];
+
+  // if (productData?.additional_fields) {
+  //   try {
+  //     parsedFields = JSON.parse(productData?.additional_fields);
+  //   } catch (error) {
+  //     console.error("Failed to parse additional fields:", error);
+  //   }
+  // }
+  const makeFieldsUnique = (fields, serviceId) => {
+    return fields?.map((field) => ({
+      ...field,
+      name: `${field.name}_${serviceId}`, // Make field name unique with service ID
+      originalName: field.name, // Keep original name for display
+    }));
+  };
+
+  const parsedFields = productData?.additional_fields
+    ? makeFieldsUnique(
+        JSON.parse(productData?.additional_fields),
+        productData.id
+      )
+    : [];
+
+  const schema = createValidationSchema(parsedFields);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+
+  // Parse and make fields unique
+
+  const onSubmit = (data) => {
+    const serviceId = productData.id;
+    let existingOrderDetails =
+      JSON.parse(sessionStorage.getItem("order_details")) || [];
+
+    // Create fields array with unique names
+    const updatedFields = parsedFields.map((field) => ({
+      name: field.name, // This is already unique now (e.g., "address_1")
+      type: field.type,
+      value: data[field.name] || "",
+      ...(field.options && { options: field.options }),
+    }));
+
+    // Update or create order
+    const orderIndex = existingOrderDetails.findIndex(
+      (order) => order.service_id === serviceId
+    );
+
+    if (orderIndex !== -1) {
+      existingOrderDetails[orderIndex].fields = updatedFields;
+    } else {
+      existingOrderDetails.push({
+        service_id: serviceId,
+        fields: updatedFields,
+      });
+    }
+
+    sessionStorage.setItem(
+      "order_details",
+      JSON.stringify(existingOrderDetails)
+    );
+    reset();
+    setIsModalOpen(false);
+  };
+
+  const getCleanFieldName = (fieldName) => {
+    // Remove any suffixes like _1_4 to get the original field name
+    return fieldName.split("_")[0];
+  };
+
+  const handleCheckOrder = () => {
+    let existingOrderDetails =
+      JSON.parse(sessionStorage.getItem("order_details")) || [];
+
+    if (existingOrderDetails.length === cartProducts.length) {
+      if (cartProducts.length !== 0) {
+        router.push("/checkout");
+      } else {
+        toast.error("No services for checkout.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } else {
+      toast.error("Please fill service requirments.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const savedData = JSON.parse(sessionStorage.getItem("order_details")) || [];
+  const checkOrderExists = (productId) => {
+    return savedData?.some((order) => order.service_id === productId);
+  };
+
   return (
     <section className="flat-spacing-11">
+      <ToastContainer />
       <div className="container">
         <div className="tf-cart-countdown">
           <div className="title-left">
@@ -46,14 +220,15 @@ export default function Cart() {
         </div>
         <div className="tf-page-cart-wrap">
           <div className="tf-page-cart-item">
-            <form onSubmit={(e) => e.preventDefault()}>
+            <div>
               <table className="tf-table-page-cart">
                 <thead>
                   <tr>
-                    <th>Product</th>
+                    <th>Service</th>
                     <th>Price</th>
                     <th>Quantity</th>
                     <th>Total</th>
+                    <th>Detail</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -78,7 +253,7 @@ export default function Cart() {
                           >
                             {elm.title}
                           </Link>
-                          <div className="cart-meta-variant">White / M</div>
+                          <div className="cart-meta-variant">{elm.name}</div>
                           <span
                             className="remove-cart link remove"
                             onClick={() => removeItem(elm.id)}
@@ -154,10 +329,167 @@ export default function Cart() {
                           ${(elm.base_price * elm.quantity).toFixed(2)}
                         </div>
                       </td>
+                      <td>
+                        <div>
+                          <button
+                            className="tf-cart-item_total"
+                            cart-data-title="order"
+                            onClick={() => handleOpenModal(elm.id)}
+                          >
+                            <div
+                              className={`tf-btn w-100 animate-hover-btn radius-3 ${
+                                checkOrderExists(elm.id) ? "filled_bg" : ""
+                              }`}
+                              style={{ minWidth: "60px" }}
+                            >
+                              {checkOrderExists(elm.id)
+                                ? "Filled service"
+                                : "Fill service details"}
+                            </div>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <form
+                className={`modal fade ${isModalOpen ? "show" : ""}`}
+                tabIndex="-1"
+                role="dialog"
+                style={{ display: isModalOpen ? "block" : "none" }}
+                onSubmit={handleSubmit(onSubmit)}
+              >
+                <div className="modal-dialog modal-dialog-centered">
+                  <div className="modal-content">
+                    <div className="modal-header">
+                      <h6 className="modal-title">
+                        Fill service requirements <p>{productData?.name}</p>
+                      </h6>
+                      <button
+                        onClick={handleCloseModal}
+                        type="button"
+                        className="btn-close"
+                        aria-label="Close"
+                      ></button>
+                    </div>
+                    <div className="modal-body">
+                      <form onSubmit={handleSubmit(onSubmit)}>
+                        <div className="tf-field style-1 mb_30">
+                          {parsedFields?.map((field, index) => {
+                            // Get saved data
+                            const savedData =
+                              JSON.parse(
+                                sessionStorage.getItem("order_details")
+                              ) || [];
+                            const serviceOrder = savedData.find(
+                              (order) => order.service_id === productData.id
+                            );
+                            const savedField = serviceOrder?.fields?.find(
+                              (f) => f.name === field.name
+                            );
+                            const prefilledValue = savedField
+                              ? savedField.value
+                              : "";
+
+                            // Get clean field name for display
+                            const displayName = getCleanFieldName(field.name);
+
+                            return (
+                              <div
+                                key={field.name}
+                                className="tf-field style-1 mb_30"
+                              >
+                                {field.type === "text" && (
+                                  <>
+                                    <input
+                                      className="tf-field-input tf-input"
+                                      placeholder=" "
+                                      type="text"
+                                      id={field.name}
+                                      defaultValue={prefilledValue}
+                                      {...register(field.name)}
+                                    />
+                                    <label
+                                      className="tf-field-label fw-4 text_black-2"
+                                      htmlFor={field.name}
+                                    >
+                                      {displayName} *
+                                    </label>
+                                  </>
+                                )}
+
+                                {field.type === "dropdown" && (
+                                  <>
+                                    <select
+                                      className="tf-field-input tf-input"
+                                      id={field.name}
+                                      defaultValue={prefilledValue}
+                                      {...register(field.name)}
+                                    >
+                                      <option value="">Select an option</option>
+                                      {field.options?.map((option, idx) => (
+                                        <option key={idx} value={option}>
+                                          {option}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <label className="tf-field-label fw-4 text_black-2">
+                                      {displayName} *
+                                    </label>
+                                  </>
+                                )}
+                                {errors[field.name] && (
+                                  <p className="error">
+                                    This field is required
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </form>
+                    </div>
+                    <div className="modal-footer">
+                      <div>
+                        <button
+                          className="tf-cart-item_total"
+                          cart-data-title="order"
+                          type="submit"
+                          onClick={handleCloseModal}
+                        >
+                          <div
+                            className={`tf-btn w-100 animate-hover-btn radius-3 `}
+                            style={{ minWidth: "60px" }}
+                          >
+                            Cancel
+                          </div>
+                        </button>
+                      </div>
+                      <div>
+                        <button
+                          className="tf-cart-item_total"
+                          cart-data-title="order"
+                          type="submit"
+                        >
+                          <div
+                            className={`tf-btn w-100 animate-hover-btn radius-3 `}
+                            style={{ minWidth: "60px" }}
+                          >
+                            Confirm
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+              {isModalOpen && (
+                <div
+                  className="modal-backdrop fade show"
+                  onClick={handleCloseModal}
+                ></div>
+              )}
               {!cartProducts.length && (
                 <>
                   <div className="row align-items-center mb-5">
@@ -168,22 +500,13 @@ export default function Cart() {
                         className="tf-btn btn-fill animate-hover-btn radius-3 w-100 justify-content-center"
                         style={{ width: "fit-content" }}
                       >
-                        Explore Products!
+                        Explore Servces!
                       </Link>
                     </div>
                   </div>
                 </>
               )}
-              <div className="tf-page-cart-note">
-                <label htmlFor="cart-note">Add Order Note</label>
-                <textarea
-                  name="note"
-                  id="cart-note"
-                  placeholder="How can we help you?"
-                  defaultValue={""}
-                />
-              </div>
-            </form>
+            </div>
           </div>
           <div className="tf-page-cart-footer">
             <div className="tf-cart-footer-inner">
@@ -213,183 +536,6 @@ export default function Cart() {
                 </div>
               </div>
               <div className="tf-page-cart-checkout">
-                <div className="shipping-calculator">
-                  <summary
-                    className="accordion-shipping-header d-flex justify-content-between align-items-center collapsed"
-                    data-bs-target="#shipping"
-                    data-bs-toggle="collapse"
-                    aria-controls="shipping"
-                  >
-                    <h3 className="shipping-calculator-title">
-                      Estimate Shipping
-                    </h3>
-                    <span className="shipping-calculator_accordion-icon" />
-                  </summary>
-                  <div className="collapse" id="shipping">
-                    <div className="accordion-shipping-content">
-                      <fieldset className="field">
-                        <label className="label">Country</label>
-                        <select
-                          className="tf-select w-100"
-                          id="ShippingCountry_CartDrawer-Form"
-                          name="address[country]"
-                          data-default=""
-                        >
-                          <option value="---" data-provinces="[]">
-                            ---
-                          </option>
-                          <option
-                            value="Australia"
-                            data-provinces="[['Australian Capital Territory','Australian Capital Territory'],['New South Wales','New South Wales'],['Northern Territory','Northern Territory'],['Queensland','Queensland'],['South Australia','South Australia'],['Tasmania','Tasmania'],['Victoria','Victoria'],['Western Australia','Western Australia']]"
-                          >
-                            Australia
-                          </option>
-                          <option value="Austria" data-provinces="[]">
-                            Austria
-                          </option>
-                          <option value="Belgium" data-provinces="[]">
-                            Belgium
-                          </option>
-                          <option
-                            value="Canada"
-                            data-provinces="[['Alberta','Alberta'],['British Columbia','British Columbia'],['Manitoba','Manitoba'],['New Brunswick','New Brunswick'],['Newfoundland and Labrador','Newfoundland and Labrador'],['Northwest Territories','Northwest Territories'],['Nova Scotia','Nova Scotia'],['Nunavut','Nunavut'],['Ontario','Ontario'],['Prince Edward Island','Prince Edward Island'],['Quebec','Quebec'],['Saskatchewan','Saskatchewan'],['Yukon','Yukon']]"
-                          >
-                            Canada
-                          </option>
-                          <option value="Czech Republic" data-provinces="[]">
-                            Czechia
-                          </option>
-                          <option value="Denmark" data-provinces="[]">
-                            Denmark
-                          </option>
-                          <option value="Finland" data-provinces="[]">
-                            Finland
-                          </option>
-                          <option value="France" data-provinces="[]">
-                            France
-                          </option>
-                          <option value="Germany" data-provinces="[]">
-                            Germany
-                          </option>
-                          <option
-                            value="Hong Kong"
-                            data-provinces="[['Hong Kong Island','Hong Kong Island'],['Kowloon','Kowloon'],['New Territories','New Territories']]"
-                          >
-                            Hong Kong SAR
-                          </option>
-                          <option
-                            value="Ireland"
-                            data-provinces="[['Carlow','Carlow'],['Cavan','Cavan'],['Clare','Clare'],['Cork','Cork'],['Donegal','Donegal'],['Dublin','Dublin'],['Galway','Galway'],['Kerry','Kerry'],['Kildare','Kildare'],['Kilkenny','Kilkenny'],['Laois','Laois'],['Leitrim','Leitrim'],['Limerick','Limerick'],['Longford','Longford'],['Louth','Louth'],['Mayo','Mayo'],['Meath','Meath'],['Monaghan','Monaghan'],['Offaly','Offaly'],['Roscommon','Roscommon'],['Sligo','Sligo'],['Tipperary','Tipperary'],['Waterford','Waterford'],['Westmeath','Westmeath'],['Wexford','Wexford'],['Wicklow','Wicklow']]"
-                          >
-                            Ireland
-                          </option>
-                          <option value="Israel" data-provinces="[]">
-                            Israel
-                          </option>
-                          <option
-                            value="Italy"
-                            data-provinces="[['Agrigento','Agrigento'],['Alessandria','Alessandria'],['Ancona','Ancona'],['Aosta','Aosta Valley'],['Arezzo','Arezzo'],['Ascoli Piceno','Ascoli Piceno'],['Asti','Asti'],['Avellino','Avellino'],['Bari','Bari'],['Barletta-Andria-Trani','Barletta-Andria-Trani'],['Belluno','Belluno'],['Benevento','Benevento'],['Bergamo','Bergamo'],['Biella','Biella'],['Bologna','Bologna'],['Bolzano','South Tyrol'],['Brescia','Brescia'],['Brindisi','Brindisi'],['Cagliari','Cagliari'],['Caltanissetta','Caltanissetta'],['Campobasso','Campobasso'],['Carbonia-Iglesias','Carbonia-Iglesias'],['Caserta','Caserta'],['Catania','Catania'],['Catanzaro','Catanzaro'],['Chieti','Chieti'],['Como','Como'],['Cosenza','Cosenza'],['Cremona','Cremona'],['Crotone','Crotone'],['Cuneo','Cuneo'],['Enna','Enna'],['Fermo','Fermo'],['Ferrara','Ferrara'],['Firenze','Florence'],['Foggia','Foggia'],['Forlì-Cesena','Forlì-Cesena'],['Frosinone','Frosinone'],['Genova','Genoa'],['Gorizia','Gorizia'],['Grosseto','Grosseto'],['Imperia','Imperia'],['Isernia','Isernia'],['L'Aquila','L’Aquila'],['La Spezia','La Spezia'],['Latina','Latina'],['Lecce','Lecce'],['Lecco','Lecco'],['Livorno','Livorno'],['Lodi','Lodi'],['Lucca','Lucca'],['Macerata','Macerata'],['Mantova','Mantua'],['Massa-Carrara','Massa and Carrara'],['Matera','Matera'],['Medio Campidano','Medio Campidano'],['Messina','Messina'],['Milano','Milan'],['Modena','Modena'],['Monza e Brianza','Monza and Brianza'],['Napoli','Naples'],['Novara','Novara'],['Nuoro','Nuoro'],['Ogliastra','Ogliastra'],['Olbia-Tempio','Olbia-Tempio'],['Oristano','Oristano'],['Padova','Padua'],['Palermo','Palermo'],['Parma','Parma'],['Pavia','Pavia'],['Perugia','Perugia'],['Pesaro e Urbino','Pesaro and Urbino'],['Pescara','Pescara'],['Piacenza','Piacenza'],['Pisa','Pisa'],['Pistoia','Pistoia'],['Pordenone','Pordenone'],['Potenza','Potenza'],['Prato','Prato'],['Ragusa','Ragusa'],['Ravenna','Ravenna'],['Reggio Calabria','Reggio Calabria'],['Reggio Emilia','Reggio Emilia'],['Rieti','Rieti'],['Rimini','Rimini'],['Roma','Rome'],['Rovigo','Rovigo'],['Salerno','Salerno'],['Sassari','Sassari'],['Savona','Savona'],['Siena','Siena'],['Siracusa','Syracuse'],['Sondrio','Sondrio'],['Taranto','Taranto'],['Teramo','Teramo'],['Terni','Terni'],['Torino','Turin'],['Trapani','Trapani'],['Trento','Trentino'],['Treviso','Treviso'],['Trieste','Trieste'],['Udine','Udine'],['Varese','Varese'],['Venezia','Venice'],['Verbano-Cusio-Ossola','Verbano-Cusio-Ossola'],['Vercelli','Vercelli'],['Verona','Verona'],['Vibo Valentia','Vibo Valentia'],['Vicenza','Vicenza'],['Viterbo','Viterbo']]"
-                          >
-                            Italy
-                          </option>
-                          <option
-                            value="Japan"
-                            data-provinces="[['Aichi','Aichi'],['Akita','Akita'],['Aomori','Aomori'],['Chiba','Chiba'],['Ehime','Ehime'],['Fukui','Fukui'],['Fukuoka','Fukuoka'],['Fukushima','Fukushima'],['Gifu','Gifu'],['Gunma','Gunma'],['Hiroshima','Hiroshima'],['Hokkaidō','Hokkaido'],['Hyōgo','Hyogo'],['Ibaraki','Ibaraki'],['Ishikawa','Ishikawa'],['Iwate','Iwate'],['Kagawa','Kagawa'],['Kagoshima','Kagoshima'],['Kanagawa','Kanagawa'],['Kumamoto','Kumamoto'],['Kyōto','Kyoto'],['Kōchi','Kochi'],['Mie','Mie'],['Miyagi','Miyagi'],['Miyazaki','Miyazaki'],['Nagano','Nagano'],['Nagasaki','Nagasaki'],['Nara','Nara'],['Niigata','Niigata'],['Okayama','Okayama'],['Okinawa','Okinawa'],['Saga','Saga'],['Saitama','Saitama'],['Shiga','Shiga'],['Shimane','Shimane'],['Shizuoka','Shizuoka'],['Tochigi','Tochigi'],['Tokushima','Tokushima'],['Tottori','Tottori'],['Toyama','Toyama'],['Tōkyō','Tokyo'],['Wakayama','Wakayama'],['Yamagata','Yamagata'],['Yamaguchi','Yamaguchi'],['Yamanashi','Yamanashi'],['Ōita','Oita'],['Ōsaka','Osaka']]"
-                          >
-                            Japan
-                          </option>
-                          <option
-                            value="Malaysia"
-                            data-provinces="[['Johor','Johor'],['Kedah','Kedah'],['Kelantan','Kelantan'],['Kuala Lumpur','Kuala Lumpur'],['Labuan','Labuan'],['Melaka','Malacca'],['Negeri Sembilan','Negeri Sembilan'],['Pahang','Pahang'],['Penang','Penang'],['Perak','Perak'],['Perlis','Perlis'],['Putrajaya','Putrajaya'],['Sabah','Sabah'],['Sarawak','Sarawak'],['Selangor','Selangor'],['Terengganu','Terengganu']]"
-                          >
-                            Malaysia
-                          </option>
-                          <option value="Netherlands" data-provinces="[]">
-                            Netherlands
-                          </option>
-                          <option
-                            value="New Zealand"
-                            data-provinces="[['Auckland','Auckland'],['Bay of Plenty','Bay of Plenty'],['Canterbury','Canterbury'],['Chatham Islands','Chatham Islands'],['Gisborne','Gisborne'],['Hawke's Bay','Hawke’s Bay'],['Manawatu-Wanganui','Manawatū-Whanganui'],['Marlborough','Marlborough'],['Nelson','Nelson'],['Northland','Northland'],['Otago','Otago'],['Southland','Southland'],['Taranaki','Taranaki'],['Tasman','Tasman'],['Waikato','Waikato'],['Wellington','Wellington'],['West Coast','West Coast']]"
-                          >
-                            New Zealand
-                          </option>
-                          <option value="Norway" data-provinces="[]">
-                            Norway
-                          </option>
-                          <option value="Poland" data-provinces="[]">
-                            Poland
-                          </option>
-                          <option
-                            value="Portugal"
-                            data-provinces="[['Aveiro','Aveiro'],['Açores','Azores'],['Beja','Beja'],['Braga','Braga'],['Bragança','Bragança'],['Castelo Branco','Castelo Branco'],['Coimbra','Coimbra'],['Faro','Faro'],['Guarda','Guarda'],['Leiria','Leiria'],['Lisboa','Lisbon'],['Madeira','Madeira'],['Portalegre','Portalegre'],['Porto','Porto'],['Santarém','Santarém'],['Setúbal','Setúbal'],['Viana do Castelo','Viana do Castelo'],['Vila Real','Vila Real'],['Viseu','Viseu'],['Évora','Évora']]"
-                          >
-                            Portugal
-                          </option>
-                          <option value="Singapore" data-provinces="[]">
-                            Singapore
-                          </option>
-                          <option
-                            value="South Korea"
-                            data-provinces="[['Busan','Busan'],['Chungbuk','North Chungcheong'],['Chungnam','South Chungcheong'],['Daegu','Daegu'],['Daejeon','Daejeon'],['Gangwon','Gangwon'],['Gwangju','Gwangju City'],['Gyeongbuk','North Gyeongsang'],['Gyeonggi','Gyeonggi'],['Gyeongnam','South Gyeongsang'],['Incheon','Incheon'],['Jeju','Jeju'],['Jeonbuk','North Jeolla'],['Jeonnam','South Jeolla'],['Sejong','Sejong'],['Seoul','Seoul'],['Ulsan','Ulsan']]"
-                          >
-                            South Korea
-                          </option>
-                          <option
-                            value="Spain"
-                            data-provinces="[['A Coruña','A Coruña'],['Albacete','Albacete'],['Alicante','Alicante'],['Almería','Almería'],['Asturias','Asturias Province'],['Badajoz','Badajoz'],['Balears','Balears Province'],['Barcelona','Barcelona'],['Burgos','Burgos'],['Cantabria','Cantabria Province'],['Castellón','Castellón'],['Ceuta','Ceuta'],['Ciudad Real','Ciudad Real'],['Cuenca','Cuenca'],['Cáceres','Cáceres'],['Cádiz','Cádiz'],['Córdoba','Córdoba'],['Girona','Girona'],['Granada','Granada'],['Guadalajara','Guadalajara'],['Guipúzcoa','Gipuzkoa'],['Huelva','Huelva'],['Huesca','Huesca'],['Jaén','Jaén'],['La Rioja','La Rioja Province'],['Las Palmas','Las Palmas'],['León','León'],['Lleida','Lleida'],['Lugo','Lugo'],['Madrid','Madrid Province'],['Melilla','Melilla'],['Murcia','Murcia'],['Málaga','Málaga'],['Navarra','Navarra'],['Ourense','Ourense'],['Palencia','Palencia'],['Pontevedra','Pontevedra'],['Salamanca','Salamanca'],['Santa Cruz de Tenerife','Santa Cruz de Tenerife'],['Segovia','Segovia'],['Sevilla','Seville'],['Soria','Soria'],['Tarragona','Tarragona'],['Teruel','Teruel'],['Toledo','Toledo'],['Valencia','Valencia'],['Valladolid','Valladolid'],['Vizcaya','Biscay'],['Zamora','Zamora'],['Zaragoza','Zaragoza'],['Álava','Álava'],['Ávila','Ávila']]"
-                          >
-                            Spain
-                          </option>
-                          <option value="Sweden" data-provinces="[]">
-                            Sweden
-                          </option>
-                          <option value="Switzerland" data-provinces="[]">
-                            Switzerland
-                          </option>
-                          <option
-                            value="United Arab Emirates"
-                            data-provinces="[['Abu Dhabi','Abu Dhabi'],['Ajman','Ajman'],['Dubai','Dubai'],['Fujairah','Fujairah'],['Ras al-Khaimah','Ras al-Khaimah'],['Sharjah','Sharjah'],['Umm al-Quwain','Umm al-Quwain']]"
-                          >
-                            United Arab Emirates
-                          </option>
-                          <option
-                            value="United Kingdom"
-                            data-provinces="[['British Forces','British Forces'],['England','England'],['Northern Ireland','Northern Ireland'],['Scotland','Scotland'],['Wales','Wales']]"
-                          >
-                            United Kingdom
-                          </option>
-                          <option
-                            value="United States"
-                            data-provinces="[['Alabama','Alabama'],['Alaska','Alaska'],['American Samoa','American Samoa'],['Arizona','Arizona'],['Arkansas','Arkansas'],['Armed Forces Americas','Armed Forces Americas'],['Armed Forces Europe','Armed Forces Europe'],['Armed Forces Pacific','Armed Forces Pacific'],['California','California'],['Colorado','Colorado'],['Connecticut','Connecticut'],['Delaware','Delaware'],['District of Columbia','Washington DC'],['Federated States of Micronesia','Micronesia'],['Florida','Florida'],['Georgia','Georgia'],['Guam','Guam'],['Hawaii','Hawaii'],['Idaho','Idaho'],['Illinois','Illinois'],['Indiana','Indiana'],['Iowa','Iowa'],['Kansas','Kansas'],['Kentucky','Kentucky'],['Louisiana','Louisiana'],['Maine','Maine'],['Marshall Islands','Marshall Islands'],['Maryland','Maryland'],['Massachusetts','Massachusetts'],['Michigan','Michigan'],['Minnesota','Minnesota'],['Mississippi','Mississippi'],['Missouri','Missouri'],['Montana','Montana'],['Nebraska','Nebraska'],['Nevada','Nevada'],['New Hampshire','New Hampshire'],['New Jersey','New Jersey'],['New Mexico','New Mexico'],['New York','New York'],['North Carolina','North Carolina'],['North Dakota','North Dakota'],['Northern Mariana Islands','Northern Mariana Islands'],['Ohio','Ohio'],['Oklahoma','Oklahoma'],['Oregon','Oregon'],['Palau','Palau'],['Pennsylvania','Pennsylvania'],['Puerto Rico','Puerto Rico'],['Rhode Island','Rhode Island'],['South Carolina','South Carolina'],['South Dakota','South Dakota'],['Tennessee','Tennessee'],['Texas','Texas'],['Utah','Utah'],['Vermont','Vermont'],['Virgin Islands','U.S. Virgin Islands'],['Virginia','Virginia'],['Washington','Washington'],['West Virginia','West Virginia'],['Wisconsin','Wisconsin'],['Wyoming','Wyoming']]"
-                          >
-                            United States
-                          </option>
-                          <option value="Vietnam" data-provinces="[]">
-                            Vietnam
-                          </option>
-                        </select>
-                      </fieldset>
-                      <fieldset className="field">
-                        <label className="label">Zip code</label>
-                        <input type="text" name="text" placeholder="" />
-                      </fieldset>
-                      <button className="tf-btn btn-fill animate-hover-btn radius-3 justify-content-center">
-                        <span>Estimate</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="cart-checkbox">
-                  <input
-                    type="checkbox"
-                    className="tf-check"
-                    id="cart-gift-checkbox"
-                  />
-                  <label htmlFor="cart-gift-checkbox" className="fw-4">
-                    <span>Do you want a gift wrap?</span> Only
-                    <span className="fw-5">$5.00</span>
-                  </label>
-                </div>
                 <div className="tf-cart-totals-discounts">
                   <h3>Subtotal</h3>
                   <span className="total-value">
@@ -413,12 +559,12 @@ export default function Cart() {
                   </label>
                 </div>
                 <div className="cart-checkout-btn">
-                  <Link
-                    href={`/checkout`}
+                  <button
+                    onClick={handleCheckOrder}
                     className="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center"
                   >
                     <span>Check out</span>
-                  </Link>
+                  </button>
                 </div>
                 <div className="tf-page-cart_imgtrust">
                   <p className="text-center fw-6">Guarantee Safe Checkout</p>

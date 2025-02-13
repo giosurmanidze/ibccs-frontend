@@ -9,6 +9,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import axiosInstance from "@/config/axios";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Cart() {
   const { cartProducts, setCartProducts, totalPrice } = useContextElement();
@@ -51,13 +52,13 @@ export default function Cart() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get(`services/${id}`); // ✅ Await the request
+      const response = await axiosInstance.get(`services/${id}`);
 
       console.log(response.data);
-      setProductData(response.data); // ✅ Axios stores data in `response.data`
+      setProductData(response.data);
     } catch (err) {
-      console.error("API Error:", err); // ✅ Log the error for debugging
-      setError(err.response?.data?.message || "Failed to fetch product data"); // ✅ Handle API error messages
+      console.error("API Error:", err);
+      setError(err.response?.data?.message || "Failed to fetch product data");
     } finally {
       setLoading(false);
     }
@@ -87,20 +88,11 @@ export default function Cart() {
     return yup.object().shape(schemaShape);
   };
 
-  // let parsedFields = [];
-
-  // if (productData?.additional_fields) {
-  //   try {
-  //     parsedFields = JSON.parse(productData?.additional_fields);
-  //   } catch (error) {
-  //     console.error("Failed to parse additional fields:", error);
-  //   }
-  // }
   const makeFieldsUnique = (fields, serviceId) => {
     return fields?.map((field) => ({
       ...field,
-      name: `${field.name}_${serviceId}`, // Make field name unique with service ID
-      originalName: field.name, // Keep original name for display
+      name: `${field.name}_${serviceId}`,
+      originalName: field.name,
     }));
   };
 
@@ -122,22 +114,18 @@ export default function Cart() {
     resolver: yupResolver(schema),
   });
 
-  // Parse and make fields unique
-
   const onSubmit = (data) => {
     const serviceId = productData.id;
     let existingOrderDetails =
       JSON.parse(sessionStorage.getItem("order_details")) || [];
 
-    // Create fields array with unique names
     const updatedFields = parsedFields.map((field) => ({
-      name: field.name, // This is already unique now (e.g., "address_1")
+      name: field.name,
       type: field.type,
       value: data[field.name] || "",
       ...(field.options && { options: field.options }),
     }));
 
-    // Update or create order
     const orderIndex = existingOrderDetails.findIndex(
       (order) => order.service_id === serviceId
     );
@@ -160,7 +148,6 @@ export default function Cart() {
   };
 
   const getCleanFieldName = (fieldName) => {
-    // Remove any suffixes like _1_4 to get the original field name
     return fieldName.split("_")[0];
   };
 
@@ -190,10 +177,16 @@ export default function Cart() {
     return savedData?.some((order) => order.service_id === productId);
   };
 
+  const { user } = useAuth();
   return (
     <section className="flat-spacing-11">
       <ToastContainer />
       <div className="container">
+        {!user && (
+          <div class="alert alert-success" role="alert">
+            You can continue checkout process without registration!
+          </div>
+        )}
         <div className="tf-cart-countdown">
           <div className="title-left">
             <svg

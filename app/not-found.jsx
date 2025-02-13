@@ -2,10 +2,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-export const metadata = {
-  title: "Page Not Found || Ecomus - Ultimate Nextjs Ecommerce Template",
-  description: "Ecomus - Ultimate Nextjs Ecommerce Template",
-};
 export default function notFound() {
   return (
     <>

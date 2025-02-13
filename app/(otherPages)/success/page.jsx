@@ -1,11 +1,12 @@
 "use client";
 import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import axiosInstance from "@/config/axios";
 
 export default function page() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
+  const router = useRouter();
 
   useEffect(() => {
     if (email) {
@@ -13,6 +14,9 @@ export default function page() {
         .post("/email/verify", { email })
         .then((response) => {
           console.log("Verification successful:", response.data);
+          setTimeout(() => {
+            router.push("/");
+          }, 2000);
         })
         .catch((error) => {
           console.error("Error verifying email:", error);

@@ -16,7 +16,7 @@ export default function Products2() {
             className="title fw-6 wow fadeInUp font-readex-pro text_black-3"
             data-wow-delay="0s"
           >
-            Popular products
+            Services
           </span>
         </div>
         <div className="wrap-carousel">

@@ -17,7 +17,7 @@ export default function Collections() {
             className="title fw-6 wow fadeInUp font-readex-pro text_black-3"
             data-wow-delay="0s"
           >
-            კატეგორიები
+            Categories
           </span>
         </div>
         <div className="hover-sw-nav padding-content radius-10">

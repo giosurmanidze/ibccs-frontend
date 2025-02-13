@@ -48,6 +48,7 @@ export default function Register() {
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: yupResolver(schema),
   });
@@ -81,6 +82,17 @@ export default function Register() {
       }
     }
   };
+
+  useEffect(() => {
+    const userDataExists = localStorage.getItem("store_user_data");
+    if (userDataExists) {
+      const userData = JSON.parse(localStorage.getItem("store_user_data"));
+      setValue("name", userData.firstname);
+      setValue("lastname", userData.lastname);
+      setValue("phone_number", userData.phone_number);
+      setValue("email", userData.email);
+    }
+  }, [selectRegisterOption]);
 
   return (
     <section className="flat-spacing-10">

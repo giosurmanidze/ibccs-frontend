@@ -432,6 +432,14 @@ html[dir="rtl"] {
     margin-top: 1rem;
   }
 }
+.box-checkbox label::after {
+  content: none !important; /* Remove the required * sign */
+}
+.store-user {
+  label {
+    margin-top: 10px;
+  }
+}
 .alert-success {
   width: 400px;
 }

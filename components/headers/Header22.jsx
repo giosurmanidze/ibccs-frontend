@@ -224,7 +224,7 @@ export default function Header22() {
                         return (
                           <li className="nav-mb-item" key={d?.id || d?.name}>
                             <Link
-                              href={`/shop-default`}
+                             href={`/shop-default?categoryId=${d.id}`}
                               className="tf-category-link mb-menu-link"
                             >
                               <div>

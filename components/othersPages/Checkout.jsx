@@ -1,17 +1,19 @@
 "use client";
 import axiosInstance from "@/config/axios";
+import { useAuth } from "@/context/AuthContext";
 import { useContextElement } from "@/context/Context";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast, ToastContainer } from "react-toastify";
 import * as yup from "yup";
 
 export default function Checkout() {
-  const { cartProducts, setCartProducts, totalPrice } = useContextElement();
+  const { cartProducts, totalPrice } = useContextElement();
+  const router = useRouter();
 
   const validationSchema = useMemo(
     () =>
@@ -28,6 +30,7 @@ export default function Checkout() {
           .min(10, "Phone number must be at least 10 digits")
           .required("Phone number is required"),
         address: yup.string().required("Address is required"),
+        store_user: yup.string(),
       }),
     []
   );
@@ -37,32 +40,19 @@ export default function Checkout() {
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: yupResolver(validationSchema),
   });
 
-  //   {
-  //     "user_id": 1,
-  //     "firstname": "John",
-  //     "lastname": "Doe",
-  //     "phone_number": "123456789",
-  //     "email": "john@example.com",
-  //     "address": "123 Main Street",
-  //     "order_items": [
-  //         {
-  //             "service_id": 1,
-  //             "service_details": json{}
-  //         },
-  //         {
-  //             "service_id": 2,
-  //             "service_details":  json{}
-  //         }
-  //     ]
-  // }
-
-  const router = useRouter();
+  const { user } = useAuth();
 
   const onSubmit = async (data) => {
+    let userDataExists = localStorage.getItem("store_user_data");
+    if (!userDataExists && !user && data["store_user"]) {
+      localStorage.setItem("store_user_data", JSON.stringify(data));
+    }
+
     const order_details = JSON.parse(sessionStorage.getItem("order_details"));
 
     const order_items = order_details.map(({ type, ...item }) => ({
@@ -86,14 +76,23 @@ export default function Checkout() {
         position: "top-right",
         autoClose: 2000,
       });
-      sessionStorage.removeItem("order_details");
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      // sessionStorage.removeItem("order_details");
+      // setTimeout(() => {
+      //   router.push("/");
+      // }, 2000);
     } catch (error) {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      setValue("firstname", user.name);
+      setValue("lastname", user.lastname);
+      setValue("phone_number", user.phone_number);
+      setValue("email", user.email);
+    }
+  }, [user, setValue]);
 
   return (
     <section className="flat-spacing-11">
@@ -209,6 +208,18 @@ export default function Checkout() {
                     )}
                   </div>
                 </fieldset>
+                <div className="box-checkbox fieldset-radio mb_20 store-user">
+                  <input
+                    type="checkbox"
+                    id="check-agree"
+                    className="tf-check"
+                    name="store_user"
+                    {...register("store_user")}
+                  />
+                  <label htmlFor="check-agree" className="text_black-2">
+                    Do you want to store this data for future registration?
+                  </label>
+                </div>
               </div>
             </form>
           </div>
@@ -225,7 +236,7 @@ export default function Checkout() {
                       <figure className="img-product">
                         <Image
                           alt="product"
-                          src={elm.imgSrc}
+                          src={`http://localhost:8000/storage/${elm.icon}`}
                           width={720}
                           height={1005}
                         />
@@ -233,11 +244,10 @@ export default function Checkout() {
                       </figure>
                       <div className="content">
                         <div className="info">
-                          <p className="name">{elm.title}</p>
-                          <span className="variant">Brown / M</span>
+                          <p className="name">{elm.name}</p>
                         </div>
                         <span className="price">
-                          ${(elm.price * elm.quantity).toFixed(2)}
+                          ${(elm.base_price * elm.quantity).toFixed(2)}
                         </span>
                       </div>
                     </li>
@@ -255,7 +265,7 @@ export default function Checkout() {
                           className="tf-btn btn-fill animate-hover-btn radius-3 w-100 justify-content-center"
                           style={{ width: "fit-content" }}
                         >
-                          Explore Products!
+                          Explore Services!
                         </Link>
                       </div>
                     </div>
@@ -263,7 +273,7 @@ export default function Checkout() {
                 )}
                 <div className="d-flex justify-content-between line pb_20">
                   <h6 className="fw-5">Total</h6>
-                  <h6 className="total fw-5">$122.00</h6>
+                  <h6 className="total fw-5">{totalPrice}</h6>
                 </div>
                 <div className="wd-check-payment">
                   <div className="fieldset-radio mb_20">
@@ -307,14 +317,7 @@ export default function Checkout() {
                       className="tf-check"
                     />
                     <label htmlFor="check-agree" className="text_black-2">
-                      I have read and agree to the website
-                      <Link
-                        href={`/terms-conditions`}
-                        className="text-decoration-underline"
-                      >
-                        terms and conditions
-                      </Link>
-                      .
+                      I have read and agree to the website.
                     </label>
                   </div>
                 </div>

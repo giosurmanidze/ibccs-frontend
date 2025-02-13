@@ -2,7 +2,6 @@
 import { layouts } from "@/data/shop";
 import ProductGrid from "./ProductGrid";
 import { useState } from "react";
-import Pagination from "../common/Pagination";
 import ShopFilter from "./ShopFilter";
 import Sorting from "./Sorting";
 import { useGetCategory } from "@/hooks/useCategory";
@@ -24,8 +23,6 @@ export default function ShopDefault() {
   const { data: categories } = useGetCategories({
     enabled: !categoryId,
   });
-
-  console.log("category", category);
 
   const servicesLength = categoryId
     ? category?.services?.length

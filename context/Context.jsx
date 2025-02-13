@@ -13,7 +13,6 @@ export default function Context({ children }) {
   const { data: services } = useGetServices();
 
   const [cartProducts, setCartProducts] = useState([]);
-  const [compareItem, setCompareItem] = useState([1, 2, 3]);
   const [quickViewItem, setQuickViewItem] = useState(allProducts[0]);
   const [quickAddItem, setQuickAddItem] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);

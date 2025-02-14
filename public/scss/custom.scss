@@ -408,9 +408,32 @@ html[dir="rtl"] {
     padding: 6px 10px;
   }
 }
+.flat-title {
+  width: 100%;
+}
+
+.flat-title .sub-title {
+  width: 100%; /* Default to full width for small screens */
+  max-width: 500px; /* Limit width for larger screens */
+  text-align: center; /* Centers text inside */
+  margin: 0 auto; /* Centers the block */
+}
+
+@media (max-width: 768px) {
+  .flat-title .sub-title {
+    max-width: 80%; /* Adjust width on tablets */
+  }
+}
+
+@media (max-width: 480px) {
+  .flat-title .sub-title {
+    max-width: 100%; /* Full width on mobile */
+  }
+}
 
 .error {
   color: red;
+  text-align: start;
 }
 /* Center the password change form */
 .password-change-page {

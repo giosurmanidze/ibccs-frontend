@@ -31,6 +31,9 @@ export default function Checkout() {
           .required("Phone number is required"),
         address: yup.string().required("Address is required"),
         store_user: yup.string(),
+        delivery: yup.string().required("Delivery option is required"),
+        city: yup.string().required("City is required"),
+        note: yup.string(),
       }),
     []
   );
@@ -48,8 +51,7 @@ export default function Checkout() {
   const { user } = useAuth();
 
   const onSubmit = async (data) => {
-    let userDataExists = localStorage.getItem("store_user_data");
-    if (!userDataExists && !user && data["store_user"]) {
+    if (!user && data["store_user"]) {
       localStorage.setItem("store_user_data", JSON.stringify(data));
     }
 
@@ -66,9 +68,11 @@ export default function Checkout() {
       phone_number: data["phone_number"],
       email: data["email"],
       address: data["address"],
+      city: data["city"],
+      note: data["note"],
+      delivery_option: data["delivery"],
       order_items: order_items,
     };
-
     try {
       await axiosInstance.post("/orders", validatedData);
       reset();
@@ -76,10 +80,10 @@ export default function Checkout() {
         position: "top-right",
         autoClose: 2000,
       });
-      // sessionStorage.removeItem("order_details");
-      // setTimeout(() => {
-      //   router.push("/");
-      // }, 2000);
+      sessionStorage.removeItem("order_details");
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
     } catch (error) {
       console.log(error);
     }
@@ -207,6 +211,67 @@ export default function Checkout() {
                       <p className="error">{errors.address.message}</p>
                     )}
                   </div>
+                </fieldset>
+                <fieldset className="fieldset">
+                  <div className="tf-field style-1 mb_30">
+                    <input
+                      className="tf-field-input tf-input"
+                      placeholder=" "
+                      type="text"
+                      id="city"
+                      name="city"
+                      {...register("city")}
+                    />
+                    <label
+                      className="tf-field-label fw-4 text_black-2"
+                      htmlFor="city"
+                    >
+                      City
+                    </label>
+                    {errors.city && (
+                      <p className="error">{errors.city.message}</p>
+                    )}
+                  </div>
+                </fieldset>
+                <fieldset className="fieldset">
+                  <div className="tf-field style-1 mb_30">
+                    <select
+                      className="tf-field-input tf-input"
+                      id="delivery"
+                      name="delivery"
+                      {...register("delivery", {
+                        required: "Please select a delivery option",
+                      })}
+                    >
+                      <option value="">Select Delivery Option</option>
+                      <option value="local">Local Delivery</option>
+                      <option value="international">
+                        International Delivery
+                      </option>
+                    </select>
+                    <label
+                      className="tf-field-label fw-4 text_black-2"
+                      htmlFor="delivery"
+                    >
+                      Delivery options
+                    </label>
+                    {errors.delivery && (
+                      <p className="error">{errors.delivery.message}</p>
+                    )}
+                  </div>
+                </fieldset>
+                <fieldset className="box fieldset">
+                  <label htmlFor="note" className="fw-5 text_black-2 mb-2">
+                    Order Notes (Optional)
+                  </label>
+                  <textarea
+                    name="note"
+                    id="note"
+                    placeholder="Add any note about your order..."
+                    className="tf-field-input tf-textarea p-3 rounded-2 w-100"
+                    rows="4"
+                    {...register("note")}
+                  />
                 </fieldset>
                 <div className="box-checkbox fieldset-radio mb_20 store-user">
                   <input

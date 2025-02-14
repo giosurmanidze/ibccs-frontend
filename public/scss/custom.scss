@@ -487,6 +487,15 @@ html[dir="rtl"] {
     }
   }
 }
+.platforms-checkbox-title {
+  font-size: 17px;
+}
+.platforms-checkbox {
+  display: flex;
+  gap: 0.5rem;
+  color: #909090;
+}
+
 .success-page {
   height: 70vh;
   display: flex;

@@ -9,14 +9,33 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const socialPlatforms = [
+  { id: "whatsapp", name: "WhatsApp" },
+  { id: "telegram", name: "Telegram" },
+  { id: "viber", name: "Viber" },
+  { id: "botim", name: "Botim" },
+];
+
 export default function Register() {
   const [selectRegisterOption, setSelectRegisterOption] = useState(true);
+
+  const [selectedSocials, setSelectedSocials] = useState([]);
+
+  const handleSocialChange = (event) => {
+    const { value, checked } = event.target;
+    setSelectedSocials((prev) =>
+      checked ? [...prev, value] : prev.filter((item) => item !== value)
+    );
+  };
 
   const schema = useMemo(
     () =>
       yup.object().shape({
         organizationName: selectRegisterOption
           ? yup.string().required("Organization name is required")
+          : yup.string().notRequired(),
+        passport_number: !selectRegisterOption
+          ? yup.string().required("Passport number is required")
           : yup.string().notRequired(),
         name: yup.string().required("First name is required"),
         lastname: yup.string().required("Last name is required"),
@@ -39,6 +58,44 @@ export default function Register() {
           .string()
           .min(6, "Password must be at least 6 characters")
           .required("Password is required"),
+        platforms_number: yup.object().shape({
+          whatsapp: yup
+            .string()
+            .matches(/^\d+$/, "Phone number must be numeric")
+            .min(9, "Phone number must be at least 9 digits")
+            .when("$selectedSocials", (selected, schema) =>
+              selected.includes("whatsapp")
+                ? schema.required("WhatsApp number is required")
+                : schema.notRequired()
+            ),
+          telegram: yup
+            .string()
+            .matches(/^\d+$/, "Phone number must be numeric")
+            .min(9, "Phone number must be at least 9 digits")
+            .when("$selectedSocials", (selected, schema) =>
+              selected.includes("telegram")
+                ? schema.required("Telegram number is required")
+                : schema.notRequired()
+            ),
+          viber: yup
+            .string()
+            .matches(/^\d+$/, "Phone number must be numeric")
+            .min(9, "Phone number must be at least 9 digits")
+            .when("$selectedSocials", (selected, schema) =>
+              selected.includes("viber")
+                ? schema.required("Viber number is required")
+                : schema.notRequired()
+            ),
+          botim: yup
+            .string()
+            .matches(/^\d+$/, "Phone number must be numeric")
+            .min(9, "Phone number must be at least 9 digits")
+            .when("$selectedSocials", (selected, schema) =>
+              selected.includes("botim")
+                ? schema.required("Botim number is required")
+                : schema.notRequired()
+            ),
+        }),
       }),
     [selectRegisterOption]
   );
@@ -58,11 +115,16 @@ export default function Register() {
   }, [selectRegisterOption, reset]);
 
   const onSubmit = async (data) => {
-    console.log(data);
+    const postData = {
+      ...data,
+      platforms_number: JSON.stringify({ ...data.platforms_number }),
+    };
+    console.log(postData);
+
     try {
       const response = await axios.post(
         "http://localhost:8000/api/user-register",
-        data
+        postData
       );
 
       if (response.status === 200) {
@@ -71,6 +133,7 @@ export default function Register() {
           autoClose: 3000,
         });
         reset();
+        setSelectedSocials([]);
         setShowVerificationOptions(true);
       }
     } catch (error) {
@@ -146,16 +209,28 @@ export default function Register() {
                   </div>
                 </>
               ) : (
-                <div className="tf-field style-1 mb_15">
-                  <input
-                    className="tf-field-input tf-input"
-                    placeholder=" "
-                    type="text"
-                    {...register("name")}
-                  />
-                  <label className="tf-field-label">First Name</label>
-                  <p className="error">{errors.name?.message}</p>
-                </div>
+                <>
+                  <div className="tf-field style-1 mb_15">
+                    <input
+                      className="tf-field-input tf-input"
+                      placeholder=" "
+                      type="text"
+                      {...register("name")}
+                    />
+                    <label className="tf-field-label">First Name</label>
+                    <p className="error">{errors.name?.message}</p>
+                  </div>{" "}
+                  <div className="tf-field style-1 mb_15">
+                    <input
+                      className="tf-field-input tf-input"
+                      placeholder=" "
+                      type="text"
+                      {...register("passport_number")}
+                    />
+                    <label className="tf-field-label">Passport Number</label>
+                    <p className="error">{errors.passport_number?.message}</p>
+                  </div>
+                </>
               )}
               <div className="tf-field style-1 mb_15">
                 <input
@@ -177,6 +252,42 @@ export default function Register() {
                 <label className="tf-field-label">Email *</label>
                 <p className="error">{errors.email?.message}</p>
               </div>
+              <div className="mb_15 checkbox">
+                <label className="tf-field-label platforms-checkbox-title">
+                  Select Social Platforms:
+                </label>
+                {socialPlatforms.map((platform) => (
+                  <div
+                    key={platform.id}
+                    className="tf-checkbox platforms-checkbox"
+                  >
+                    <input
+                      type="checkbox"
+                      id={platform.id}
+                      value={platform.id}
+                      checked={selectedSocials.includes(platform.id)}
+                      onChange={handleSocialChange}
+                    />
+                    <label htmlFor={platform.id}>{platform.name}</label>
+                  </div>
+                ))}
+              </div>
+              {selectedSocials.map((social) => (
+                <div key={social} className="tf-field style-1 mb_15 checkbox">
+                  <input
+                    className="tf-field-input tf-input"
+                    placeholder={`Enter ${social} phone number`}
+                    type="text"
+                    {...register(`platforms_number.${social}`)}
+                  />
+                  <label className="tf-field-label">
+                    {social} Phone Number *
+                  </label>
+                  <p className="error">
+                    {errors.platforms_number?.[social]?.message}
+                  </p>
+                </div>
+              ))}
               {selectRegisterOption ? (
                 <div className="tf-field style-1 mb_15">
                   <input

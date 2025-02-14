@@ -6,7 +6,7 @@ export default function Hero() {
       <div className="banner-wrapper">
         <Image
           className="lazyload"
-          src="/images/slider/about-banner-01.jpg"
+          src="/images/slider/established.jpg"
           data-=""
           alt="image-collection"
           width={2000}
@@ -15,7 +15,8 @@ export default function Hero() {
         <div className="box-content text-center">
           <div className="container">
             <div className="text text-white">
-              Empowering women to achieve <br className="d-xl-block d-none" />
+              FINDING SOLUTIONS IS OUR SPECIALITY{" "}
+              <br className="d-xl-block d-none" />
               fitness goals with style
             </div>
           </div>

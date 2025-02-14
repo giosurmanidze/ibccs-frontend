@@ -9,28 +9,24 @@ export default function About() {
             <div className="tf-image-wrap">
               <Image
                 className="lazyload w-100"
-                data-src="/images/collections/collection-69.jpg"
+                data-src="/images/collections/established.jpg"
                 alt="collection-img"
-                src="/images/collections/collection-69.jpg"
+                src="/images/collections/established.jpg"
                 width={600}
                 height={499}
               />
             </div>
             <div className="tf-content-wrap px-0 d-flex justify-content-center w-100">
               <div>
-                <div className="heading">Established - 1995</div>
+                <div className="heading">Our mission</div>
                 <div className="text">
-                  Ecomus was founded in 1995 by Jane Smith, a fashion lover with
-                  a <br className="d-xl-block d-none" />
-                  passion for timeless style. Jane had always been drawn to
-                  classic <br className="d-xl-block d-none" />
-                  pieces that could be worn season after season, and she
-                  believed that <br className="d-xl-block d-none" />
-                  there was a gap in the market for a store that focused solely
-                  on classic <br className="d-xl-block d-none" />
-                  women's clothing. She opened the first store in a small town
-                  in New <br className="d-xl-block d-none" />
-                  England, where it quickly became a local favorite.
+                  To empower our clients to discover and capitalize on unseen
+                  opportunities, by providing expert guidance, customized
+                  solutions and dedicated support that drive their growth and
+                  success. <br className="d-xl-block d-none" />
+                  We work individually with every single client in a friendly
+                  environment. Based on the best business practices. That foster
+                  trust to start, grow and expand businesses of our clients.
                 </div>
               </div>
             </div>
@@ -42,17 +38,27 @@ export default function About() {
           <div className="tf-grid-layout md-col-2 tf-img-with-text style-4">
             <div className="tf-content-wrap px-0 d-flex justify-content-center w-100">
               <div>
-                <div className="heading">Our mission</div>
+                <div className="heading">Our values</div>
                 <div className="text">
-                  Our mission is to empower people through sustainable fashion.
-                  <br className="d-xl-block d-none" />
-                  We want everyone to look and feel good, while also doing our
-                  part to <br className="d-xl-block d-none" />
-                  help the environment.We believe that fashion should be
-                  stylish, <br className="d-xl-block d-none" />
-                  affordable and accessible to everyone. Body positivity and
-                  inclusivity <br className="d-xl-block d-none" />
-                  are values that are at the heart of our brand.
+                  <p>
+                    Efficiency, responsiveness and commitment are the core
+                    values being practiced when working with our clients. Every
+                    client is very important to us - that is why we put all
+                    effort and give our energy to show in a simple way many
+                    possibilities for running a business in Georgia.
+                  </p>
+                  <p>
+                    We believe in a long-term relationship with our clients. It
+                    all starts with effective communication. Based on honesty
+                    and transparency. Complemented by our business experience,
+                    competencies and excellent knowledge of the Georgian market.
+                  </p>
+                  <p>
+                    Our responsibility is to be open, honest and
+                    straightforward. And deliver the best options so that our
+                    clients could make proper decisions. And recommend us to
+                    others.
+                  </p>
                 </div>
               </div>
             </div>
@@ -61,7 +67,7 @@ export default function About() {
                 <div className="img-style">
                   <Image
                     className="lazyload"
-                    src="/images/collections/collection-71.jpg"
+                    src="/images/collections/our_values.webp"
                     data-=""
                     alt="img-slider"
                     width={337}
@@ -73,7 +79,7 @@ export default function About() {
                 <div className="img-style">
                   <Image
                     className="lazyload"
-                    src="/images/collections/collection-70.jpg"
+                    src="/images/collections/Tax-form-1024x748.png"
                     data-=""
                     alt="img-slider"
                     width={400}

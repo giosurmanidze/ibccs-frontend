@@ -2,7 +2,7 @@
 import { useContextElement } from "@/context/Context";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 export default function ShopCart() {
   const { cartProducts, totalPrice, setCartProducts, setQuickViewItem } =
     useContextElement();
@@ -31,9 +31,23 @@ export default function ShopCart() {
     );
   };
 
-  const addNoteRef = useRef();
-  const addGiftRef = useRef();
-  const addShipingRef = useRef();
+  const [totalPrice2, setTotalPrice2] = useState(0);
+  useEffect(() => {
+    const subtotal = cartProducts.reduce((accumulator, elm) => {
+      const serviceTotal =
+        elm.base_price * elm.quantity +
+        (elm.extraTaxFields
+          ? Object.values(elm.extraTaxFields).reduce(
+              (sum, field) => sum + (Number(field.extra_tax) || 0),
+              0
+            )
+          : 0);
+
+      return accumulator + serviceTotal;
+    }, 0);
+
+    setTotalPrice2(subtotal);
+  }, [cartProducts]);
 
   return (
     <div className="modal fullRight fade modal-shopping-cart" id="shoppingCart">
@@ -85,9 +99,8 @@ export default function ShopCart() {
                             <Image
                               alt="image"
                               src={`http://localhost:8000/storage/${elm.icon}`}
-                              width={668}
-                              height={932}
-                              style={{ objectFit: "cover" }}
+                              width={50}
+                              height={70}
                             />
                           </Link>
                         </div>
@@ -98,7 +111,19 @@ export default function ShopCart() {
                           >
                             {elm.name}
                           </Link>
-                          <div className="price fw-6">${elm.base_price}</div>
+                          <div className="price fw-6">
+                            ${" "}
+                            {(
+                              elm.base_price * elm.quantity +
+                              (elm.extraTaxFields
+                                ? Object.values(elm.extraTaxFields).reduce(
+                                    (sum, field) =>
+                                      sum + (Number(field.extra_tax) || 0),
+                                    0
+                                  )
+                                : 0)
+                            ).toFixed(2)}
+                          </div>
                           <div className="tf-mini-cart-btns">
                             <div className="wg-quantity small">
                               <span
@@ -165,7 +190,7 @@ export default function ShopCart() {
                   <div className="tf-cart-totals-discounts">
                     <div className="tf-cart-total">Subtotal</div>
                     <div className="tf-totals-total-value fw-6">
-                      ${totalPrice.toFixed(2)} USD
+                      ${totalPrice2} USD
                     </div>
                   </div>
                   <div className="tf-mini-cart-line" />

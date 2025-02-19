@@ -1,4 +1,3 @@
-import Features from "@/components/common/Features2";
 import Collections from "@/components/homes/home-gaming-accessories/Collections";
 import Hero from "@/components/homes/home-gaming-accessories/Hero";
 import Lookbook from "@/components/homes/home-gaming-accessories/Lookbook";
@@ -11,7 +10,6 @@ export default function page() {
     <>
       <div className="home-gaming-accessories color-primary-14">
         <Hero />
-        <Features bgColor="flat-spacing-3 flat-iconbox line" />
         <Collections />
         <Products2 />
         <Lookbook />

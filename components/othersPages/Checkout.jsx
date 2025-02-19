@@ -57,9 +57,22 @@ export default function Checkout() {
 
     const order_details = JSON.parse(sessionStorage.getItem("order_details"));
 
+    // Helper function to clean the field names (remove suffix)
+    const cleanFieldNames = (fields) => {
+      return fields.map((field) => ({
+        ...field,
+        name: field.name.replace(/_\d+$/, ""), // Remove the "_number" suffix
+      }));
+    };
+
+    // Loop through the order items and clean the fields
     const order_items = order_details.map(({ type, ...item }) => ({
       service_id: item.service_id,
-      service_details: JSON.stringify(item),
+      // Clean fields array (sanitize field names inside)
+      service_details: {
+        ...item,
+        fields: cleanFieldNames(item.fields), // Clean the fields array
+      },
     }));
 
     const validatedData = {
@@ -73,17 +86,68 @@ export default function Checkout() {
       delivery_option: data["delivery"],
       order_items: order_items,
     };
+
+    // Create a FormData instance
+    const formData = new FormData();
+
+    formData.append("firstname", validatedData.firstname);
+    formData.append("lastname", validatedData.lastname);
+    formData.append("phone_number", validatedData.phone_number);
+    formData.append("email", validatedData.email);
+    formData.append("address", validatedData.address);
+    formData.append("city", validatedData.city);
+    formData.append("note", validatedData.note);
+    formData.append("delivery_option", validatedData.delivery_option);
+
+    // Append order items (and handle file fields)
+    validatedData.order_items.forEach((item, index) => {
+      formData.append(`order_items[${index}][service_id]`, item.service_id);
+
+      // Append the full field information including name and type
+      item.service_details.fields.forEach((field, fieldIndex) => {
+        formData.append(
+          `order_items[${index}][service_details][fields][${fieldIndex}][name]`,
+          field.name
+        );
+        formData.append(
+          `order_items[${index}][service_details][fields][${fieldIndex}][type]`,
+          field.type
+        );
+
+        if (field.type === "file" && field.value) {
+          formData.append(
+            `order_items[${index}][service_details][fields][${fieldIndex}][value]`,
+            field.value
+          );
+        } else {
+          formData.append(
+            `order_items[${index}][service_details][fields][${fieldIndex}][value]`,
+            field.value
+          );
+        }
+
+        // If it's a dropdown, include the options
+        if (field.type === "dropdown" && field.options) {
+          formData.append(
+            `order_items[${index}][service_details][fields][${fieldIndex}][options]`,
+            JSON.stringify(field.options)
+          );
+        }
+      });
+    });
+
     try {
-      await axiosInstance.post("/orders", validatedData);
-      reset();
+      const response = await axiosInstance.post("/orders", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       toast.success("Order is completed.", {
         position: "top-right",
         autoClose: 2000,
       });
-      sessionStorage.removeItem("order_details");
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      console.log(response);
     } catch (error) {
       console.log(error);
     }
@@ -97,6 +161,24 @@ export default function Checkout() {
       setValue("email", user.email);
     }
   }, [user, setValue]);
+
+  const [totalPrice2, setTotalPrice2] = useState(0);
+  useEffect(() => {
+    const subtotal = cartProducts.reduce((accumulator, elm) => {
+      const serviceTotal =
+        elm.base_price * elm.quantity +
+        (elm.extraTaxFields
+          ? Object.values(elm.extraTaxFields).reduce(
+              (sum, field) => sum + (Number(field.extra_tax) || 0),
+              0
+            )
+          : 0);
+
+      return accumulator + serviceTotal;
+    }, 0);
+
+    setTotalPrice2(subtotal);
+  }, [cartProducts]);
 
   return (
     <section className="flat-spacing-11">
@@ -312,7 +394,16 @@ export default function Checkout() {
                           <p className="name">{elm.name}</p>
                         </div>
                         <span className="price">
-                          ${(elm.base_price * elm.quantity).toFixed(2)}
+                          {(
+                            elm.base_price * elm.quantity +
+                            (elm.extraTaxFields
+                              ? Object.values(elm.extraTaxFields).reduce(
+                                  (sum, field) =>
+                                    sum + (Number(field.extra_tax) || 0),
+                                  0
+                                )
+                              : 0)
+                          ).toFixed(2)}$
                         </span>
                       </div>
                     </li>
@@ -338,7 +429,7 @@ export default function Checkout() {
                 )}
                 <div className="d-flex justify-content-between line pb_20">
                   <h6 className="fw-5">Total</h6>
-                  <h6 className="total fw-5">{totalPrice}</h6>
+                  <h6 className="total fw-5">{totalPrice2}$</h6>
                 </div>
                 <div className="wd-check-payment">
                   <div className="fieldset-radio mb_20">

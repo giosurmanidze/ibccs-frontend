@@ -2,7 +2,7 @@
 import { useContextElement } from "@/context/Context";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -10,9 +10,10 @@ import axiosInstance from "@/config/axios";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
+import mammoth from "mammoth";
 
 export default function Cart() {
-  const { cartProducts, setCartProducts, totalPrice } = useContextElement();
+  const { cartProducts, setCartProducts } = useContextElement();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const router = useRouter();
@@ -43,19 +44,54 @@ export default function Cart() {
   };
 
   const [productData, setProductData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   const handleOpenModal = async (id) => {
-    console.log("Fetching service with ID:", id);
     setIsModalOpen(true);
     setLoading(true);
     setError(null);
+    setIsInitialLoad(true);
+
+    reset(
+      {},
+      {
+        keepValues: false,
+        keepDefaultValues: false,
+        keepErrors: false,
+      }
+    );
+
     try {
       const response = await axiosInstance.get(`services/${id}`);
-
-      console.log(response.data);
       setProductData(response.data);
+
+      const savedData =
+        JSON.parse(sessionStorage.getItem("order_details")) || [];
+      const existingOrder = savedData.find((order) => order.service_id === id);
+
+      if (existingOrder?.fields) {
+        const defaultValues = {};
+        const newFiles = {};
+
+        existingOrder.fields.forEach((field) => {
+          if (field.type === "file" && field.value) {
+            defaultValues[field.name] = field.value;
+            newFiles[field.name] = {
+              name: field.value.fileName || field.fileName,
+              value: field.value.data || field.value,
+            };
+          } else {
+            defaultValues[field.name] = field.value;
+          }
+        });
+
+        setFiles(newFiles);
+
+        reset(defaultValues, {
+          keepDefaultValues: true,
+        });
+      } else {
+        setFiles({});
+      }
     } catch (err) {
       console.error("API Error:", err);
       setError(err.response?.data?.message || "Failed to fetch product data");
@@ -63,12 +99,15 @@ export default function Cart() {
       setLoading(false);
     }
   };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setProductData(null);
-    setError(null);
+    reset();
+    setTempCartChanges(null);
+    setFiles({});
+    setExtraInputs([]);
+    setProductData([]);
   };
+  const [extraInputs, setExtraInputs] = useState([]);
 
   const createValidationSchema = (fields) => {
     let schemaShape = {};
@@ -82,18 +121,50 @@ export default function Cart() {
         schemaShape[field.name] = yup
           .string()
           .required(`${field.name} is required`);
+      } else if (field.type === "radio") {
+        schemaShape[field.name] = yup
+          .string()
+          .required(`${field.name} is required`);
+
+        if (field.extra_tax) {
+          extraInputs.forEach((_, index) => {
+            schemaShape[`${field.name}_extra_${index}`] = yup
+              .string()
+              .required(`Extra tax field ${index + 1} is required`);
+          });
+        }
+      } else if (field.type === "checkbox") {
+        schemaShape[field.name] = yup
+          .array()
+          .min(1, "At least one option must be selected");
+      } else if (field.type === "file") {
+        schemaShape[field.name] = yup.mixed().required("File is required");
       }
     });
 
     return yup.object().shape(schemaShape);
   };
 
-  const makeFieldsUnique = (fields, serviceId) => {
-    return fields?.map((field) => ({
-      ...field,
-      name: `${field.name}_${serviceId}`,
-      originalName: field.name,
-    }));
+  const makeFieldsUnique = (fields, productId) => {
+    const nameCount = {};
+
+    return fields.map((field) => {
+      let baseName = field.name?.replace(/_\d+$/, "");
+      let uniqueName = `${baseName}_${productId}`;
+
+      if (nameCount[baseName]) {
+        nameCount[baseName] += 1;
+        uniqueName = `${baseName}_${productId}_${nameCount[baseName]}`;
+      } else {
+        nameCount[baseName] = 1;
+      }
+
+      return {
+        ...field,
+        name: uniqueName,
+        originalName: baseName,
+      };
+    });
   };
 
   const parsedFields = productData?.additional_fields
@@ -103,6 +174,15 @@ export default function Cart() {
       )
     : [];
 
+  const [tempCartChanges, setTempCartChanges] = useState(null);
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      setTempCartChanges(null);
+    }
+  }, [isModalOpen]);
+
+  const [isInitialLoad, setIsInitialLoad] = useState(null);
   const schema = createValidationSchema(parsedFields);
 
   const {
@@ -110,47 +190,260 @@ export default function Cart() {
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
+    getValues,
   } = useForm({
     resolver: yupResolver(schema),
   });
 
-  const onSubmit = (data) => {
-    const serviceId = productData.id;
+  const onSubmit = async (data) => {
+    if (tempCartChanges) {
+      setCartProducts((prevProducts) =>
+        prevProducts.map((product) => {
+          if (tempCartChanges[product.id]) {
+            return {
+              ...product,
+              extraTaxFields: tempCartChanges[product.id],
+            };
+          }
+          return product;
+        })
+      );
+    }
+    setTempCartChanges(null);
+    setIsModalOpen(false);
+    const serviceId = productData?.id;
     let existingOrderDetails =
       JSON.parse(sessionStorage.getItem("order_details")) || [];
+    let serviceOrder = existingOrderDetails.find(
+      (order) => order.service_id === serviceId
+    );
+    const fileFields =
+      serviceOrder?.fields?.filter((field) => field.type === "file") || [];
 
-    const updatedFields = parsedFields.map((field) => ({
-      name: field.name,
-      type: field.type,
-      value: data[field.name] || "",
-      ...(field.options && { options: field.options }),
-    }));
+    const fileToBase64 = (file) => {
+      if (!file || !(file instanceof Blob)) {
+        return Promise.resolve(null);
+      }
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+      });
+    };
+
+    const updatedFields = await Promise.all(
+      parsedFields.map(async (field) => {
+        let value = data[field.name];
+
+        if (field.type === "file") {
+          const existingFile = fileFields.find((f) => f.name === field.name);
+          const currentFile = files[field.name];
+
+          if (currentFile instanceof Blob) {
+            try {
+              const dataUrl = await fileToBase64(currentFile);
+              value = {
+                data: dataUrl,
+                fileName: currentFile.name,
+              };
+            } catch (error) {
+              console.error(`Error processing file ${field.name}:`, error);
+              value = existingFile?.value || null;
+            }
+          } else if (currentFile && currentFile.value) {
+            value = {
+              data: currentFile.value,
+              fileName: currentFile.name,
+            };
+          } else {
+            value = existingFile?.value || null;
+          }
+        }
+
+        return {
+          name: field.name,
+          type: field.type,
+          value:
+            field.type === "file"
+              ? value
+              : Array.isArray(value)
+              ? value
+              : value || "",
+          ...(field.options && { options: field.options }),
+        };
+      })
+    );
+
+    const filteredFields = updatedFields.filter(
+      (field) =>
+        (field.type === "file" && field.value) ||
+        (typeof field.value === "string" && field.value.trim() !== "") ||
+        (Array.isArray(field.value) && field.value.length > 0)
+    );
+
+    updateSessionStorage(serviceId, null, filteredFields);
+    reset();
+    setIsModalOpen(false);
+  };
+  const updateSessionStorage = (serviceId, fieldName, fieldValue) => {
+    let existingOrderDetails =
+      JSON.parse(sessionStorage.getItem("order_details")) || [];
 
     const orderIndex = existingOrderDetails.findIndex(
       (order) => order.service_id === serviceId
     );
 
     if (orderIndex !== -1) {
-      existingOrderDetails[orderIndex].fields = updatedFields;
+      if (fieldName) {
+        const fieldIndex = existingOrderDetails[orderIndex].fields.findIndex(
+          (field) => field.name === fieldName
+        );
+
+        if (fieldIndex !== -1) {
+          existingOrderDetails[orderIndex].fields[fieldIndex].value =
+            fieldValue;
+          if (typeof fieldValue === "object" && fieldValue.fileName) {
+            existingOrderDetails[orderIndex].fields[fieldIndex].fileName =
+              fieldValue.fileName;
+            existingOrderDetails[orderIndex].fields[fieldIndex].value =
+              fieldValue.data;
+          }
+        } else {
+          existingOrderDetails[orderIndex].fields.push({
+            name: fieldName,
+            type: "file",
+            value:
+              typeof fieldValue === "object" ? fieldValue.data : fieldValue,
+            ...(typeof fieldValue === "object" && {
+              fileName: fieldValue.fileName,
+            }),
+          });
+        }
+      } else {
+        existingOrderDetails[orderIndex].fields = fieldValue.map((field) => {
+          if (field.type === "file" && typeof field.value === "object") {
+            return {
+              ...field,
+              fileName: field.value.fileName,
+              value: field.value.data,
+            };
+          }
+          return field;
+        });
+      }
+
+      if (existingOrderDetails[orderIndex].fields.length === 0) {
+        existingOrderDetails.splice(orderIndex, 1);
+      }
     } else {
-      existingOrderDetails.push({
-        service_id: serviceId,
-        fields: updatedFields,
-      });
+      if (fieldValue.length > 0) {
+        const newOrder = {
+          service_id: serviceId,
+          fields: fieldValue.map((field) => {
+            if (field.type === "file" && typeof field.value === "object") {
+              return {
+                ...field,
+                fileName: field.value.fileName,
+                value: field.value.data,
+              };
+            }
+            return field;
+          }),
+        };
+
+        existingOrderDetails.push(newOrder);
+      }
     }
 
     sessionStorage.setItem(
       "order_details",
       JSON.stringify(existingOrderDetails)
     );
-    reset();
-    setIsModalOpen(false);
   };
-
   const getCleanFieldName = (fieldName) => {
     return fieldName.split("_")[0];
   };
 
+  const savedData = JSON.parse(sessionStorage.getItem("order_details")) || [];
+
+  const serviceOrder = savedData.find(
+    (order) => order.service_id === productData?.id
+  );
+
+  useEffect(() => {
+    if (serviceOrder?.fields && isInitialLoad) {
+      const fileUpdates = {};
+      const formValues = {};
+
+      serviceOrder.fields.forEach((field) => {
+        if (field.type === "file" && field.value) {
+          fileUpdates[field.name] = {
+            name: field.fileName || field.value.split("/").pop(),
+            value: field.value,
+          };
+          formValues[field.name] = field.value;
+        } else if (
+          !["physical_person", "legal_person", "director"].includes(field.type)
+        ) {
+          formValues[field.name] = field.value;
+
+          if (
+            field.type === "radio" &&
+            field.value === "Specify a category" &&
+            field.extra_tax_values
+          ) {
+            setExtraInputs(field.extra_tax_values);
+            sessionStorage.setItem(
+              "extra_tax_values",
+              JSON.stringify(field.extra_tax_values)
+            );
+          }
+        }
+      });
+
+      Object.entries(formValues).forEach(([key, value]) => {
+        setValue(key, value, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      });
+
+      if (Object.keys(fileUpdates).length > 0) {
+        setFiles((prev) => ({
+          ...prev,
+          ...fileUpdates,
+        }));
+      }
+
+      setIsInitialLoad(false);
+    }
+  }, [serviceOrder, setValue, isInitialLoad]);
+  const getProductTotal = (product) => {
+    const extraTaxFields =
+      tempCartChanges?.[product.id] || product.extraTaxFields;
+
+    return (
+      product.base_price * product.quantity +
+      (extraTaxFields
+        ? Object.values(extraTaxFields).reduce(
+            (sum, field) => sum + (Number(field.extra_tax) || 0),
+            0
+          )
+        : 0)
+    );
+  };
+  const handleChange = (e, type) => {
+    const { name, value } = e.target;
+
+    if (type === "checkbox") {
+      setValue(name, [...(watch(name) || []), value]);
+    } else {
+      setValue(name, value);
+    }
+  };
   const handleCheckOrder = () => {
     let existingOrderDetails =
       JSON.parse(sessionStorage.getItem("order_details")) || [];
@@ -171,13 +464,167 @@ export default function Cart() {
       });
     }
   };
-
-  const savedData = JSON.parse(sessionStorage.getItem("order_details")) || [];
   const checkOrderExists = (productId) => {
     return savedData?.some((order) => order.service_id === productId);
   };
 
   const { user } = useAuth();
+
+  const [files, setFiles] = useState({});
+  const [wordCounts, setWordCounts] = useState({});
+
+  const countWords = (file, fieldName) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const arrayBuffer = reader.result;
+      mammoth
+        .extractRawText({ arrayBuffer: arrayBuffer })
+        .then((result) => {
+          const text = result.value;
+          const wordCount = text
+            .split(/\s+/)
+            .filter((word) => word.length > 0).length;
+
+          setWordCounts((prev) => ({
+            ...prev,
+            [fieldName]: wordCount,
+          }));
+        })
+        .catch((error) => {
+          console.error("Error reading the document:", error);
+        });
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleFileChange = (event, fieldName) => {
+    const file = event.target.files[0];
+    if (file) {
+      setFiles((prev) => ({
+        ...prev,
+        [fieldName]: file,
+      }));
+
+      const currentValues = getValues();
+
+      setValue(fieldName, file, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+
+      Object.entries(currentValues).forEach(([key, value]) => {
+        if (key !== fieldName && value) {
+          setValue(key, value, {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
+        }
+      });
+
+      countWords(file, fieldName);
+    } else {
+      alert("Please upload a .docx file.");
+    }
+  };
+
+  const addExtraInput = (cate_extra_tax) => {
+    setExtraInputs((prev) => [...prev, ""]);
+
+    const categoryExtraTax = Number(cate_extra_tax) || 0;
+
+    setTotalExtraCategoryPrice((prev) => {
+      const currentTotal = Number(prev) || 0;
+      return currentTotal + categoryExtraTax;
+    });
+  };
+
+  const [totalExtraCategoryPrice, setTotalExtraCategoryPrice] = useState(() => {
+    const savedPrice = sessionStorage.getItem("total_extra_category_price");
+    const parsedPrice = parseFloat(savedPrice);
+    return !isNaN(parsedPrice) ? parsedPrice : 0;
+  });
+
+  useEffect(() => {
+    const priceToStore = !isNaN(totalExtraCategoryPrice)
+      ? totalExtraCategoryPrice
+      : 0;
+    sessionStorage.setItem(
+      "total_extra_category_price",
+      priceToStore.toString()
+    );
+  }, [totalExtraCategoryPrice]);
+
+  const handleSelectChange = (e) => {
+    const selectedValue = JSON.parse(e.target.value);
+    const fieldName = e.target.name;
+    const serviceId = productData?.id;
+
+    if (
+      selectedValue &&
+      typeof selectedValue === "object" &&
+      "extra_tax" in selectedValue
+    ) {
+      setTempCartChanges((prevChanges) => {
+        const currentProduct = cartProducts.find((p) => p.id === serviceId);
+        const existingExtraTaxFields =
+          prevChanges?.[serviceId] || currentProduct?.extraTaxFields || {};
+
+        const updatedExtraTaxFields = {
+          ...existingExtraTaxFields, 
+          [fieldName]: {
+            name: fieldName, 
+            value: selectedValue.text,
+            extra_tax: selectedValue.extra_tax,
+            displayName: getCleanFieldName(fieldName), 
+          },
+        };
+
+        return {
+          ...prevChanges,
+          [serviceId]: updatedExtraTaxFields,
+        };
+      });
+    } else {
+      setTempCartChanges((prevChanges) => {
+        if (!prevChanges?.[serviceId]) {
+          const currentProduct = cartProducts.find((p) => p.id === serviceId);
+          const existingFields = { ...currentProduct?.extraTaxFields };
+          delete existingFields[fieldName];
+          return {
+            ...prevChanges,
+            [serviceId]: existingFields,
+          };
+        }
+
+        const updatedFields = { ...prevChanges[serviceId] };
+        delete updatedFields[fieldName];
+
+        return {
+          ...prevChanges,
+          [serviceId]: updatedFields,
+        };
+      });
+    }
+
+    handleChange(e, selectedValue);
+  };
+  const [totalPrice2, setTotalPrice2] = useState(0);
+  useEffect(() => {
+    const subtotal = cartProducts.reduce((accumulator, elm) => {
+      const serviceTotal =
+        elm.base_price * elm.quantity +
+        (elm.extraTaxFields
+          ? Object.values(elm.extraTaxFields).reduce(
+              (sum, field) => sum + (Number(field.extra_tax) || 0),
+              0
+            )
+          : 0);
+
+      return accumulator + serviceTotal;
+    }, 0);
+
+    setTotalPrice2(subtotal);
+  }, [cartProducts]);
   return (
     <section className="flat-spacing-11">
       <ToastContainer />
@@ -203,7 +650,7 @@ export default function Cart() {
                 d="M10.0899 24C11.3119 22.1928 11.4245 20.2409 10.4277 18.1443C10.1505 19.2691 9.64344 19.9518 8.90645 20.1924C9.59084 18.2379 9.01896 16.1263 7.19079 13.8576C7.15133 16.2007 6.58824 17.9076 5.50148 18.9782C4.00436 20.4517 4.02197 22.1146 5.55428 23.9669C-0.806588 20.5819 -1.70399 16.0418 2.86196 10.347C3.14516 11.7228 3.83141 12.5674 4.92082 12.8809C3.73335 7.84186 4.98274 3.54821 8.66895 0C8.6916 7.87426 11.1062 8.57414 14.1592 12.089C17.4554 16.3071 15.5184 21.1748 10.0899 24Z"
               />
             </svg>
-            <p>These products are limited, checkout within</p>
+            <p>These services are limited, checkout within</p>
           </div>
           <div
             className="js-countdown timer-count"
@@ -319,9 +766,38 @@ export default function Cart() {
                           className="cart-total"
                           style={{ minWidth: "60px" }}
                         >
-                          ${(elm.base_price * elm.quantity).toFixed(2)}
+                          <div className="mb-2 fs-6">
+                            ${(elm.base_price * elm.quantity).toFixed(2)}
+                          </div>
+                          {((tempCartChanges && tempCartChanges[elm.id]) ||
+                            elm.extraTaxFields) &&
+                            Object.entries(
+                              tempCartChanges?.[elm.id] || elm.extraTaxFields
+                            ).map(([fieldName, field]) => (
+                              <div
+                                key={field}
+                                className="extra-tax-item small d-flex justify-content-between align-items-center border-top border-secondary-subtle pt-1 mb-1"
+                              >
+                                <span className="text-secondary">
+                                  {getCleanFieldName(fieldName)}({field?.value})
+                                  :
+                                </span>
+                                <span className="text-success">
+                                  +${Number(field.extra_tax).toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+
+                          <div className="fw-bold d-flex justify-content-between align-items-center border-top pt-2 mt-2 total_price">
+                            <span>Total:</span>
+                            <span>${getProductTotal(elm).toFixed(2)}</span>
+                          </div>
                         </div>
                       </td>
+                      <div
+                        className="cart-total"
+                        style={{ minWidth: "100px" }}
+                      ></div>
                       <td>
                         <div>
                           <button
@@ -333,7 +809,6 @@ export default function Cart() {
                               className={`tf-btn w-100 animate-hover-btn radius-3 ${
                                 checkOrderExists(elm.id) ? "filled_bg" : ""
                               }`}
-                              style={{ minWidth: "60px" }}
                             >
                               {checkOrderExists(elm.id)
                                 ? "Filled service"
@@ -370,68 +845,303 @@ export default function Cart() {
                       <form onSubmit={handleSubmit(onSubmit)}>
                         <div className="tf-field style-1 mb_30">
                           {parsedFields?.map((field, index) => {
-                            // Get saved data
-                            const savedData =
-                              JSON.parse(
-                                sessionStorage.getItem("order_details")
-                              ) || [];
-                            const serviceOrder = savedData.find(
-                              (order) => order.service_id === productData.id
-                            );
-                            const savedField = serviceOrder?.fields?.find(
-                              (f) => f.name === field.name
-                            );
-                            const prefilledValue = savedField
-                              ? savedField.value
-                              : "";
-
-                            // Get clean field name for display
                             const displayName = getCleanFieldName(field.name);
 
                             return (
                               <div
-                                key={field.name}
+                                key={`${field.name}-${index}`}
                                 className="tf-field style-1 mb_30"
                               >
-                                {field.type === "text" && (
-                                  <>
-                                    <input
-                                      className="tf-field-input tf-input"
-                                      placeholder=" "
-                                      type="text"
-                                      id={field.name}
-                                      defaultValue={prefilledValue}
-                                      {...register(field.name)}
-                                    />
-                                    <label
-                                      className="tf-field-label fw-4 text_black-2"
-                                      htmlFor={field.name}
+                                <h5>{field?.title}</h5>
+                                <>
+                                  {field.type === "text" && (
+                                    <div
+                                      key={`textfield_${field.name}}`}
+                                      className="form-group"
                                     >
-                                      {displayName} *
-                                    </label>
-                                  </>
-                                )}
-
-                                {field.type === "dropdown" && (
-                                  <>
-                                    <select
-                                      className="tf-field-input tf-input"
-                                      id={field.name}
-                                      defaultValue={prefilledValue}
-                                      {...register(field.name)}
-                                    >
-                                      <option value="">Select an option</option>
-                                      {field.options?.map((option, idx) => (
-                                        <option key={idx} value={option}>
-                                          {option}
+                                      <label
+                                        className="fw-4 text_black-2"
+                                        htmlFor={`${field.name}}`}
+                                      >
+                                        {displayName} *
+                                      </label>
+                                      <input
+                                        className="tf-field-input tf-input custom-input"
+                                        placeholder=""
+                                        type="text"
+                                        id={`${field.name}}`}
+                                        {...register(field.name)}
+                                      />
+                                    </div>
+                                  )}
+                                  {field.type === "dropdown" && (
+                                    <div className="select-input">
+                                      <label className=" fw-4 text_black-2">
+                                        {displayName} *
+                                      </label>
+                                      <select
+                                        className="tf-field-input tf-input custom-input form-control form-control-sm w-50"
+                                        id={field.name}
+                                        {...register(field.name)}
+                                        onChange={handleSelectChange}
+                                      >
+                                        <option value="">
+                                          Select an option
                                         </option>
-                                      ))}
-                                    </select>
-                                    <label className="tf-field-label fw-4 text_black-2">
-                                      {displayName} *
-                                    </label>
-                                  </>
-                                )}
+                                        {Object.entries(field.options)?.map(
+                                          ([key, option], idx) => (
+                                            <option
+                                              key={idx}
+                                              value={JSON.stringify(option)}
+                                            >
+                                              {option.text}{" "}
+                                              {option.extra_tax
+                                                ? `(Extra Tax: $${option.extra_tax})`
+                                                : ""}
+                                            </option>
+                                          )
+                                        )}
+                                      </select>
+                                    </div>
+                                  )}
+                                  {field.type === "radio" && (
+                                    <div className="mb-2 d-flex flex-column radio-group">
+                                      <label className="fw-4 text_black-2">
+                                        {displayName} *
+                                      </label>
+                                      <div className="d-flex flex-column">
+                                        {field.options?.map((option, idx) => (
+                                          <div
+                                            key={idx}
+                                            className="d-flex align-items-center mb-2 radio-option"
+                                          >
+                                            <input
+                                              type="radio"
+                                              id={`${field.name}-${option}`}
+                                              className="form-check-input me-2"
+                                              name={field.name}
+                                              value={option}
+                                              {...register(field.name)}
+                                              onChange={(e) =>
+                                                handleChange(e, "radio")
+                                              }
+                                            />
+                                            <label
+                                              htmlFor={`${field.name}-${option}`}
+                                              className="form-check-label custom-radio"
+                                            >
+                                              {option}
+                                            </label>
+                                          </div>
+                                        ))}
+                                      </div>
+
+                                      {extraTax && (
+                                        <div className="extra-tax-section mt-3 flex-column">
+                                          {displayName ===
+                                            "Trademark categories" && (
+                                            <div className="d-flex flex-column gap-2 additional-charge">
+                                              <span className="fw-bold">
+                                                Consultation fee:
+                                                {field.extra_tax}$
+                                              </span>
+                                              <span className="fw-bold">
+                                                Fee for extra category(s):
+                                                {totalExtraCategoryPrice}$
+                                              </span>
+                                              <span className="fw-bold ">
+                                                Total price:
+                                                {Number(field.extra_tax) +
+                                                  totalExtraCategoryPrice}
+                                                $
+                                              </span>
+                                            </div>
+                                          )}
+                                          <div className="d-flex flex-column align-items-start mb-2">
+                                            <button
+                                              type="button"
+                                              className="btn btn-sm  mt-2 add-category-button"
+                                              onClick={() =>
+                                                addExtraInput(
+                                                  field.extra_category_tax
+                                                )
+                                              }
+                                            >
+                                              Add category
+                                            </button>
+                                          </div>
+                                          {extraInputs.map((_, idx) => (
+                                            <div
+                                              key={idx}
+                                              className="mb-2 d-flex align-items-center"
+                                            >
+                                              <input
+                                                type="text"
+                                                className="form-control form-control-sm w-50"
+                                                {...register(
+                                                  `${field.name}_extra_${idx}`
+                                                )}
+                                                placeholder={`Category ${
+                                                  idx + 1
+                                                }`}
+                                              />
+                                              <button
+                                                type="button"
+                                                className="btn btn-sm btn-danger ms-2 delete-category-button"
+                                                onClick={() => {
+                                                  setExtraInputs((prev) =>
+                                                    prev.filter(
+                                                      (_, i) => i !== idx
+                                                    )
+                                                  );
+                                                  setTotalExtraCategoryPrice(
+                                                    (prev) => {
+                                                      if (
+                                                        idx === 0 &&
+                                                        extraInputs.length === 1
+                                                      ) {
+                                                        return 0;
+                                                      } else {
+                                                        return (
+                                                          prev -
+                                                          field.extra_category_tax
+                                                        );
+                                                      }
+                                                    }
+                                                  );
+                                                  const newTotal =
+                                                    idx === 0
+                                                      ? totalExtraCategoryPrice -
+                                                        field.extra_tax
+                                                      : totalExtraCategoryPrice -
+                                                        field.extra_category_tax;
+                                                  sessionStorage.setItem(
+                                                    "total_extra_category_price",
+                                                    newTotal.toString()
+                                                  );
+                                                }}
+                                              >
+                                                -
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      {field.comment && (
+                                        <p className="comment-text">
+                                          <span>*</span> {field?.comment}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                  {field.type === "checkbox" && (
+                                    <div className="checkbox-group">
+                                      <label>{displayName} *</label>
+                                      <div>
+                                        {field.options?.map((option, idx) => {
+                                          const optionName =
+                                            option.name || option;
+                                          const optionValue =
+                                            option.value || option;
+                                          return (
+                                            <div
+                                              key={idx}
+                                              className="checkbox-option"
+                                            >
+                                              <input
+                                                type="checkbox"
+                                                id={`${field.name}-${optionValue}`}
+                                                name={field.name}
+                                                value={optionValue}
+                                                {...register(field.name)}
+                                                defaultChecked={field.value?.includes(
+                                                  optionValue
+                                                )}
+                                              />
+                                              <label
+                                                htmlFor={`${field.name}-${optionValue}`}
+                                                className="custom-checkbox"
+                                              >
+                                                {optionName}
+                                              </label>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {errors.file && (
+                                    <p className="text-red-500">
+                                      {errors.file.message}
+                                    </p>
+                                  )}
+                                  {field.type === "file" && (
+                                    <div className="file-upload button-wrap">
+                                      <input
+                                        type="file"
+                                        accept=".docx"
+                                        id={field.name}
+                                        {...register(field.name)}
+                                        onChange={(e) =>
+                                          handleFileChange(e, field.name)
+                                        }
+                                        className="file-upload-input"
+                                      />
+                                      <label
+                                        htmlFor={field.name}
+                                        className="new-button"
+                                      >
+                                        {displayName} *
+                                      </label>
+                                      {files[field.name]?.name ? (
+                                        <div className="file-upload-info">
+                                          <p className="file-upload-file-name">
+                                            File: {files[field.name].name}
+                                          </p>
+                                          <p className="file-upload-word-count">
+                                            Word Count:
+                                            {wordCounts[field.name] || 0}
+                                          </p>
+                                        </div>
+                                      ) : field.value ? (
+                                        <div className="file-upload-info">
+                                          <p className="file-upload-file-name">
+                                            Stored File:
+                                            {field.fileName ||
+                                              field.value.split("/").pop()}
+                                          </p>
+                                          <a
+                                            href={field.value}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:text-blue-700 underline"
+                                          >
+                                            Download File
+                                          </a>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  )}
+                                  {displayName ===
+                                    "Calculation of the number of words" && (
+                                    <div>
+                                      <span className="file-upload-file-name">
+                                        {displayName}
+                                      </span>
+                                      <p className="file-upload-word-count">
+                                        {field.comment2}
+                                      </p>
+                                      {wordCounts[field.name] ? (
+                                        <p className="file-upload-word-count">
+                                          Total price = {wordCount * 0.1} $
+                                        </p>
+                                      ) : (
+                                        ""
+                                      )}
+                                    </div>
+                                  )}
+                                </>
                                 {errors[field.name] && (
                                   <p className="error">
                                     This field is required
@@ -524,16 +1234,14 @@ export default function Cart() {
                   </span>
                 </div>
                 <div className="tf-progress-msg">
-                  Buy <span className="price fw-6">$75.00</span> more to enjoy{" "}
+                  Buy <span className="price fw-6">$75.00</span> more to enjoy
                   <span className="fw-6">Free Shipping</span>
                 </div>
               </div>
               <div className="tf-page-cart-checkout">
                 <div className="tf-cart-totals-discounts">
                   <h3>Subtotal</h3>
-                  <span className="total-value">
-                    ${totalPrice.toFixed(2)} USD
-                  </span>
+                  <span className="total-value">${totalPrice2} USD</span>
                 </div>
                 <p className="tf-cart-tax">
                   Taxes and

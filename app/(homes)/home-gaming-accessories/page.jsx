@@ -1,5 +1,4 @@
 import Brands from "@/components/common/Brands";
-import Features from "@/components/common/Features2";
 import Footer2 from "@/components/footers/Footer2";
 import Header22 from "@/components/headers/Header22";
 import Topbar4 from "@/components/headers/Topbar4";
@@ -26,7 +25,6 @@ export default function page() {
         <Header22 />
         <Hero />
         <Marquee />
-        <Features bgColor="flat-spacing-3 flat-iconbox line" />
         <Collections />
         <Products />
         <Products2 />

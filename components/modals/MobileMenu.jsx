@@ -2,9 +2,9 @@
 import React from "react";
 import Link from "next/link";
 import LanguageSelect from "../common/LanguageSelect";
-import CurrencySelect from "../common/CurrencySelect";
-import { navItems } from "@/data/menu";
+// import { navItems } from "@/data/menu";
 import { usePathname } from "next/navigation";
+import Nav from "../headers/Nav";
 export default function MobileMenu() {
   const pathname = usePathname();
   const isMenuActive = (menuItem) => {
@@ -42,7 +42,7 @@ export default function MobileMenu() {
       />
       <div className="mb-canvas-content">
         <div className="mb-body">
-          <ul className="nav-ul-mb" id="wrapper-menu-navigation">
+          {/* <ul className="nav-ul-mb" id="wrapper-menu-navigation">
             {navItems.map((item, i) => (
               <li key={i} className="nav-mb-item">
                 <a
@@ -115,31 +115,20 @@ export default function MobileMenu() {
                           </Link>
                         )}
                       </li>
-                    ))}
-                  </ul>
+                    ))} */}
+          {/* </ul>
                 </div>
               </li>
             ))}
-            <li className="nav-mb-item">
-              <a
-                href="https://themeforest.net/item/ecomus-ultimate-html5-template/53417990?s_rank=3"
-                className="mb-menu-link"
-              >
-                Buy now
-              </a>
-            </li>
-          </ul>
+          </ul> */}
           <div className="mb-other-content">
             <div className="d-flex group-icon">
-              <Link href={`/wishlist`} className="site-nav-icon">
-                <i className="icon icon-heart" />
-                Wishlist
-              </Link>
               <Link href={`/home-search`} className="site-nav-icon">
                 <i className="icon icon-search" />
                 Search
               </Link>
-            </div>
+            </div>{" "}
+            <Nav />
             <div className="mb-notice">
               <Link href={`/contact-1`} className="text-need">
                 Need help ?
@@ -165,9 +154,6 @@ export default function MobileMenu() {
             Login
           </Link>
           <div className="bottom-bar-language">
-            <div className="tf-currencies">
-              <CurrencySelect />
-            </div>
             <div className="tf-languages">
               <LanguageSelect
                 parentClassName={

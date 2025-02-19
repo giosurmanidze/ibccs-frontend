@@ -101,25 +101,27 @@ export default function Header22() {
                     <div className="search-suggests-results-inner">
                       <ul>
                         {data.map((product, index) => (
-                          <li key={index}>
-                            <hr />
+                          <li key={index} className="search-card">
                             <Link
                               href={`/product-detail/${product.id}?categoryId=${product.category_id}`}
+                              className="search-card-link"
                             >
-                              <div className="img-box">
+                              <div className="search-card-img-box">
                                 <Image
-                                  alt="img"
+                                  alt={product.name}
                                   src={`http://localhost:8000/storage/${product.icon}`}
-                                  width={30}
-                                  height={30}
+                                  width={50}
+                                  height={50}
+                                  className="search-card-img"
                                 />
                               </div>
-                              <div className="box-content">
-                                <p className="title link">{product.name}</p>
-
-                                <div className="price">
+                              <div className="search-card-content">
+                                <p className="search-card-title">
+                                  {product.name}
+                                </p>
+                                <p className="search-card-price">
                                   ${product.base_price}
-                                </div>
+                                </p>
                               </div>
                             </Link>
                           </li>
@@ -128,6 +130,7 @@ export default function Header22() {
                     </div>
                   </div>
                 )}
+
                 {isLoading && searchTerm && (
                   <div className="search-suggests-results">
                     <p>Loading...</p>
@@ -224,7 +227,7 @@ export default function Header22() {
                         return (
                           <li className="nav-mb-item" key={d?.id || d?.name}>
                             <Link
-                             href={`/shop-default?categoryId=${d.id}`}
+                              href={`/shop-default?categoryId=${d.id}`}
                               className="tf-category-link mb-menu-link"
                             >
                               <div>

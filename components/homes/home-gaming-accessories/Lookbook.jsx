@@ -11,9 +11,9 @@ export default function Lookbook() {
         <div className="image">
           <Image
             className="lazyload"
-            data-src="/images/slider/lookbook-gaming-accessories.jpg"
+            data-src="/images/logo/banner.avif"
             alt="image-lookbook"
-            src="/images/slider/lookbook-gaming-accessories.jpg"
+            src="/images/logo/banner.avif"
             width={2000}
             height={918}
           />

@@ -24,6 +24,7 @@ export default function Context({ children }) {
   }, [cartProducts]);
 
   const addProductToCart = (id, qty) => {
+    console.log(services);
     if (!cartProducts.filter((elm) => elm.id == id)[0]) {
       const item = {
         ...services.filter((elm) => elm.id == id)[0],
@@ -65,7 +66,6 @@ export default function Context({ children }) {
   useEffect(() => {
     localStorage.setItem("cartList", JSON.stringify(cartProducts));
   }, [cartProducts]);
-  
 
   const contextElement = {
     cartProducts,

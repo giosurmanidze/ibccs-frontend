@@ -47,8 +47,6 @@ export default function Cart() {
 
   const handleOpenModal = async (id) => {
     setIsModalOpen(true);
-    setLoading(true);
-    setError(null);
     setIsInitialLoad(true);
 
     reset(
@@ -94,9 +92,6 @@ export default function Cart() {
       }
     } catch (err) {
       console.error("API Error:", err);
-      setError(err.response?.data?.message || "Failed to fetch product data");
-    } finally {
-      setLoading(false);
     }
   };
   const handleCloseModal = () => {
@@ -289,80 +284,81 @@ export default function Cart() {
     setIsModalOpen(false);
   };
   const updateSessionStorage = (serviceId, fieldName, fieldValue) => {
-    let existingOrderDetails =
-      JSON.parse(sessionStorage.getItem("order_details")) || [];
-
+    let existingOrderDetails = JSON.parse(sessionStorage.getItem("order_details")) || [];
+ 
+    const product = cartProducts.find(p => p.id === serviceId);
+    const totalPrice = product ? getProductTotal(product) : 0;
+ 
     const orderIndex = existingOrderDetails.findIndex(
-      (order) => order.service_id === serviceId
+        (order) => order.service_id === serviceId
     );
-
+ 
     if (orderIndex !== -1) {
-      if (fieldName) {
-        const fieldIndex = existingOrderDetails[orderIndex].fields.findIndex(
-          (field) => field.name === fieldName
-        );
-
-        if (fieldIndex !== -1) {
-          existingOrderDetails[orderIndex].fields[fieldIndex].value =
-            fieldValue;
-          if (typeof fieldValue === "object" && fieldValue.fileName) {
-            existingOrderDetails[orderIndex].fields[fieldIndex].fileName =
-              fieldValue.fileName;
-            existingOrderDetails[orderIndex].fields[fieldIndex].value =
-              fieldValue.data;
-          }
-        } else {
-          existingOrderDetails[orderIndex].fields.push({
-            name: fieldName,
-            type: "file",
-            value:
-              typeof fieldValue === "object" ? fieldValue.data : fieldValue,
-            ...(typeof fieldValue === "object" && {
-              fileName: fieldValue.fileName,
-            }),
-          });
-        }
-      } else {
-        existingOrderDetails[orderIndex].fields = fieldValue.map((field) => {
-          if (field.type === "file" && typeof field.value === "object") {
-            return {
-              ...field,
-              fileName: field.value.fileName,
-              value: field.value.data,
-            };
-          }
-          return field;
-        });
-      }
-
-      if (existingOrderDetails[orderIndex].fields.length === 0) {
-        existingOrderDetails.splice(orderIndex, 1);
-      }
-    } else {
-      if (fieldValue.length > 0) {
-        const newOrder = {
-          service_id: serviceId,
-          fields: fieldValue.map((field) => {
-            if (field.type === "file" && typeof field.value === "object") {
-              return {
-                ...field,
-                fileName: field.value.fileName,
-                value: field.value.data,
-              };
+        if (fieldName) {
+            const fieldIndex = existingOrderDetails[orderIndex].fields.findIndex(
+                (field) => field.name === fieldName
+            );
+ 
+            if (fieldIndex !== -1) {
+                existingOrderDetails[orderIndex].fields[fieldIndex].value = fieldValue;
+                if (typeof fieldValue === "object" && fieldValue.fileName) {
+                    existingOrderDetails[orderIndex].fields[fieldIndex].fileName = fieldValue.fileName;
+                    existingOrderDetails[orderIndex].fields[fieldIndex].value = fieldValue.data;
+                }
+            } else {
+                existingOrderDetails[orderIndex].fields.push({
+                    name: fieldName,
+                    type: "file",
+                    value: typeof fieldValue === "object" ? fieldValue.data : fieldValue,
+                    ...(typeof fieldValue === "object" && {
+                        fileName: fieldValue.fileName,
+                    }),
+                });
             }
-            return field;
-          }),
-        };
-
-        existingOrderDetails.push(newOrder);
-      }
+            existingOrderDetails[orderIndex].total_price = totalPrice;
+        } else {
+            existingOrderDetails[orderIndex].fields = fieldValue.map((field) => {
+                if (field.type === "file" && typeof field.value === "object") {
+                    return {
+                        ...field,
+                        fileName: field.value.fileName,
+                        value: field.value.data,
+                    };
+                }
+                return field;
+            });
+            existingOrderDetails[orderIndex].total_price = totalPrice;
+        }
+ 
+        if (existingOrderDetails[orderIndex].fields.length === 0) {
+            existingOrderDetails.splice(orderIndex, 1);
+        }
+    } else {
+        if (fieldValue.length > 0) {
+            const newOrder = {
+                service_id: serviceId,
+                fields: fieldValue.map((field) => {
+                    if (field.type === "file" && typeof field.value === "object") {
+                        return {
+                            ...field,
+                            fileName: field.value.fileName,
+                            value: field.value.data,
+                        };
+                    }
+                    return field;
+                }),
+                total_price: totalPrice
+            };
+ 
+            existingOrderDetails.push(newOrder);
+        }
     }
-
+ 
     sessionStorage.setItem(
-      "order_details",
-      JSON.stringify(existingOrderDetails)
+        "order_details",
+        JSON.stringify(existingOrderDetails)
     );
-  };
+ };
   const getCleanFieldName = (fieldName) => {
     return fieldName.split("_")[0];
   };
@@ -570,12 +566,12 @@ export default function Cart() {
           prevChanges?.[serviceId] || currentProduct?.extraTaxFields || {};
 
         const updatedExtraTaxFields = {
-          ...existingExtraTaxFields, 
+          ...existingExtraTaxFields,
           [fieldName]: {
-            name: fieldName, 
+            name: fieldName,
             value: selectedValue.text,
             extra_tax: selectedValue.extra_tax,
-            displayName: getCleanFieldName(fieldName), 
+            displayName: getCleanFieldName(fieldName),
           },
         };
 
@@ -910,53 +906,51 @@ export default function Cart() {
                                         {displayName} *
                                       </label>
                                       <div className="d-flex flex-column">
-                                        {field.options?.map((option, idx) => (
-                                          <div
-                                            key={idx}
-                                            className="d-flex align-items-center mb-2 radio-option"
-                                          >
-                                            <input
-                                              type="radio"
-                                              id={`${field.name}-${option}`}
-                                              className="form-check-input me-2"
-                                              name={field.name}
-                                              value={option}
-                                              {...register(field.name)}
-                                              onChange={(e) =>
-                                                handleChange(e, "radio")
-                                              }
-                                            />
-                                            <label
-                                              htmlFor={`${field.name}-${option}`}
-                                              className="form-check-label custom-radio"
+                                        {Object.entries(field.options)?.map(
+                                          ([key, option], idx) => (
+                                            <div
+                                              key={idx}
+                                              className="d-flex align-items-center mb-2 radio-option"
                                             >
-                                              {option}
-                                            </label>
-                                          </div>
-                                        ))}
-                                      </div>
-
-                                      {extraTax && (
-                                        <div className="extra-tax-section mt-3 flex-column">
-                                          {displayName ===
-                                            "Trademark categories" && (
-                                            <div className="d-flex flex-column gap-2 additional-charge">
-                                              <span className="fw-bold">
-                                                Consultation fee:
-                                                {field.extra_tax}$
-                                              </span>
-                                              <span className="fw-bold">
-                                                Fee for extra category(s):
-                                                {totalExtraCategoryPrice}$
-                                              </span>
-                                              <span className="fw-bold ">
-                                                Total price:
-                                                {Number(field.extra_tax) +
-                                                  totalExtraCategoryPrice}
-                                                $
-                                              </span>
+                                              {option.extra_tax && (
+                                                <div className="d-flex flex-column gap-2 additional-charge">
+                                                  <span className="fw-bold">
+                                                    Consultation fee:{" "}
+                                                    {field.extra_tax}$
+                                                  </span>
+                                                  <span className="fw-bold">
+                                                    Fee for extra category(s):{" "}
+                                                    {totalExtraCategoryPrice}$
+                                                  </span>
+                                                  <span className="fw-bold">
+                                                    Total price:{" "}
+                                                    {Number(field.extra_tax) +
+                                                      totalExtraCategoryPrice}
+                                                    $
+                                                  </span>
+                                                </div>
+                                              )}
+                                              <input
+                                                type="radio"
+                                                id={`${field.name}_${idx}`}
+                                                className="form-check-input me-2"
+                                                name={field.name}
+                                                value={JSON.stringify(option)}
+                                                {...register(field.name)}
+                                                onChange={handleSelectChange}
+                                              />
+                                              <label
+                                                htmlFor={`${field.name}_${idx}`}
+                                                className="form-check-label custom-radio"
+                                              >
+                                                {option.text}
+                                              </label>
                                             </div>
-                                          )}
+                                          )
+                                        )}
+                                      </div>
+                                      {field.extra_category_tax && (
+                                        <div className="extra-tax-section mt-3 flex-column">
                                           <div className="d-flex flex-column align-items-start mb-2">
                                             <button
                                               type="button"
@@ -1027,7 +1021,6 @@ export default function Cart() {
                                           ))}
                                         </div>
                                       )}
-
                                       {field.comment && (
                                         <p className="comment-text">
                                           <span>*</span> {field?.comment}

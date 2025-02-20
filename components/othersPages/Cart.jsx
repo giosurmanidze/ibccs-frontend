@@ -243,6 +243,7 @@ export default function Cart() {
               value = {
                 data: dataUrl,
                 fileName: currentFile.name,
+                wordCount: wordCounts[field.name] || 0,
               };
             } catch (error) {
               console.error(`Error processing file ${field.name}:`, error);
@@ -252,9 +253,13 @@ export default function Cart() {
             value = {
               data: currentFile.value,
               fileName: currentFile.name,
+              wordCount: wordCounts[field.name] || 0,
             };
           } else {
-            value = existingFile?.value || null;
+            value = {
+              ...existingFile,
+              wordCount: existingFile?.wordCount || 0,
+            };
           }
         }
 
@@ -284,81 +289,109 @@ export default function Cart() {
     setIsModalOpen(false);
   };
   const updateSessionStorage = (serviceId, fieldName, fieldValue) => {
-    let existingOrderDetails = JSON.parse(sessionStorage.getItem("order_details")) || [];
- 
-    const product = cartProducts.find(p => p.id === serviceId);
-    const totalPrice = product ? getProductTotal(product) : 0;
- 
+    let existingOrderDetails =
+      JSON.parse(sessionStorage.getItem("order_details")) || [];
+  
+    const calculateTotalPrice = (fields) => {
+      const trademarkField = fields.find(
+        (field) =>
+          field.extra_category_tax && field.extra_tax_values?.length > 0
+      );
+  
+      if (trademarkField) {
+        return (
+          Number(trademarkField.extra_tax) + Number(totalExtraCategoryPrice)
+        );
+      }
+  
+      const product = cartProducts.find((p) => p.id === serviceId);
+      return product ? getProductTotal(product) : 0;
+    };
+  
     const orderIndex = existingOrderDetails.findIndex(
-        (order) => order.service_id === serviceId
+      (order) => order.service_id === serviceId
     );
- 
+  
     if (orderIndex !== -1) {
-        if (fieldName) {
-            const fieldIndex = existingOrderDetails[orderIndex].fields.findIndex(
-                (field) => field.name === fieldName
-            );
- 
-            if (fieldIndex !== -1) {
-                existingOrderDetails[orderIndex].fields[fieldIndex].value = fieldValue;
-                if (typeof fieldValue === "object" && fieldValue.fileName) {
-                    existingOrderDetails[orderIndex].fields[fieldIndex].fileName = fieldValue.fileName;
-                    existingOrderDetails[orderIndex].fields[fieldIndex].value = fieldValue.data;
-                }
-            } else {
-                existingOrderDetails[orderIndex].fields.push({
-                    name: fieldName,
-                    type: "file",
-                    value: typeof fieldValue === "object" ? fieldValue.data : fieldValue,
-                    ...(typeof fieldValue === "object" && {
-                        fileName: fieldValue.fileName,
-                    }),
-                });
+      if (fieldName) {
+        const fieldIndex = existingOrderDetails[orderIndex].fields.findIndex(
+          (field) => field.name === fieldName
+        );
+  
+        if (fieldIndex !== -1) {
+          existingOrderDetails[orderIndex].fields[fieldIndex].value =
+            fieldValue;
+          if (typeof fieldValue === "object" && fieldValue.fileName) {
+            existingOrderDetails[orderIndex].fields[fieldIndex].fileName =
+              fieldValue.fileName;
+            existingOrderDetails[orderIndex].fields[fieldIndex].value =
+              fieldValue.data;
+            
+            // Add word count for file fields
+            if (fieldValue.wordCount !== undefined) {
+              existingOrderDetails[orderIndex].fields[fieldIndex].wordCount =
+                fieldValue.wordCount;
             }
-            existingOrderDetails[orderIndex].total_price = totalPrice;
+          }
         } else {
-            existingOrderDetails[orderIndex].fields = fieldValue.map((field) => {
-                if (field.type === "file" && typeof field.value === "object") {
-                    return {
-                        ...field,
-                        fileName: field.value.fileName,
-                        value: field.value.data,
-                    };
-                }
-                return field;
-            });
-            existingOrderDetails[orderIndex].total_price = totalPrice;
+          existingOrderDetails[orderIndex].fields.push({
+            name: fieldName,
+            type: "file",
+            value:
+              typeof fieldValue === "object" ? fieldValue.data : fieldValue,
+            ...(typeof fieldValue === "object" && {
+              fileName: fieldValue.fileName,
+              wordCount: fieldValue.wordCount
+            }),
+          });
         }
- 
-        if (existingOrderDetails[orderIndex].fields.length === 0) {
-            existingOrderDetails.splice(orderIndex, 1);
-        }
-    } else {
-        if (fieldValue.length > 0) {
-            const newOrder = {
-                service_id: serviceId,
-                fields: fieldValue.map((field) => {
-                    if (field.type === "file" && typeof field.value === "object") {
-                        return {
-                            ...field,
-                            fileName: field.value.fileName,
-                            value: field.value.data,
-                        };
-                    }
-                    return field;
-                }),
-                total_price: totalPrice
+        existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
+          existingOrderDetails[orderIndex].fields
+        );
+      } else {
+        existingOrderDetails[orderIndex].fields = fieldValue.map((field) => {
+          if (field.type === "file" && typeof field.value === "object") {
+            return {
+              ...field,
+              fileName: field.value.fileName,
+              value: field.value.data,
+              wordCount: field.value.wordCount
             };
- 
-            existingOrderDetails.push(newOrder);
-        }
+          }
+          return field;
+        });
+        existingOrderDetails[orderIndex].total_price =
+          calculateTotalPrice(fieldValue);
+      }
+  
+      if (existingOrderDetails[orderIndex].fields.length === 0) {
+        existingOrderDetails.splice(orderIndex, 1);
+      }
+    } else {
+      if (fieldValue.length > 0) {
+        existingOrderDetails.push({
+          service_id: serviceId,
+          fields: fieldValue.map((field) => {
+            if (field.type === "file" && typeof field.value === "object") {
+              return {
+                ...field,
+                fileName: field.value.fileName,
+                value: field.value.data,
+                wordCount: field.value.wordCount
+              };
+            }
+            return field;
+          }),
+          total_price: calculateTotalPrice(fieldValue),
+        });
+      }
     }
- 
+  
     sessionStorage.setItem(
-        "order_details",
-        JSON.stringify(existingOrderDetails)
+      "order_details",
+      JSON.stringify(existingOrderDetails)
     );
- };
+  };
   const getCleanFieldName = (fieldName) => {
     return fieldName.split("_")[0];
   };
@@ -373,6 +406,7 @@ export default function Cart() {
     if (serviceOrder?.fields && isInitialLoad) {
       const fileUpdates = {};
       const formValues = {};
+      const wordCountUpdates = {};
 
       serviceOrder.fields.forEach((field) => {
         if (field.type === "file" && field.value) {
@@ -381,6 +415,11 @@ export default function Cart() {
             value: field.value,
           };
           formValues[field.name] = field.value;
+
+          // Restore word count if available
+          if (field.wordCount !== undefined) {
+            wordCountUpdates[field.name] = field.wordCount;
+          }
         } else if (
           !["physical_person", "legal_person", "director"].includes(field.type)
         ) {
@@ -411,6 +450,14 @@ export default function Cart() {
         setFiles((prev) => ({
           ...prev,
           ...fileUpdates,
+        }));
+      }
+
+      // Restore word counts
+      if (Object.keys(wordCountUpdates).length > 0) {
+        setWordCounts((prev) => ({
+          ...prev,
+          ...wordCountUpdates,
         }));
       }
 

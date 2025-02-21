@@ -32,15 +32,12 @@ export default function Cart() {
     setCartProducts((pre) => pre.filter((elm) => elm.id !== id));
 
     let existingOrderDetails =
-      JSON.parse(sessionStorage.getItem("order_details")) || [];
+      JSON.parse(localStorage.getItem("order_details")) || [];
     existingOrderDetails = existingOrderDetails.filter(
       (order) => order.service_id !== id
     );
 
-    sessionStorage.setItem(
-      "order_details",
-      JSON.stringify(existingOrderDetails)
-    );
+    localStorage.setItem("order_details", JSON.stringify(existingOrderDetails));
   };
 
   const [productData, setProductData] = useState(null);
@@ -62,8 +59,7 @@ export default function Cart() {
       const response = await axiosInstance.get(`services/${id}`);
       setProductData(response.data);
 
-      const savedData =
-        JSON.parse(sessionStorage.getItem("order_details")) || [];
+      const savedData = JSON.parse(localStorage.getItem("order_details")) || [];
       const existingOrder = savedData.find((order) => order.service_id === id);
 
       if (existingOrder?.fields) {
@@ -83,7 +79,6 @@ export default function Cart() {
         });
 
         setFiles(newFiles);
-
         reset(defaultValues, {
           keepDefaultValues: true,
         });
@@ -196,6 +191,7 @@ export default function Cart() {
     if (tempCartChanges) {
       setCartProducts((prevProducts) =>
         prevProducts.map((product) => {
+          console.log("product", product);
           if (tempCartChanges[product.id]) {
             return {
               ...product,
@@ -210,7 +206,7 @@ export default function Cart() {
     setIsModalOpen(false);
     const serviceId = productData?.id;
     let existingOrderDetails =
-      JSON.parse(sessionStorage.getItem("order_details")) || [];
+      JSON.parse(localStorage.getItem("order_details")) || [];
     let serviceOrder = existingOrderDetails.find(
       (order) => order.service_id === serviceId
     );
@@ -284,40 +280,86 @@ export default function Cart() {
         (Array.isArray(field.value) && field.value.length > 0)
     );
 
-    updateSessionStorage(serviceId, null, filteredFields);
+    updatelocalStorage(serviceId, null, filteredFields);
     reset();
     setIsModalOpen(false);
   };
-  const updateSessionStorage = (serviceId, fieldName, fieldValue) => {
+  const updatelocalStorage = (serviceId, fieldName, fieldValue) => {
     let existingOrderDetails =
-      JSON.parse(sessionStorage.getItem("order_details")) || [];
-  
+      JSON.parse(localStorage.getItem("order_details")) || [];
+
     const calculateTotalPrice = (fields) => {
-      const trademarkField = fields.find(
+      // Find the corresponding cart product
+      const product = cartProducts.find((p) => p.id === serviceId);
+
+      // Start with base price
+      let basePrice = product ? getProductTotal(product) : 0;
+
+      // Parse additional fields to check word count calculation
+      let additionalFields = [];
+      try {
+        additionalFields = product
+          ? JSON.parse(product.additional_fields || "[]")
+          : [];
+      } catch (error) {
+        console.error("Error parsing additional fields:", error);
+      }
+
+      // Check if word count calculation is enabled
+      const isWordCountCalculationEnabled = additionalFields.some(
         (field) =>
-          field.extra_category_tax && field.extra_tax_values?.length > 0
+          field.name === "Calculation of the number of words" &&
+          field.calculation_fee === true
       );
-  
-      if (trademarkField) {
-        return (
-          Number(trademarkField.extra_tax) + Number(totalExtraCategoryPrice)
+
+      // Calculate additional word count price
+      const wordCountPrice = isWordCountCalculationEnabled
+        ? fields
+            .filter((field) => field.type === "file" && field.wordCount)
+            .reduce((total, field) => {
+              // Precise calculation of word count price
+              return total + Number((field.wordCount * 0.1).toFixed(2));
+            }, 0)
+        : 0;
+
+      // Calculate total price (base price + word count price)
+      const totalPrice = Number((basePrice + wordCountPrice).toFixed(2));
+
+      // Update cart products with word count fee if applicable
+      if (isWordCountCalculationEnabled && wordCountPrice > 0) {
+        setCartProducts((prevProducts) =>
+          prevProducts.map((p) => {
+            if (p.id === serviceId) {
+              return {
+                ...p,
+                extraTaxFields: {
+                  ...p.extraTaxFields,
+                  word_count_fee: {
+                    name: "Word Count Fee",
+                    extra_tax: wordCountPrice.toFixed(2),
+                    displayName: "Word Count Pricing",
+                  },
+                },
+              };
+            }
+            return p;
+          })
         );
       }
-  
-      const product = cartProducts.find((p) => p.id === serviceId);
-      return product ? getProductTotal(product) : 0;
+
+      return totalPrice;
     };
-  
+
     const orderIndex = existingOrderDetails.findIndex(
       (order) => order.service_id === serviceId
     );
-  
+
     if (orderIndex !== -1) {
       if (fieldName) {
         const fieldIndex = existingOrderDetails[orderIndex].fields.findIndex(
           (field) => field.name === fieldName
         );
-  
+
         if (fieldIndex !== -1) {
           existingOrderDetails[orderIndex].fields[fieldIndex].value =
             fieldValue;
@@ -326,13 +368,18 @@ export default function Cart() {
               fieldValue.fileName;
             existingOrderDetails[orderIndex].fields[fieldIndex].value =
               fieldValue.data;
-            
+
             // Add word count for file fields
             if (fieldValue.wordCount !== undefined) {
               existingOrderDetails[orderIndex].fields[fieldIndex].wordCount =
                 fieldValue.wordCount;
             }
           }
+
+          // Explicitly recalculate and update total price
+          existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
+            existingOrderDetails[orderIndex].fields
+          );
         } else {
           existingOrderDetails[orderIndex].fields.push({
             name: fieldName,
@@ -341,29 +388,35 @@ export default function Cart() {
               typeof fieldValue === "object" ? fieldValue.data : fieldValue,
             ...(typeof fieldValue === "object" && {
               fileName: fieldValue.fileName,
-              wordCount: fieldValue.wordCount
+              wordCount: fieldValue.wordCount,
             }),
           });
+
+          // Recalculate total price
+          existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
+            existingOrderDetails[orderIndex].fields
+          );
         }
-        existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
-          existingOrderDetails[orderIndex].fields
-        );
       } else {
+        // Update fields and recalculate total price
         existingOrderDetails[orderIndex].fields = fieldValue.map((field) => {
           if (field.type === "file" && typeof field.value === "object") {
             return {
               ...field,
               fileName: field.value.fileName,
               value: field.value.data,
-              wordCount: field.value.wordCount
+              wordCount: field.value.wordCount,
             };
           }
           return field;
         });
-        existingOrderDetails[orderIndex].total_price =
-          calculateTotalPrice(fieldValue);
+
+        // Recalculate total price
+        existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
+          existingOrderDetails[orderIndex].fields
+        );
       }
-  
+
       if (existingOrderDetails[orderIndex].fields.length === 0) {
         existingOrderDetails.splice(orderIndex, 1);
       }
@@ -377,7 +430,7 @@ export default function Cart() {
                 ...field,
                 fileName: field.value.fileName,
                 value: field.value.data,
-                wordCount: field.value.wordCount
+                wordCount: field.value.wordCount,
               };
             }
             return field;
@@ -386,17 +439,14 @@ export default function Cart() {
         });
       }
     }
-  
-    sessionStorage.setItem(
-      "order_details",
-      JSON.stringify(existingOrderDetails)
-    );
+
+    localStorage.setItem("order_details", JSON.stringify(existingOrderDetails));
   };
   const getCleanFieldName = (fieldName) => {
     return fieldName.split("_")[0];
   };
 
-  const savedData = JSON.parse(sessionStorage.getItem("order_details")) || [];
+  const savedData = JSON.parse(localStorage.getItem("order_details")) || [];
 
   const serviceOrder = savedData.find(
     (order) => order.service_id === productData?.id
@@ -419,22 +469,6 @@ export default function Cart() {
           // Restore word count if available
           if (field.wordCount !== undefined) {
             wordCountUpdates[field.name] = field.wordCount;
-          }
-        } else if (
-          !["physical_person", "legal_person", "director"].includes(field.type)
-        ) {
-          formValues[field.name] = field.value;
-
-          if (
-            field.type === "radio" &&
-            field.value === "Specify a category" &&
-            field.extra_tax_values
-          ) {
-            setExtraInputs(field.extra_tax_values);
-            sessionStorage.setItem(
-              "extra_tax_values",
-              JSON.stringify(field.extra_tax_values)
-            );
           }
         }
       });
@@ -489,7 +523,7 @@ export default function Cart() {
   };
   const handleCheckOrder = () => {
     let existingOrderDetails =
-      JSON.parse(sessionStorage.getItem("order_details")) || [];
+      JSON.parse(localStorage.getItem("order_details")) || [];
 
     if (existingOrderDetails.length === cartProducts.length) {
       if (cartProducts.length !== 0) {
@@ -515,7 +549,6 @@ export default function Cart() {
 
   const [files, setFiles] = useState({});
   const [wordCounts, setWordCounts] = useState({});
-
   const countWords = (file, fieldName) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -528,10 +561,48 @@ export default function Cart() {
             .split(/\s+/)
             .filter((word) => word.length > 0).length;
 
+          // Update word counts
           setWordCounts((prev) => ({
             ...prev,
             [fieldName]: wordCount,
           }));
+
+          // Update temp cart changes with word count fee
+          const serviceId = productData?.id;
+          if (serviceId) {
+            setTempCartChanges((prevChanges) => {
+              const currentProduct = cartProducts.find(
+                (p) => p.id === serviceId
+              );
+              const existingExtraTaxFields = {
+                ...(prevChanges?.[serviceId] ||
+                  currentProduct?.extraTaxFields ||
+                  {}),
+              };
+
+              // Remove any existing word count fee before adding new one
+              const filteredExtraTaxFields = Object.fromEntries(
+                Object.entries(existingExtraTaxFields).filter(
+                  ([key]) => key !== "word_count_fee"
+                )
+              );
+
+              const wordCountPrice = Number((wordCount * 0.1).toFixed(2));
+
+              return {
+                ...prevChanges,
+                [serviceId]: {
+                  ...filteredExtraTaxFields,
+                  word_count_fee: {
+                    name: "Word Count Fee",
+                    value: `${wordCount} words`,
+                    extra_tax: wordCountPrice.toString(),
+                    displayName: "Word Count Pricing",
+                  },
+                },
+              };
+            });
+          }
         })
         .catch((error) => {
           console.error("Error reading the document:", error);
@@ -539,9 +610,11 @@ export default function Cart() {
     };
     reader.readAsArrayBuffer(file);
   };
-
-  const handleFileChange = (event, fieldName) => {
+  console.log(cartProducts);
+  const handleFileChange = (event, fieldName, field) => {
     const file = event.target.files[0];
+    const serviceId = productData?.id;
+
     if (file) {
       setFiles((prev) => ({
         ...prev,
@@ -564,7 +637,10 @@ export default function Cart() {
         }
       });
 
-      countWords(file, fieldName);
+      // Check if word count calculation is enabled
+      if (field.calculation_fee) {
+        countWords(file, fieldName);
+      }
     } else {
       alert("Please upload a .docx file.");
     }
@@ -582,7 +658,7 @@ export default function Cart() {
   };
 
   const [totalExtraCategoryPrice, setTotalExtraCategoryPrice] = useState(() => {
-    const savedPrice = sessionStorage.getItem("total_extra_category_price");
+    const savedPrice = localStorage.getItem("total_extra_category_price");
     const parsedPrice = parseFloat(savedPrice);
     return !isNaN(parsedPrice) ? parsedPrice : 0;
   });
@@ -591,10 +667,7 @@ export default function Cart() {
     const priceToStore = !isNaN(totalExtraCategoryPrice)
       ? totalExtraCategoryPrice
       : 0;
-    sessionStorage.setItem(
-      "total_extra_category_price",
-      priceToStore.toString()
-    );
+    localStorage.setItem("total_extra_category_price", priceToStore.toString());
   }, [totalExtraCategoryPrice]);
 
   const handleSelectChange = (e) => {
@@ -638,7 +711,6 @@ export default function Cart() {
             [serviceId]: existingFields,
           };
         }
-
         const updatedFields = { ...prevChanges[serviceId] };
         delete updatedFields[fieldName];
 
@@ -652,6 +724,7 @@ export default function Cart() {
     handleChange(e, selectedValue);
   };
   const [totalPrice2, setTotalPrice2] = useState(0);
+
   useEffect(() => {
     const subtotal = cartProducts.reduce((accumulator, elm) => {
       const serviceTotal =
@@ -665,9 +738,9 @@ export default function Cart() {
 
       return accumulator + serviceTotal;
     }, 0);
-
     setTotalPrice2(subtotal);
   }, [cartProducts]);
+
   return (
     <section className="flat-spacing-11">
       <ToastContainer />
@@ -816,24 +889,104 @@ export default function Cart() {
                             elm.extraTaxFields) &&
                             Object.entries(
                               tempCartChanges?.[elm.id] || elm.extraTaxFields
-                            ).map(([fieldName, field]) => (
-                              <div
-                                key={field}
-                                className="extra-tax-item small d-flex justify-content-between align-items-center border-top border-secondary-subtle pt-1 mb-1"
-                              >
-                                <span className="text-secondary">
-                                  {getCleanFieldName(fieldName)}({field?.value})
-                                  :
-                                </span>
-                                <span className="text-success">
-                                  +${Number(field.extra_tax).toFixed(2)}
-                                </span>
-                              </div>
-                            ))}
+                            )
+                              .filter(
+                                ([fieldName]) => fieldName !== "word_count_fee"
+                              ) // Exclude word count fee
+                              .map(([fieldName, field]) => (
+                                <div
+                                  key={field?.name}
+                                  className="extra-tax-item small d-flex justify-content-between align-items-center border-top border-secondary-subtle pt-1 mb-1"
+                                >
+                                  <span className="text-secondary">
+                                    {getCleanFieldName(fieldName)}(
+                                    {field?.value}) :
+                                  </span>
+                                  <span className="text-success">
+                                    +${Number(field.extra_tax).toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
 
+                          {(tempCartChanges?.[elm.id]?.word_count_fee ||
+                            savedData
+                              .find((order) => order.service_id === elm.id)
+                              ?.fields?.some(
+                                (field) =>
+                                  field.type === "file" && field.wordCount
+                              )) && (
+                            <div
+                              key="word-count-fee"
+                              className="word-count-item small d-flex justify-content-between align-items-center border-top border-secondary-subtle pt-1 mb-1"
+                            >
+                              <span className="text-secondary">
+                                {tempCartChanges?.[elm.id]?.word_count_fee
+                                  ? `${
+                                      tempCartChanges[elm.id].word_count_fee
+                                        .value
+                                    }`
+                                  : "Document words count fee"}
+                                :
+                              </span>
+                              <span className="text-success">
+                                +$
+                                {Number(
+                                  tempCartChanges?.[elm.id]?.word_count_fee
+                                    ?.extra_tax ||
+                                    savedData
+                                      .find(
+                                        (order) => order.service_id === elm.id
+                                      )
+                                      ?.fields?.filter(
+                                        (field) =>
+                                          field.type === "file" &&
+                                          field.wordCount
+                                      )
+                                      .reduce(
+                                        (total, field) =>
+                                          total + field.wordCount * 0.1,
+                                        0
+                                      )
+                                      .toFixed(2) ||
+                                    0
+                                ).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
                           <div className="fw-bold d-flex justify-content-between align-items-center border-top pt-2 mt-2 total_price">
                             <span>Total:</span>
-                            <span>${getProductTotal(elm).toFixed(2)}</span>
+                            <span>
+                              $
+                              {(() => {
+                                const orderDetail = savedData.find(
+                                  (order) => order.service_id === elm.id
+                                );
+
+                                if (orderDetail && orderDetail.total_price) {
+                                  return Number(
+                                    orderDetail.total_price
+                                  ).toFixed(2);
+                                }
+
+                                const baseTotal = getProductTotal(elm);
+                                const wordCountTotal =
+                                  savedData
+                                    .find(
+                                      (order) => order.service_id === elm.id
+                                    )
+                                    ?.fields?.filter(
+                                      (field) =>
+                                        field.type === "file" && field.wordCount
+                                    )
+                                    .reduce(
+                                      (total, field) =>
+                                        total + field.wordCount * 0.1,
+                                      0
+                                    ) || 0;
+
+                                return (baseTotal + wordCountTotal).toFixed(2);
+                              })()}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -937,7 +1090,7 @@ export default function Cart() {
                                               key={idx}
                                               value={JSON.stringify(option)}
                                             >
-                                              {option.text}{" "}
+                                              {option.text}
                                               {option.extra_tax
                                                 ? `(Extra Tax: $${option.extra_tax})`
                                                 : ""}
@@ -962,15 +1115,15 @@ export default function Cart() {
                                               {option.extra_tax && (
                                                 <div className="d-flex flex-column gap-2 additional-charge">
                                                   <span className="fw-bold">
-                                                    Consultation fee:{" "}
+                                                    Consultation fee:
                                                     {field.extra_tax}$
                                                   </span>
                                                   <span className="fw-bold">
-                                                    Fee for extra category(s):{" "}
+                                                    Fee for extra category(s):
                                                     {totalExtraCategoryPrice}$
                                                   </span>
                                                   <span className="fw-bold">
-                                                    Total price:{" "}
+                                                    Total price:
                                                     {Number(field.extra_tax) +
                                                       totalExtraCategoryPrice}
                                                     $
@@ -1056,7 +1209,7 @@ export default function Cart() {
                                                         field.extra_tax
                                                       : totalExtraCategoryPrice -
                                                         field.extra_category_tax;
-                                                  sessionStorage.setItem(
+                                                  localStorage.setItem(
                                                     "total_extra_category_price",
                                                     newTotal.toString()
                                                   );
@@ -1124,7 +1277,7 @@ export default function Cart() {
                                         id={field.name}
                                         {...register(field.name)}
                                         onChange={(e) =>
-                                          handleFileChange(e, field.name)
+                                          handleFileChange(e, field.name, field)
                                         }
                                         className="file-upload-input"
                                       />
@@ -1134,47 +1287,33 @@ export default function Cart() {
                                       >
                                         {displayName} *
                                       </label>
-                                      {files[field.name]?.name ? (
-                                        <div className="file-upload-info">
-                                          <p className="file-upload-file-name">
-                                            File: {files[field.name].name}
-                                          </p>
-                                          <p className="file-upload-word-count">
-                                            Word Count:
-                                            {wordCounts[field.name] || 0}
-                                          </p>
-                                        </div>
-                                      ) : field.value ? (
-                                        <div className="file-upload-info">
-                                          <p className="file-upload-file-name">
-                                            Stored File:
-                                            {field.fileName ||
-                                              field.value.split("/").pop()}
-                                          </p>
-                                          <a
-                                            href={field.value}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-500 hover:text-blue-700 underline"
-                                          >
-                                            Download File
-                                          </a>
-                                        </div>
-                                      ) : null}
+                                      {files[field.name]?.name && (
+                                        <p className="file-upload-file-name">
+                                          File: {files[field.name]?.name}
+                                        </p>
+                                      )}
+                                      {files[field.name]?.name &&
+                                        field?.calculation_fee && (
+                                          <div className="file-upload-info">
+                                            <p className="file-upload-word-count">
+                                              Word Count:
+                                              {` ${
+                                                wordCounts[field.name] || 0
+                                              }`}
+                                            </p>
+                                          </div>
+                                        )}
                                     </div>
                                   )}
-                                  {displayName ===
-                                    "Calculation of the number of words" && (
+                                  <p className="file-upload-word-count ">
+                                    {field.comment2}
+                                  </p>
+                                  {wordCounts[field.name] && (
                                     <div>
-                                      <span className="file-upload-file-name">
-                                        {displayName}
-                                      </span>
-                                      <p className="file-upload-word-count">
-                                        {field.comment2}
-                                      </p>
                                       {wordCounts[field.name] ? (
                                         <p className="file-upload-word-count">
-                                          Total price = {wordCount * 0.1} $
+                                          Total price =
+                                          {` ${wordCounts[field.name] * 0.1}`} $
                                         </p>
                                       ) : (
                                         ""

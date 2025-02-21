@@ -55,7 +55,7 @@ export default function Checkout() {
       localStorage.setItem("store_user_data", JSON.stringify(data));
     }
 
-    const order_details = JSON.parse(sessionStorage.getItem("order_details"));
+    const order_details = JSON.parse(localStorage.getItem("order_details"));
 
     // Helper function to clean the field names (remove suffix)
     const cleanFieldNames = (fields) => {
@@ -403,7 +403,8 @@ export default function Checkout() {
                                   0
                                 )
                               : 0)
-                          ).toFixed(2)}$
+                          ).toFixed(2)}
+                          $
                         </span>
                       </div>
                     </li>

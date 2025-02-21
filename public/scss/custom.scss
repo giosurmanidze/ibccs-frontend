@@ -1207,6 +1207,13 @@ input[type="file"] {
     grid-template-columns: 100%;
   }
 }
+.file-upload-word-count {
+  color: rgb(208, 89, 46);
+}
+.file-upload-file-name {
+  margin-top: 5px;
+  color: #5ca595;
+}
 @media (min-width: 765px) {
   .tf-cart-item .cart-quantity,
   .tf-cart-item .cart-total,

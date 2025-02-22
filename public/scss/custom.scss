@@ -33,7 +33,9 @@
     line-height: normal;
   }
 }
-
+.Toastify {
+  z-index: 100;
+}
 .swiper-slide {
   display: flex;
   justify-content: center; /* Center align cards within the slide */

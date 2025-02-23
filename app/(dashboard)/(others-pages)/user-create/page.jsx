@@ -139,7 +139,7 @@ export default function BlankPage() {
                 id="name"
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 placeholder="John"
-              />{" "}
+              />
               {errors.name && <p className="error">{errors.name.message}</p>}
             </div>
             <div>
@@ -155,7 +155,7 @@ export default function BlankPage() {
                 id="lastname"
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 placeholder="Doe"
-              />{" "}
+              />
               {errors.lastname && (
                 <p className="error">{errors.lastname.message}</p>
               )}
@@ -173,7 +173,7 @@ export default function BlankPage() {
                 {...register("phone_number")}
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 placeholder="Flowbite"
-              />{" "}
+              />
               {errors.phone_number && (
                 <p className="error">{errors.phone_number.message}</p>
               )}
@@ -191,7 +191,7 @@ export default function BlankPage() {
               {...register("email")}
               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               placeholder="john.doe@company.com"
-            />{" "}
+            />
             {errors.email && <p className="error">{errors.email.message}</p>}
           </div>
           <label
@@ -211,7 +211,7 @@ export default function BlankPage() {
                 {role.name}
               </option>
             ))}
-          </select>{" "}
+          </select>
           {errors.role_id && <p className="error">{errors.role_id.message}</p>}
           <div className="space-y-4  mt-6">
             <div
@@ -238,7 +238,7 @@ export default function BlankPage() {
                       </g>
                     </svg>
                     <h2 className="text-center text-gray-400 text-xs leading-4">
-                      PNG, JPG or PDF, smaller than 15MB
+                      PNG, JPG, JPEG
                     </h2>
                   </>
                 ) : (
@@ -274,7 +274,7 @@ export default function BlankPage() {
                     <div className="flex w-28 h-9 px-2 flex-col bg-indigo-600 rounded-full shadow text-white text-xs font-semibold leading-4 items-center justify-center cursor-pointer hover:bg-indigo-700 transition-colors focus:outline-none">
                       Choose Photo
                     </div>
-                  </label>{" "}
+                  </label>
                   {errors.photo && (
                     <p classphoto="error">{errors.name.message}</p>
                   )}

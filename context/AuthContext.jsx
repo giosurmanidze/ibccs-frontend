@@ -4,11 +4,18 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = () => {
     const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("jwt_token");
+
     try {
-      if (storedUser && storedUser !== "undefined") {
+      if (storedUser && token && storedUser !== "undefined") {
         setUser(JSON.parse(storedUser));
       } else {
         setUser(null);
@@ -16,8 +23,10 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Error parsing user data:", error);
       setUser(null);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
   const login = (userData, token) => {
     localStorage.setItem("jwt_token", token);
@@ -33,7 +42,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

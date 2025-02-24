@@ -1,17 +1,6 @@
-import type React from "react";
 import Link from "next/link";
 
-interface DropdownItemProps {
-  tag?: "a" | "button";
-  href?: string;
-  onClick?: () => void;
-  onItemClick?: () => void;
-  baseClassName?: string;
-  className?: string;
-  children: React.ReactNode;
-}
-
-export const DropdownItem: React.FC<DropdownItemProps> = ({
+export const DropdownItem = ({
   tag = "button",
   href,
   onClick,
@@ -22,7 +11,7 @@ export const DropdownItem: React.FC<DropdownItemProps> = ({
 }) => {
   const combinedClasses = `${baseClassName} ${className}`.trim();
 
-  const handleClick = (event: React.MouseEvent) => {
+  const handleClick = (event) => {
     if (tag === "button") {
       event.preventDefault();
     }

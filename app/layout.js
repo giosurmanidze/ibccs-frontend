@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import Context from "@/context/Context";
+import { AuthProvider } from "@/context/AuthContext";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();

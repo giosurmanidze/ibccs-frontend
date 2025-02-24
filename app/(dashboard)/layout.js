@@ -4,7 +4,6 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
 import "@/public/css/tail.css";
@@ -12,6 +11,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
+import AppHeader from "@/layout/AppHeader";
 
 export default function AdminLayout({ children }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();

@@ -6,6 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast, ToastContainer } from "react-toastify";
 import * as yup from "yup";
 
 const validationSchema = yup.object().shape({
@@ -46,7 +47,7 @@ export default function SignInForm() {
       router.push("/dashboard");
     } catch (error) {
       console.log(error);
-      // toast.error(error?.response?.data["error"]);
+      toast.error(error?.response?.data["error"]);
     }
   };
 
@@ -58,9 +59,9 @@ export default function SignInForm() {
     }
   }, [user, loading, router]);
 
-
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
+      <ToastContainer />
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div>
@@ -68,7 +69,7 @@ export default function SignInForm() {
               <div class="mb-5">
                 <label
                   for="email"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
                   Email address
                 </label>

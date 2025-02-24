@@ -175,7 +175,7 @@ export default function Header22() {
                   <li className="nav-account">
                     <i className="icon icon-account" />
                     <span className="text">
-                      {user.name} {user.lastname}
+                      {user?.name} {user?.lastname}
                     </span>
                     <button onClick={logout}>Logout</button>
                   </li>

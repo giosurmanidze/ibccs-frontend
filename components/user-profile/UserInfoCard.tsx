@@ -1,18 +1,42 @@
 "use client";
-import React from "react";
-import { useModal } from "../../hooks/useModal";
+import { useModal } from "@/hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
+import { useAuth } from "@/context/AuthContext";
+import * as yup from "yup";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+
+const validationSchema = yup.object().shape({
+  name: yup.string().required("Name is required"),
+  lastname: yup.string().required("Lastname is required"),
+  email: yup.string().required("Email is required"),
+  phone_number: yup.string().required("Phone number is required"),
+});
 
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
-  const handleSave = () => {
-    // Handle save logic here
-    console.log("Saving changes...");
-    closeModal();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: yupResolver(validationSchema),
+  });
+
+  const handleSave = (data) => {
+    console.log(data);
+    // closeModal();
   };
+
+  const { user } = useAuth();
+
+  console.log(user);
+
   return (
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -102,27 +126,17 @@ export default function UserInfoCard() {
               Update your details to keep your profile up-to-date.
             </p>
           </div>
-          <form className="flex flex-col">
+          <form onSubmit={handleSubmit(handleSave)} className="flex flex-col">
             <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
               <div>
                 <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
                   Social Links
                 </h5>
 
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div>
-                    <Label>Facebook</Label>
-                    <Input
-                      type="text"
-                      defaultValue="https://www.facebook.com/PimjoHQ"
-                    />
-                  </div>
-
-                  <div>
+                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2"> <div>
                     <Label>X.com</Label>
                     <Input type="text" defaultValue="https://x.com/PimjoHQ" />
                   </div>
-
                   <div>
                     <Label>Linkedin</Label>
                     <Input
@@ -130,7 +144,6 @@ export default function UserInfoCard() {
                       defaultValue="https://www.linkedin.com/company/pimjo"
                     />
                   </div>
-
                   <div>
                     <Label>Instagram</Label>
                     <Input
@@ -138,6 +151,8 @@ export default function UserInfoCard() {
                       defaultValue="https://instagram.com/PimjoHQ"
                     />
                   </div>
+                 
+                 
                 </div>
               </div>
               <div className="mt-7">
@@ -146,24 +161,69 @@ export default function UserInfoCard() {
                 </h5>
 
                 <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>First Name</Label>
-                    <Input type="text" defaultValue="Musharof" />
+                <div className="mb-5">
+                    <label
+                      for="name"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Firstname
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      placeholder="Please enter firstname"
+                      {...register("name")}
+                    />
+                    <p className="error">{errors.name?.message}</p>
                   </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Last Name</Label>
-                    <Input type="text" defaultValue="Chowdhury" />
+                  <div className="mb-5">
+                    <label
+                      for="lastname"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Lastname
+                    </label>
+                    <input
+                      type="lastname"
+                      id="lastname"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      placeholder="Please enter lastname"
+                      {...register("lastname")}
+                    />
+                    <p className="error">{errors.lastname?.message}</p>
                   </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Email Address</Label>
-                    <Input type="text" defaultValue="randomuser@pimjo.com" />
+                  <div className="mb-5">
+                    <label
+                      for="email"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Email address
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      placeholder="Please enter email"
+                      {...register("email")}
+                    />
+                    <p className="error">{errors.email?.message}</p>
                   </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Phone</Label>
-                    <Input type="text" defaultValue="+09 363 398 46" />
+                  <div className="mb-5">
+                    <label
+                      for="phone_number"
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Phone number
+                    </label>
+                    <input
+                      type="text"
+                      id="phone_number"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      placeholder="Please enter Phone number"
+                      {...register("phone_number")}
+                    />
+                    <p className="error">{errors.phone_number?.message}</p>
                   </div>
 
                   <div className="col-span-2">

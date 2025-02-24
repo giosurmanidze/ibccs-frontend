@@ -8,36 +8,123 @@ import { Modal } from "@/components/ui/modal";
 import { useModal } from "@/hooks/useModal";
 import * as yup from "yup";
 
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
 import Button from "@/components/ui/button/Button";
 import { useGetUsers } from "@/hooks/useGetUsers";
 import Image from "next/image";
+import axiosInstance from "@/config/axios";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetUser } from "@/hooks/useGetUser";
 
-const validationSchema = yup.object().shape({
-  name: yup.string().required("Name is required"),
-  lastname: yup.string().required("Lastname is required"),
-  email: yup.string().required("Email is required"),
-  phone_number: yup.string().required("Phone number is required"),
-});
+const ALL_SOCIAL_PLATFORMS = ["whatsapp", "telegram", "viber", "botim"];
+
 export default function BasicTables() {
-  const { isOpen, openModal, closeModal } = useModal();
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState({});
+
+  const { data: users } = useGetUsers();
+  const { data: AuthUser } = useGetUser();
+  const queryClient = useQueryClient();
+
+  const [socialPlatforms, setSocialPlatforms] = useState(
+    selectedUser?.platforms_number
+      ? JSON.parse(selectedUser?.platforms_number)
+      : {}
+  );
+
+  const availablePlatforms = ALL_SOCIAL_PLATFORMS.filter(
+    (platform) => !Object.keys(socialPlatforms).includes(platform)
+  );
+
+  const validationSchema = yup.object().shape({
+    name: yup.string().required("Name is required"),
+    lastname: yup.string().required("Lastname is required"),
+    email: yup.string().required("Email is required"),
+    phone_number: yup.string().required("Phone number is required"),
+
+    ...Object.keys(socialPlatforms || {}).reduce(
+      (acc, platform) => ({
+        ...acc,
+        [platform]: yup.string().nullable(),
+      }),
+      {}
+    ),
+  });
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: yupResolver(validationSchema),
   });
-  const handleSave = (data) => {
-    console.log(data);
-    // closeModal();
+
+  const openModal = useCallback((user) => {
+    setValue("name", user.name);
+    setValue("lastname", user.lastname);
+    setValue("phone_number", user.phone_number);
+    setValue("email", user.email);
+    setSelectedUser(user);
+    setIsOpen(true);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setIsOpen(false);
+    reset();
+  }, [reset]);
+
+  const handleSave = async (data) => {
+    try {
+      const socialLinks = {
+        whatsapp: data.whatsapp || "",
+        telegram: data.telegram || "",
+        viber: data.viber || "",
+        botim: data.botim || "",
+      };
+
+      const filteredSocialLinks = Object.fromEntries(
+        Object.entries(socialLinks).filter(([_, value]) => value)
+      );
+
+      const formData = {
+        ...data,
+        social_links: JSON.stringify(filteredSocialLinks),
+      };
+
+      const response = await axiosInstance.post(
+        `users/update/${selectedUser.id}?from_user_list`,
+        formData
+      );
+
+      closeModal();
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      if (error.response?.data.errors?.email) {
+        toast.error("The email has already been taken");
+      }
+    }
   };
 
-  const { data: users } = useGetUsers();
-  console.log(users);
+  useEffect(() => {
+    if (selectedUser?.platforms_number) {
+      const platforms = JSON.parse(selectedUser.platforms_number);
+      setSocialPlatforms(platforms);
+    }
+  }, [selectedUser?.platforms_number]);
+
+  useEffect(() => {
+    if (selectedUser.platforms_number) {
+      const platforms = JSON.parse(selectedUser.platforms_number);
+      Object.entries(platforms).forEach(([platform, value]) => {
+        setValue(platform, value);
+      });
+    }
+  }, [selectedUser, setValue]);
 
   return (
     <div>
@@ -133,7 +220,7 @@ export default function BasicTables() {
             <input
               type="text"
               id="table-search-users"
-              class="block ps-10 text-sm p-2 text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              class="block ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               placeholder="Search for users"
             />
           </div>
@@ -164,10 +251,10 @@ export default function BasicTables() {
               </th>
               <th scope="col" class="px-6 py-3">
                 Edit
-              </th>{" "}
+              </th>
               <th scope="col" class="px-6 py-3">
                 Delete
-              </th>{" "}
+              </th>
               <th scope="col" class="px-6 py-3">
                 Deactivate
               </th>
@@ -175,7 +262,10 @@ export default function BasicTables() {
           </thead>
           <tbody>
             {users?.map((user) => (
-              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
+              <tr
+                key={user.id}
+                class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+              >
                 <td class="w-4 p-4">
                   <div class="flex items-center">
                     <input
@@ -213,20 +303,23 @@ export default function BasicTables() {
                   <div class="flex items-center">{user?.phone_number}</div>
                 </td>
                 <td class="px-6 py-4">
-                  <a
+                  <button
                     href="#"
                     type="button"
-                    data-modal-target="editUserModal"
-                    data-modal-show="editUserModal"
+                    disabled={AuthUser?.role.name !== "Admin"}
                     class="font-medium text-green-600 dark:text-green-500 hover:underline"
-                    onClick={openModal}
+                    onClick={() => openModal(user)}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke-width="1.5"
-                      stroke="currentColor"
+                      stroke={` ${
+                        AuthUser?.role.name !== "Admin"
+                          ? "grey"
+                          : "currentColor"
+                      }`}
                       class="size-6"
                     >
                       <path
@@ -235,8 +328,8 @@ export default function BasicTables() {
                         d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
                       />
                     </svg>
-                  </a>
-                </td>{" "}
+                  </button>
+                </td>
                 <td class="px-6 py-4">
                   <a
                     href="#"
@@ -248,7 +341,11 @@ export default function BasicTables() {
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke-width="1.5"
-                      stroke="currentColor"
+                      stroke={` ${
+                        AuthUser?.role.name !== "Admin"
+                          ? "grey"
+                          : "currentColor"
+                      }`}
                       class="size-6"
                     >
                       <path
@@ -258,7 +355,7 @@ export default function BasicTables() {
                       />
                     </svg>
                   </a>
-                </td>{" "}
+                </td>
                 <td class="px-6 py-4">
                   <a
                     href="#"
@@ -270,7 +367,11 @@ export default function BasicTables() {
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke-width="1.5"
-                      stroke="currentColor"
+                      stroke={` ${
+                        AuthUser?.role.name !== "Admin"
+                          ? "grey"
+                          : "currentColor"
+                      }`}
                       class="size-6"
                     >
                       <path
@@ -307,25 +408,57 @@ export default function BasicTables() {
                   </h5>
 
                   <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                    {" "}
-                    <div>
-                      <Label>X.com</Label>
-                      <Input type="text" defaultValue="https://x.com/PimjoHQ" />
-                    </div>
-                    <div>
-                      <Label>Linkedin</Label>
-                      <Input
-                        type="text"
-                        defaultValue="https://www.linkedin.com/company/pimjo"
-                      />
-                    </div>
-                    <div>
-                      <Label>Instagram</Label>
-                      <Input
-                        type="text"
-                        defaultValue="https://instagram.com/PimjoHQ"
-                      />
-                    </div>
+                    {Object.entries(socialPlatforms).map(
+                      ([platform, value]) => (
+                        <div key={platform} className="mb-5">
+                          <label
+                            htmlFor={platform}
+                            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                          >
+                            {platform}
+                          </label>
+                          <input
+                            type="text"
+                            id={platform}
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder={`Enter ${platform} number`}
+                            {...register(platform)}
+                          />
+                          <p className="error">{errors[platform]?.message}</p>
+                        </div>
+                      )
+                    )}
+
+                    {availablePlatforms.map((platform) => (
+                      <div key={platform} className="mb-5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSocialPlatforms((prev) => ({
+                              ...prev,
+                              [platform]: "",
+                            }));
+                            setValue(platform, "");
+                          }}
+                          className="flex items-center gap-2 p-2.5 w-full border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                            />
+                          </svg>
+                          <span className="capitalize">Add {platform}</span>
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="mt-7">
@@ -397,11 +530,6 @@ export default function BasicTables() {
                         {...register("phone_number")}
                       />
                       <p className="error">{errors.phone_number?.message}</p>
-                    </div>
-
-                    <div className="col-span-2">
-                      <Label>Bio</Label>
-                      <Input type="text" defaultValue="Team Manager" />
                     </div>
                   </div>
                 </div>

@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axiosInstance from "@/config/axios";
 
 const socialPlatforms = [
   { id: "whatsapp", name: "WhatsApp" },
@@ -122,10 +122,7 @@ export default function Register() {
     console.log(postData);
 
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/user-register",
-        postData
-      );
+      const response = await axiosInstance.post("user-register", postData);
 
       if (response.status === 200) {
         toast.success("Verification email is sent.", {

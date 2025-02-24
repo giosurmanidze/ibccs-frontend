@@ -5,11 +5,13 @@ import { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useAuth } from "@/context/AuthContext";
+import { useGetUser } from "@/hooks/useGetUser";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { data: user } = useGetUser();
 
   function toggleDropdown(e) {
     e.stopPropagation();
@@ -29,12 +31,13 @@ export default function UserDropdown() {
           <Image
             width={44}
             height={44}
-            src={`http://localhost:8000/storage/${user.photo}`}
+            src={`http://localhost:8000/storage/${user?.photo}`}
             alt="User"
+            className="w-full h-full object-cover"
           />
         </span>
         <span className="block mr-1 font-medium text-theme-sm">
-          {user.name}
+          {user?.name}
         </span>
 
         <svg
@@ -64,10 +67,10 @@ export default function UserDropdown() {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            {user.name} {user.lastname}
+            {user?.name} {user?.lastname}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            {user.email}
+            {user?.email}
           </span>
         </div>
 

@@ -4,38 +4,111 @@ import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
-import { useAuth } from "@/context/AuthContext";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useEffect, useState } from "react";
+import axiosInstance from "@/config/axios";
+import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
 
-const validationSchema = yup.object().shape({
-  name: yup.string().required("Name is required"),
-  lastname: yup.string().required("Lastname is required"),
-  email: yup.string().required("Email is required"),
-  phone_number: yup.string().required("Phone number is required"),
-});
+const ALL_SOCIAL_PLATFORMS = ["whatsapp", "telegram", "viber", "botim"];
 
-export default function UserInfoCard() {
+export default function UserInfoCard({ user }) {
   const { isOpen, openModal, closeModal } = useModal();
+
+  const [socialPlatforms, setSocialPlatforms] = useState(
+    user?.platforms_number ? JSON.parse(user.platforms_number) : {}
+  );
+
+  const availablePlatforms = ALL_SOCIAL_PLATFORMS.filter(
+    (platform) => !Object.keys(socialPlatforms).includes(platform)
+  );
+
+  const validationSchema = yup.object().shape({
+    name: yup.string().required("Name is required"),
+    lastname: yup.string().required("Lastname is required"),
+    email: yup.string().required("Email is required"),
+    phone_number: yup.string().required("Phone number is required"),
+
+    ...Object.keys(socialPlatforms || {}).reduce(
+      (acc, platform) => ({
+        ...acc,
+        [platform]: yup.string().nullable(),
+      }),
+      {}
+    ),
+  });
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: yupResolver(validationSchema),
   });
 
-  const handleSave = (data) => {
-    console.log(data);
-    // closeModal();
+  const queryClient = useQueryClient();
+
+  const handleSave = async (data) => {
+    try {
+      const socialLinks = {
+        whatsapp: data.whatsapp || "",
+        telegram: data.telegram || "",
+        viber: data.viber || "",
+        botim: data.botim || "",
+      };
+
+      const filteredSocialLinks = Object.fromEntries(
+        Object.entries(socialLinks).filter(([_, value]) => value)
+      );
+
+      console.log(filteredSocialLinks);
+
+      const formData = {
+        ...data,
+        social_links: JSON.stringify(filteredSocialLinks),
+      };
+
+      const response = await axiosInstance.post(
+        `users/update/${user?.id}`,
+        formData
+      );
+
+      queryClient.invalidateQueries(["user", user?.id]);
+      toast.success("Profile updated successfully");
+      closeModal();
+    } catch (error) {
+      if (error.response?.data.errors?.email) {
+        toast.error("The email has already been taken");
+      }
+    }
   };
 
-  const { user } = useAuth();
+  useEffect(() => {
+    if (user?.platforms_number) {
+      const platforms = JSON.parse(user.platforms_number);
+      setSocialPlatforms(platforms);
+    }
+  }, [user?.platforms_number]);
 
-  console.log(user);
+  useEffect(() => {
+    if (user) {
+      setValue("name", user.name);
+      setValue("lastname", user.lastname);
+      setValue("phone_number", user.phone_number);
+      setValue("email", user.email);
+
+      if (user.platforms_number) {
+        const platforms = JSON.parse(user.platforms_number);
+        Object.entries(platforms).forEach(([platform, value]) => {
+          setValue(platform, value);
+        });
+      }
+    }
+  }, [user, setValue]);
 
   return (
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
@@ -51,7 +124,7 @@ export default function UserInfoCard() {
                 First Name
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                Musharof
+                {user?.name}
               </p>
             </div>
 
@@ -60,7 +133,7 @@ export default function UserInfoCard() {
                 Last Name
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                Chowdhury
+                {user?.lastname}
               </p>
             </div>
 
@@ -69,7 +142,7 @@ export default function UserInfoCard() {
                 Email address
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                randomuser@pimjo.com
+                {user?.email}
               </p>
             </div>
 
@@ -78,16 +151,7 @@ export default function UserInfoCard() {
                 Phone
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                +09 363 398 46
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Bio
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                Team Manager
+                {user?.phone_number}
               </p>
             </div>
           </div>
@@ -133,26 +197,92 @@ export default function UserInfoCard() {
                   Social Links
                 </h5>
 
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2"> <div>
-                    <Label>X.com</Label>
-                    <Input type="text" defaultValue="https://x.com/PimjoHQ" />
+                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                  {Object.entries(socialPlatforms).map(([platform, value]) => (
+                    <div key={platform} className="mb-5">
+                      <label
+                        htmlFor={platform}
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        {platform}
+                      </label>
+                      <input
+                        type="text"
+                        id={platform}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder={`Enter ${platform} number`}
+                        {...register(platform)}
+                      />
+                      <p className="error">{errors[platform]?.message}</p>
+                    </div>
+                  ))}
+
+                  {availablePlatforms.map((platform) => (
+                    <div key={platform} className="mb-5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSocialPlatforms((prev) => ({
+                            ...prev,
+                            [platform]: "",
+                          }));
+                          setValue(platform, "");
+                        }}
+                        className="flex items-center gap-2 p-2.5 w-full border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        <span className="capitalize">Add {platform}</span>
+                      </button>
+                    </div>
+                  ))}
+                  {/* <div>
+                    <div className="mb-5">
+                      <label
+                        for="name"
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Firstname
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Please enter firstname"
+                        {...register("name")}
+                      />
+                      <p className="error">{errors.name?.message}</p>
+                    </div>
                   </div>
                   <div>
-                    <Label>Linkedin</Label>
-                    <Input
-                      type="text"
-                      defaultValue="https://www.linkedin.com/company/pimjo"
-                    />
-                  </div>
-                  <div>
-                    <Label>Instagram</Label>
-                    <Input
-                      type="text"
-                      defaultValue="https://instagram.com/PimjoHQ"
-                    />
-                  </div>
-                 
-                 
+                    <div className="mb-5">
+                      <label
+                        for="name"
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Firstname
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Please enter firstname"
+                        {...register("name")}
+                      />
+                      <p className="error">{errors.name?.message}</p>
+                    </div>
+                  </div> */}
                 </div>
               </div>
               <div className="mt-7">
@@ -161,7 +291,7 @@ export default function UserInfoCard() {
                 </h5>
 
                 <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                <div className="mb-5">
+                  <div className="mb-5">
                     <label
                       for="name"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
@@ -224,11 +354,6 @@ export default function UserInfoCard() {
                       {...register("phone_number")}
                     />
                     <p className="error">{errors.phone_number?.message}</p>
-                  </div>
-
-                  <div className="col-span-2">
-                    <Label>Bio</Label>
-                    <Input type="text" defaultValue="Team Manager" />
                   </div>
                 </div>
               </div>

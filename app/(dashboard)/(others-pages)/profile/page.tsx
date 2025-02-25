@@ -1,12 +1,11 @@
 "use client";
 import UserInfoCard from "@/components/user-profile/UserInfoCard";
 import UserMetaCard from "@/components/user-profile/UserMetaCard";
-import { useGetUser } from "@/hooks/useGetUser";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Profile() {
-  const { data: user } = useGetUser();
+  const { user, fetchUserData } = useAuth();
 
-  console.log(user);
   return (
     <div>
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
@@ -14,8 +13,8 @@ export default function Profile() {
           Profile
         </h3>
         <div className="space-y-6">
-          <UserMetaCard user={user} />
-          <UserInfoCard user={user} />
+          <UserMetaCard user={user} fetchUserData={fetchUserData} />
+          <UserInfoCard user={user} fetchUserData={fetchUserData} />
         </div>
       </div>
     </div>

@@ -6,7 +6,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import Context from "@/context/Context";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+
+function AuthWrapper({ children }) {
+  const { fetchUserData, user } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      fetchUserData();
+    }
+  }, []);
+
+  return children;
+}
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -132,11 +144,13 @@ export default function RootLayout({ children }) {
           </div>
           <Context>
             <AuthProvider>
-              <ThemeProvider>
-                <SidebarProvider>
-                  <div id="wrapper">{children}</div>
-                </SidebarProvider>
-              </ThemeProvider>
+              <AuthWrapper>
+                <ThemeProvider>
+                  <SidebarProvider>
+                    <div id="wrapper">{children}</div>
+                  </SidebarProvider>
+                </ThemeProvider>
+              </AuthWrapper>
             </AuthProvider>
           </Context>
         </body>

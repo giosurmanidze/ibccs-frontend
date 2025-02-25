@@ -2,19 +2,16 @@
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
-import Label from "../form/Label";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect, useState } from "react";
 import axiosInstance from "@/config/axios";
 import { toast } from "react-toastify";
-import { useQueryClient } from "@tanstack/react-query";
 
 const ALL_SOCIAL_PLATFORMS = ["whatsapp", "telegram", "viber", "botim"];
 
-export default function UserInfoCard({ user }) {
+export default function UserInfoCard({ user, fetchUserData }) {
   const { isOpen, openModal, closeModal } = useModal();
 
   const [socialPlatforms, setSocialPlatforms] = useState(
@@ -50,8 +47,6 @@ export default function UserInfoCard({ user }) {
     resolver: yupResolver(validationSchema),
   });
 
-  const queryClient = useQueryClient();
-
   const handleSave = async (data) => {
     try {
       const socialLinks = {
@@ -65,8 +60,6 @@ export default function UserInfoCard({ user }) {
         Object.entries(socialLinks).filter(([_, value]) => value)
       );
 
-      console.log(filteredSocialLinks);
-
       const formData = {
         ...data,
         social_links: JSON.stringify(filteredSocialLinks),
@@ -76,8 +69,7 @@ export default function UserInfoCard({ user }) {
         `users/update/${user?.id}`,
         formData
       );
-
-      queryClient.invalidateQueries(["user", user?.id]);
+      fetchUserData();
       toast.success("Profile updated successfully");
       closeModal();
     } catch (error) {

@@ -5,13 +5,12 @@ import { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useAuth } from "@/context/AuthContext";
-import { useGetUser } from "@/hooks/useGetUser";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
 
   const { logout } = useAuth();
-  const { data: user } = useGetUser();
+  const { user } = useAuth();
 
   function toggleDropdown(e) {
     e.stopPropagation();

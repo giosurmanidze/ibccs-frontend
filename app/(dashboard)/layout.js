@@ -11,14 +11,11 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import AppHeader from "@/layout/AppHeader";
-import { useGetUser } from "@/hooks/useGetUser";
 
 export default function AdminLayout({ children }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const { user, loading } = useAuth();
   const router = useRouter();
-
-  const { data: user1 } = useGetUser();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -29,7 +26,6 @@ export default function AdminLayout({ children }) {
   if (loading || !user) {
     return null;
   }
-
   const mainContentMargin = isMobileOpen
     ? "ml-0"
     : isExpanded || isHovered

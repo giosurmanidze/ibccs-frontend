@@ -1,6 +1,6 @@
 "use client";
 import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
-import React from "react";
+import React, { useEffect } from "react";
 import MonthlyTarget from "@/components/ecommerce/MonthlyTarget";
 import MonthlySalesChart from "@/components/ecommerce/MonthlySalesChart";
 import StatisticsChart from "@/components/ecommerce/StatisticsChart";

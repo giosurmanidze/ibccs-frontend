@@ -37,8 +37,6 @@ export default function SignInForm() {
   const router = useRouter();
 
   const onSubmit = async (data) => {
-    console.log(data);
-    console.log(errors);
     try {
       const response = await axiosInstance.post("login?admin_login=true", data);
       login(response.data["user"], response.data["token"]);

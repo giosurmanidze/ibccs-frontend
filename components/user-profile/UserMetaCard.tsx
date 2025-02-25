@@ -8,23 +8,14 @@ import { Botim } from "@/icons/Botim";
 import { Viber } from "@/icons/Viber";
 import axiosInstance from "@/config/axios";
 import { toast } from "react-toastify";
-import { useQueryClient } from "@tanstack/react-query";
 
-export default function UserMetaCard({ user }) {
-  const { isOpen, openModal, closeModal } = useModal();
-  const handleSave = () => {
-    console.log("Saving changes...");
-    closeModal();
-  };
+export default function UserMetaCard({ user, fetchUserData }) {
 
   const socialPlatforms = user?.platforms_number
     ? JSON.parse(user.platforms_number)
     : [];
 
-  const [selectedImage, setSelectedImage] = useState(null);
-  const queryClient = useQueryClient();
 
-  // Add this function to handle file selection
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -41,8 +32,7 @@ export default function UserMetaCard({ user }) {
             },
           }
         );
-        queryClient.invalidateQueries(['user', user.id]);
-        console.log(response);
+        fetchUserData();
       } catch (error) {
         toast.error("Failed to update photo");
       }
@@ -64,7 +54,6 @@ export default function UserMetaCard({ user }) {
                 />
               </div>
 
-              {/* Overlay with edit button */}
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <label className="cursor-pointer p-2 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70">
                   <input

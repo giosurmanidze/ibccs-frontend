@@ -1,5 +1,4 @@
 "use client";
-
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -12,19 +11,20 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import AppHeader from "@/layout/AppHeader";
+import { useGetUser } from "@/hooks/useGetUser";
 
 export default function AdminLayout({ children }) {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const { data: user1 } = useGetUser();
+
   useEffect(() => {
-    const token = localStorage.getItem("jwt_token");
-    if (!token) {
-      router.replace("/error-404");
-      return;
+    if (!loading && !user) {
+      router.replace("/signin");
     }
-  }, []);
+  }, [loading, user, router]);
 
   if (loading || !user) {
     return null;

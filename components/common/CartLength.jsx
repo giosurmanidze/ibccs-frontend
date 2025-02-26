@@ -2,7 +2,7 @@
 
 import { useContextElement } from "@/context/Context";
 
-export default function CartLength() {
+export default function CartLength({ color }) {
   const { cartProducts } = useContextElement();
-  return <>{cartProducts.length}</>;
+  return <span style={{ color: color }}>{cartProducts.length}</span>;
 }

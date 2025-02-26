@@ -8,7 +8,7 @@ import { useGetCategories } from "@/hooks/useGetCategories";
 import { useAuth } from "@/context/AuthContext";
 import axiosInstance from "@/config/axios";
 
-export default function Header22() {
+export default function Header22({ pageContent }) {
   const { data: categories } = useGetCategories();
   const { user, logout } = useAuth();
 
@@ -39,12 +39,28 @@ export default function Header22() {
     }
   };
 
+  const header_bg = pageContent?.header?.bg_color["value"];
+  const placeholder_text =
+    pageContent?.header?.search_placeholder_text["value"];
+  const placeholder_bg_color = pageContent?.header?.search_bg_color["value"];
+  const search_placeholder_text_color =
+    pageContent?.header?.search_placeholder_text_color["value"];
+  const search_icon_bg = pageContent?.header?.search_icon_bg["value"];
+  const search_icon_color = pageContent?.header?.search_icon_color["value"];
+  const cart_color = pageContent?.header?.cart_color["value"];
+  const quantity_circle = pageContent?.header?.quantity_circle["value"];
+  const quantity_circle_text =
+    pageContent?.header?.quantity_circle_text["value"];
+
   return (
     <header
       id="header"
       className="header-default header-style-2 header-style-4"
     >
-      <div className="main-header line-1 ">
+      <div
+        className="main-header line-1"
+        style={{ backgroundColor: header_bg }}
+      >
         <div className="container">
           <div className="row wrapper-header align-items-center">
             <div className="col-md-4 col-3 tf-lg-hidden">
@@ -73,7 +89,7 @@ export default function Header22() {
                 <Image
                   alt="logo"
                   className="logo"
-                  src="/images/logo/ibccs logo.avif"
+                  src={pageContent?.header?.header_logo["value"]}
                   width={136}
                   height={21}
                 />
@@ -87,12 +103,27 @@ export default function Header22() {
                 >
                   <input
                     type="text"
-                    placeholder="Search product"
+                    placeholder={placeholder_text}
+                    style={{
+                      backgroundColor: placeholder_bg_color,
+                      "&::placeholder": {
+                        color: search_placeholder_text_color,
+                      },
+                    }}
                     value={searchTerm}
-                    onChange={handleSearch} // Trigger search on input change
+                    onChange={handleSearch}
                   />
-                  <button className="tf-btn" type="button">
-                    <i className="icon icon-search" />
+                  <button
+                    className="tf-btn"
+                    type="button"
+                    style={{
+                      backgroundColor: search_icon_bg,
+                    }}
+                  >
+                    <i
+                      className="icon icon-search"
+                      style={{ color: search_icon_color }}
+                    />
                   </button>
                 </form>
 
@@ -151,25 +182,27 @@ export default function Header22() {
                     href="#canvasSearch"
                     data-bs-toggle="offcanvas"
                     aria-controls="offcanvasLeft"
-                    className="nav-icon-item text_white"
+                    className="nav-icon-item"
                   >
-                    <i className="icon icon-search" />
+                    <i className="icon icon-search" style={{ color: "red" }} />
                   </a>
                 </li>
-                {!user ? (
-                  <li className="nav-account">
-                    <a
-                      href="/login"
-                      className="nav-icon-item align-items-center  text-white"
-                    >
-                      <span className="text">Login</span>
-                    </a>
-                    <a
-                      href="/register"
-                      className="nav-icon-item align-items-center  text-white"
-                    >
-                      <span className="text">Register</span>
-                    </a>
+                {user === null ? (
+                  <li className="nav-account flex gap-2">
+                    {pageContent?.buttons?.map((button, index) => (
+                      <a
+                        key={index}
+                        href={`${button.url}`}
+                        className="nav-icon-item items-center justify-center"
+                        style={{
+                          color: button.text_color,
+                        }}
+                      >
+                        <span className="text" style={{ color: "inherit" }}>
+                          {button.name}
+                        </span>
+                      </a>
+                    ))}
                   </li>
                 ) : (
                   <li className="nav-account">
@@ -186,9 +219,17 @@ export default function Header22() {
                     data-bs-toggle="modal"
                     className="nav-icon-item text-white"
                   >
-                    <i className="icon icon-bag" />
-                    <span className="count-box">
-                      <CartLength />
+                    <i
+                      className="icon icon-bag"
+                      style={{ color: cart_color }}
+                    />
+                    <span
+                      className="count-box"
+                      style={{
+                        backgroundColor: quantity_circle,
+                      }}
+                    >
+                      <CartLength color={quantity_circle_text} />
                     </span>
                   </a>
                 </li>

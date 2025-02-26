@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import "@/public/scss/main.scss";
 import "photoswipe/dist/photoswipe.css";
 import "rc-slider/assets/index.css";
+import "@/public/css/tail.css";
 import Context from "@/context/Context";
 import QuickView from "@/components/modals/QuickView";
 import ProductSidebar from "@/components/modals/ProductSidebar";
@@ -19,7 +20,6 @@ import Register from "@/components/modals/Register";
 import ResetPass from "@/components/modals/ResetPass";
 import ToolbarBottom from "@/components/modals/ToolbarBottom";
 import ToolbarShop from "@/components/modals/ToolbarShop";
-
 import { usePathname } from "next/navigation";
 import ShareModal from "@/components/modals/ShareModal";
 import ScrollTop from "@/components/common/ScrollTop";
@@ -28,6 +28,7 @@ import Header22 from "@/components/headers/Header22";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Footer2 from "@/components/footers/Footer2";
 import { AuthProvider } from "@/context/AuthContext";
+import axiosInstance from "@/config/axios";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -153,6 +154,17 @@ export default function RootLayout({ children }) {
 
   const queryClient = new QueryClient();
 
+  const [pageContent, setPageContent] = useState({});
+
+  useEffect(() => {
+    const getPageContent = async () => {
+      const response = await axiosInstance.get("pages/header");
+      setPageContent(JSON.parse(response.data?.dynamic_content));
+      console.log(response);
+    };
+    getPageContent();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <html lang="en">
@@ -164,7 +176,7 @@ export default function RootLayout({ children }) {
           </div>{" "}
           <Context>
             <AuthProvider>
-              <Header22 />
+              <Header22 pageContent={pageContent} />
               <div id="wrapper">{children}</div>
               <RtlToggle />
               <QuickView />

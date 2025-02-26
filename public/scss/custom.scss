@@ -720,11 +720,6 @@ input[type="file"] {
   }
   a {
     transition: color 0.3s ease-in-out !important;
-
-    &:hover {
-      color: #5ca595 !important;
-      text-decoration: underline !important;
-    }
   }
 }
 .platforms-checkbox-title {

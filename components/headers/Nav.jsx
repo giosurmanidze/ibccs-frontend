@@ -46,7 +46,7 @@ export default function Nav({ isArrow = true, textColor = "", Linkfs = "" }) {
       <li className="menu-item">
         <a
           href="/about-us"
-          className={`item-link ${Linkfs} ${textColor} ${
+          className={`item-link w-max ${Linkfs} ${textColor} ${
             pathname === "/about-us" ? "activeMenu" : ""
           }`}
         >

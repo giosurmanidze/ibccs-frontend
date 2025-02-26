@@ -160,10 +160,11 @@ export default function RootLayout({ children }) {
     const getPageContent = async () => {
       const response = await axiosInstance.get("pages/header");
       setPageContent(JSON.parse(response.data?.dynamic_content));
-      console.log(response);
+      console.log(response)
     };
     getPageContent();
   }, []);
+
 
   return (
     <QueryClientProvider client={queryClient}>

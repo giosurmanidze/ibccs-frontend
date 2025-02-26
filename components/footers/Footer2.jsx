@@ -1,11 +1,13 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import LanguageSelect from "../common/LanguageSelect";
-import CurrencySelect from "../common/CurrencySelect";
-import { aboutLinks, footerLinks, paymentImages } from "@/data/footerLinks";
-export default function Footer2({ bgColor = "background-black" }) {
+
+export const aboutLinks = [
+  { href: "/contact", text: "Contact Us" },
+  { href: "/about-us", text: "About Us" },
+];
+
+export default function Footer2({ pageContent }) {
   useEffect(() => {
     const headings = document.querySelectorAll(".footer-heading-moblie");
 
@@ -24,19 +26,25 @@ export default function Footer2({ bgColor = "background-black" }) {
         heading.removeEventListener("click", toggleOpen);
       });
     };
-  }, []); 
+  }, []);
 
-  const formRef = useRef();
-  const [showMessage, setShowMessage] = useState(false);
-
+  const footer_bg_color = pageContent?.bg_color["value"];
+  const footer_text_color = pageContent?.text_color["value"];
 
   return (
-    <footer id="footer" className={`footer ${bgColor}`}>
+    <footer
+      id="footer"
+      className="footer"
+      style={{ backgroundColor: footer_bg_color }}
+    >
       <div className="footer-wrap wow fadeIn" data-wow-delay="0s">
         <div className="footer-body">
           <div className="container">
             <div className="row">
-              <div className="col-xl-3 col-md-6 col-12">
+              <div
+                className="col-xl-3 col-md-6 col-12"
+                style={{ color: footer_text_color }}
+              >
                 <div className="footer-infor">
                   <ul>
                     <li>
@@ -60,78 +68,23 @@ export default function Footer2({ bgColor = "background-black" }) {
                     Get direction
                     <i className="icon icon-arrow1-top-left" />
                   </Link>
-                  <ul className="tf-social-icon d-flex gap-10 style-white">
-                    <li>
-                      <a
-                        href="#"
-                        className="box-icon w_34 round social-facebook social-line"
-                      >
-                        <i className="icon fs-14 icon-fb" />
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        className="box-icon w_34 round social-twiter social-line"
-                      >
-                        <i className="icon fs-12 icon-Icon-x" />
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        className="box-icon w_34 round social-instagram social-line"
-                      >
-                        <i className="icon fs-14 icon-instagram" />
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        className="box-icon w_34 round social-tiktok social-line"
-                      >
-                        <i className="icon fs-14 icon-tiktok" />
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        className="box-icon w_34 round social-pinterest social-line"
-                      >
-                        <i className="icon fs-14 icon-pinterest-1" />
-                      </a>
-                    </li>
-                  </ul>
                 </div>
               </div>
               <div className="col-xl-3 col-md-6 col-12 footer-col-block">
                 <div className="footer-heading footer-heading-desktop">
-                  <h6>Help</h6>
+                  <h6 style={{ color: footer_text_color }}>About us</h6>
                 </div>
                 <div className="footer-heading footer-heading-moblie">
-                  <h6>Help</h6>
-                </div>
-                <ul className="footer-menu-list tf-collapse-content">
-                  {footerLinks.map((link, index) => (
-                    <li key={index}>
-                      <Link href={link.href} className="footer-menu_item">
-                        {link.text}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="col-xl-3 col-md-6 col-12 footer-col-block">
-                <div className="footer-heading footer-heading-desktop">
-                  <h6>About us</h6>
-                </div>
-                <div className="footer-heading footer-heading-moblie">
-                  <h6>About us</h6>
+                  <h6 style={{ color: footer_text_color }}>About us</h6>
                 </div>
                 <ul className="footer-menu-list tf-collapse-content">
                   {aboutLinks.slice(0, 4).map((link, index) => (
                     <li key={index}>
-                      <Link href={link.href} className="footer-menu_item">
+                      <Link
+                        href={link.href}
+                        className="footer-menu_item"
+                        style={{ color: footer_text_color }}
+                      >
                         {link.text}
                       </Link>
                     </li>
@@ -147,19 +100,7 @@ export default function Footer2({ bgColor = "background-black" }) {
               <div className="col-12">
                 <div className="footer-bottom-wrap d-flex gap-20 flex-wrap justify-content-between align-items-center">
                   <div className="footer-menu_item">
-                    © {new Date().getFullYear()} Ecomus Store. All Rights
-                    Reserved
-                  </div>
-                  <div className="tf-payment">
-                    {paymentImages.map((image, index) => (
-                      <Image
-                        key={index}
-                        src={image.src}
-                        width={image.width}
-                        height={image.height}
-                        alt={image.alt}
-                      />
-                    ))}
+                    © {new Date().getFullYear()} Ibccs. All Rights Reserved
                   </div>
                 </div>
               </div>

@@ -160,11 +160,10 @@ export default function RootLayout({ children }) {
     const getPageContent = async () => {
       const response = await axiosInstance.get("pages/header");
       setPageContent(JSON.parse(response.data?.dynamic_content));
-      console.log(response)
+      console.log(response);
     };
     getPageContent();
   }, []);
-
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -183,7 +182,7 @@ export default function RootLayout({ children }) {
               <QuickView />
               <QuickAdd />
               <ProductSidebar />
-              <ShopCart />
+              <ShopCart pageContent={pageContent?.sidebar_buttons} />
               <AskQuestion />
               <DeliveryReturn />
               <FindSize />
@@ -197,7 +196,7 @@ export default function RootLayout({ children }) {
             </AuthProvider>
           </Context>
           <ScrollTop />
-          <Footer2 />
+          <Footer2 pageContent={pageContent?.footer}/>
         </body>
       </html>
     </QueryClientProvider>

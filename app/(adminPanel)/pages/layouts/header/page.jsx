@@ -9,9 +9,9 @@ import { useForm } from "react-hook-form";
 import axiosInstance from "@/config/axios";
 
 function HeaderLayout({ pageId }) {
-  const [pageContent, setPageContent] = useState({});
   const [imageUrl, setImageUrl] = useState("");
-
+  const [pageContent, setPageContent] = useState({});
+  
   useEffect(() => {
     const getPageContent = async () => {
       const response = await axiosInstance.get("pages/header");
@@ -127,8 +127,6 @@ function HeaderLayout({ pageId }) {
     <PageBreadcrumb pageTitle="Header layout" />
     <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-4 py-6 dark:border-gray-800 dark:bg-white/[0.03] sm:px-5 sm:py-7 xl:px-10 xl:py-12">
       <form onSubmit={handleSubmit(onSubmit)}>
-        {/* Header Style Options */}
-        <h3 className="text-lg font-medium mb-4">Header Style</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {Object.entries(pageContent?.header || {}).map(
             ([key, fieldData]) => {

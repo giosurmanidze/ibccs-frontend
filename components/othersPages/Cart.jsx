@@ -1412,10 +1412,6 @@ export default function Cart() {
                     </div>
                   </span>
                 </div>
-                <div className="tf-progress-msg">
-                  Buy <span className="price fw-6">$75.00</span> more to enjoy
-                  <span className="fw-6">Free Shipping</span>
-                </div>
               </div>
               <div className="tf-page-cart-checkout">
                 <div className="tf-cart-totals-discounts">

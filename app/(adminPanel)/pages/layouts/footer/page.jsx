@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getPage } from "@/services/pageService";
 import { toast, ToastContainer } from "react-toastify";
 import { withProtectedRoute } from "@/components/auth/ProtectedRoute";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useForm } from "react-hook-form";
 import axiosInstance from "@/config/axios";
 
-function FooterLayout({ pageId }) {
+function FooterLayout() {
   const [pageContent, setPageContent] = useState({});
 
   useEffect(() => {
@@ -19,32 +18,6 @@ function FooterLayout({ pageId }) {
     };
     getPageContent();
   }, []);
-
-  const [loading, setLoading] = useState(false);
-  const isEditMode = !!pageId;
-
-  useEffect(() => {
-    if (isEditMode) {
-      fetchPageData();
-    }
-  }, [pageId]);
-
-  const fetchPageData = async () => {
-    try {
-      setLoading(true);
-      const page = await getPage(pageId);
-      setFormData({
-        title: page.title,
-        content: page.content,
-        meta_data: page.meta_data || { description: "", keywords: "" },
-        is_published: page.is_published,
-      });
-    } catch (error) {
-      toast.error("Failed to load page data");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const {
     register,

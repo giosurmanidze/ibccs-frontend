@@ -1,11 +1,39 @@
+"use client";
 import ContactForm from "@/components/othersPages/contact/ContactForm";
 import Map from "@/components/othersPages/contact/Map";
-import React from "react";
-export default function page() {
+import axiosInstance from "@/config/axios";
+import React, { useEffect, useState } from "react";
+
+export default function Page() {
+  const [pageContent, setPageContent] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getPageContent = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get(`pages/contact`);
+        const content = JSON.parse(response.data?.dynamic_content || "{}");
+
+        if (Array.isArray(content.dynamic_fields)) {
+          content.dynamic_fields = {};
+        }
+
+        setPageContent(content);
+      } catch (error) {
+        console.error("Error fetching contact page data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getPageContent();
+  }, []);
+
   return (
     <>
-      <Map />
-      <ContactForm />
+      <Map pageContent={pageContent?.contact_details} />
+      <ContactForm dynamicFields={pageContent?.dynamic_fields || {}} />
     </>
   );
 }

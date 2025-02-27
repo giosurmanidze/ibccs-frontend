@@ -7,12 +7,12 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useForm } from "react-hook-form";
 import axiosInstance from "@/config/axios";
 
-function SidebarLayout() {
+function EditPage() {
   const [pageContent, setPageContent] = useState({});
 
   useEffect(() => {
     const getPageContent = async () => {
-      const response = await axiosInstance.get("pages/header");
+      const response = await axiosInstance.get(`pages/view-cart`);
       setPageContent(JSON.parse(response.data?.dynamic_content));
     };
     getPageContent();
@@ -27,13 +27,11 @@ function SidebarLayout() {
   } = useForm({});
 
   useEffect(() => {
-    if (pageContent?.sidebar_buttons) {
-      Object.entries(pageContent.sidebar_buttons).forEach(
-        ([key, fieldData]) => {
-          setValue(`sidebar_buttons.${key}.value`, fieldData.value);
-          setValue(`sidebar_buttons.${key}.type`, fieldData.type);
-        }
-      );
+    if (pageContent?.cart_content) {
+      Object.entries(pageContent.cart_content).forEach(([key, fieldData]) => {
+        setValue(`cart_content.${key}.value`, fieldData.value);
+        setValue(`cart_content.${key}.type`, fieldData.type);
+      });
     }
   }, [pageContent, setValue]);
 
@@ -46,7 +44,8 @@ function SidebarLayout() {
 
       const dynamicContentData = {
         ...currentContent,
-        sidebar_buttons: data.sidebar_buttons, 
+        cart_content: data.cart_content,
+        buttons: data.buttons,
       };
 
       const payload = {
@@ -55,7 +54,7 @@ function SidebarLayout() {
       };
 
       const response = await axiosInstance.post(
-        "pages/by-title/header",
+        "pages/by-title/view_cart",
         payload
       );
 
@@ -76,12 +75,78 @@ function SidebarLayout() {
         closeOnClick
         draggable
       />
-      <PageBreadcrumb pageTitle="Sidebar layout" />
+      <PageBreadcrumb pageTitle={`Cart page`} />
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-4 py-6 dark:border-gray-800 dark:bg-white/[0.03] sm:px-5 sm:py-7 xl:px-10 xl:py-12">
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-8">
-            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-              {(pageContent?.sidebar_buttons || []).map((button, index) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {Object.entries(pageContent?.cart_content || {}).map(
+                ([key, fieldData]) => (
+                  <div key={key} className="mb-4">
+                    <label
+                      htmlFor={key}
+                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      {key
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </label>
+
+                    {fieldData.type === "color" ? (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="color"
+                          id={`${key}-picker`}
+                          value={
+                            watch(`cart_content.${key}.value`) ||
+                            fieldData.value
+                          }
+                          onChange={(e) => {
+                            setValue(
+                              `cart_content.${key}.value`,
+                              e.target.value
+                            );
+                          }}
+                          className="p-1 h-10 w-14 block bg-white border border-gray-200 cursor-pointer rounded-lg disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700"
+                        />
+                        <input
+                          type="text"
+                          id={key}
+                          value={
+                            watch(`cart_content.${key}.value`) ||
+                            fieldData.value
+                          }
+                          onChange={(e) => {
+                            setValue(
+                              `cart_content.${key}.value`,
+                              e.target.value
+                            );
+                          }}
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 flex-1 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        />
+                      </div>
+                    ) : fieldData.type === "text" ? (
+                      <input
+                        type="text"
+                        id={key}
+                        {...register(`cart_content.${key}.value`, {
+                          required: "This field is required",
+                        })}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      />
+                    ) : null}
+                    {errors?.cart_content?.[key]?.value && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.cart_content[key].value.message}
+                      </p>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+            <h3 className="text-lg font-medium mb-4">Cart Buttons</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {(pageContent?.buttons || []).map((button, index) => (
                 <div
                   key={index}
                   className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 flex-1 min-w-[280px]"
@@ -93,7 +158,7 @@ function SidebarLayout() {
                       </label>
                       <input
                         type="text"
-                        {...register(`sidebar_buttons.${index}.text`, {
+                        {...register(`buttons.${index}.text`, {
                           required: "Button text is required",
                         })}
                         defaultValue={button.text}
@@ -107,7 +172,7 @@ function SidebarLayout() {
                       </label>
                       <input
                         type="text"
-                        {...register(`sidebar_buttons.${index}.url`, {
+                        {...register(`buttons.${index}.url`, {
                           required: "Button URL is required",
                         })}
                         defaultValue={button.url}
@@ -121,7 +186,7 @@ function SidebarLayout() {
                       </label>
                       <input
                         type="text"
-                        {...register(`sidebar_buttons.${index}.name`, {
+                        {...register(`buttons.${index}.name`, {
                           required: "Button name is required",
                         })}
                         defaultValue={button.name}
@@ -137,19 +202,19 @@ function SidebarLayout() {
                         <input
                           type="color"
                           id={`button-color-${index}`}
-                          {...register(`sidebar_buttons.${index}.text_color`)}
+                          {...register(`buttons.${index}.text_color`)}
                           defaultValue={button.text_color}
                           className="p-1 h-10 w-14 block bg-white border border-gray-200 cursor-pointer rounded-lg dark:bg-gray-700"
                         />
                         <input
                           type="text"
                           value={
-                            watch(`sidebar_buttons.${index}.text_color`) ||
+                            watch(`buttons.${index}.text_color`) ||
                             button.text_color
                           }
                           onChange={(e) => {
                             setValue(
-                              `sidebar_buttons.${index}.text_color`,
+                              `buttons.${index}.text_color`,
                               e.target.value
                             );
                           }}
@@ -165,19 +230,19 @@ function SidebarLayout() {
                         <input
                           type="color"
                           id={`button-color-${index}`}
-                          {...register(`sidebar_buttons.${index}.background_color`)}
+                          {...register(`buttons.${index}.background_color`)}
                           defaultValue={button.background_color}
                           className="p-1 h-10 w-14 block bg-white border border-gray-200 cursor-pointer rounded-lg dark:bg-gray-700"
                         />
                         <input
                           type="text"
                           value={
-                            watch(`sidebar_buttons.${index}.background_color`) ||
+                            watch(`buttons.${index}.background_color`) ||
                             button.background_color
                           }
                           onChange={(e) => {
                             setValue(
-                              `sidebar_buttons.${index}.background_color`,
+                              `buttons.${index}.background_color`,
                               e.target.value
                             );
                           }}
@@ -190,6 +255,7 @@ function SidebarLayout() {
               ))}
             </div>
           </div>
+
           <div className="mt-6">
             <button
               type="submit"
@@ -204,4 +270,4 @@ function SidebarLayout() {
   );
 }
 
-export default withProtectedRoute(SidebarLayout, ["Admin"]);
+export default withProtectedRoute(EditPage, ["Admin"]);

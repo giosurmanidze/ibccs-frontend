@@ -132,6 +132,7 @@ export default function RootLayout({ children }) {
     initializeDirection();
   }, []);
 
+
   const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>

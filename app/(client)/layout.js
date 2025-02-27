@@ -7,9 +7,7 @@ import "photoswipe/dist/photoswipe.css";
 import "rc-slider/assets/index.css";
 import "@/public/css/tail.css";
 import Context from "@/context/Context";
-import QuickView from "@/components/modals/QuickView";
 import ProductSidebar from "@/components/modals/ProductSidebar";
-import QuickAdd from "@/components/modals/QuickAdd";
 import ShopCart from "@/components/modals/ShopCart";
 import AskQuestion from "@/components/modals/AskQuestion";
 import DeliveryReturn from "@/components/modals/DeliveryReturn";
@@ -179,8 +177,6 @@ export default function RootLayout({ children }) {
               <Header22 pageContent={pageContent} />
               <div id="wrapper">{children}</div>
               <RtlToggle />
-              <QuickView />
-              <QuickAdd />
               <ProductSidebar />
               <ShopCart pageContent={pageContent?.sidebar_buttons} />
               <AskQuestion />

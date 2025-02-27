@@ -1,8 +1,7 @@
-
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-export default function notFound() {
+export default function NotFoundPage() {
   return (
     <>
       <section className="page-404-wrap">

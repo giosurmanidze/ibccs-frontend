@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 export default function ShopCart({ pageContent }) {
   const { cartProducts, setCartProducts } = useContextElement();
+
   const setQuantity = (id, quantity) => {
     if (quantity >= 1) {
       const item = cartProducts.filter((elm) => elm.id == id)[0];
@@ -151,7 +152,7 @@ export default function ShopCart({ pageContent }) {
                                 href={pageContent[1].url}
                                 className="tf-btn  w-full mb-2"
                                 style={{
-                                  backgroundColor: pageContent[1].bg_color,
+                                  backgroundColor: pageContent[1].background_color,
                                   color: pageContent[1].text_color,
                                 }}
                               >
@@ -180,7 +181,7 @@ export default function ShopCart({ pageContent }) {
                         href={pageContent[0].url}
                         className="tf-btn w-full mb-2"
                         style={{
-                          backgroundColor: pageContent[0].bg_color,
+                          backgroundColor: pageContent[0].background_color,
                           color: pageContent[0].text_color,
                         }}
                       >

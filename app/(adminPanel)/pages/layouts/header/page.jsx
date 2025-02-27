@@ -190,7 +190,6 @@ function HeaderLayout({ pageId }) {
           )}
         </div>
   
-        {/* Logo Upload Section */}
         <div className="mb-8">
           <h3 className="text-lg font-medium mb-4">Header Logo</h3>
           <div className="flex flex-col">
@@ -270,7 +269,6 @@ function HeaderLayout({ pageId }) {
           )}
         </div>
   
-        {/* Header Buttons */}
         <div className="mb-8">
           <h3 className="text-lg font-medium mb-4">Header Buttons</h3>
   

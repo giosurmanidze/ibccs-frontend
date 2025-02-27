@@ -7,12 +7,12 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useForm } from "react-hook-form";
 import axiosInstance from "@/config/axios";
 
-function SidebarLayout() {
+function EditPage() {
   const [pageContent, setPageContent] = useState({});
 
   useEffect(() => {
     const getPageContent = async () => {
-      const response = await axiosInstance.get("pages/header");
+      const response = await axiosInstance.get(`pages/login`);
       setPageContent(JSON.parse(response.data?.dynamic_content));
     };
     getPageContent();
@@ -27,18 +27,16 @@ function SidebarLayout() {
   } = useForm({});
 
   useEffect(() => {
-    if (pageContent?.sidebar_buttons) {
-      Object.entries(pageContent.sidebar_buttons).forEach(
-        ([key, fieldData]) => {
-          setValue(`sidebar_buttons.${key}.value`, fieldData.value);
-          setValue(`sidebar_buttons.${key}.type`, fieldData.type);
-        }
-      );
+    if (pageContent?.login_content) {
+      Object.entries(pageContent.login_content).forEach(([key, fieldData]) => {
+        setValue(`login_content.${key}.value`, fieldData.value);
+        setValue(`login_content.${key}.type`, fieldData.type);
+      });
     }
   }, [pageContent, setValue]);
 
   const onSubmit = async (data) => {
-    console.log(data);
+    console.log(data.login_content);
     try {
       const currentContent = pageContent
         ? JSON.parse(JSON.stringify(pageContent))
@@ -46,7 +44,7 @@ function SidebarLayout() {
 
       const dynamicContentData = {
         ...currentContent,
-        sidebar_buttons: data.sidebar_buttons, 
+        buttons: data.login_content,
       };
 
       const payload = {
@@ -55,7 +53,7 @@ function SidebarLayout() {
       };
 
       const response = await axiosInstance.post(
-        "pages/by-title/header",
+        "pages/by-title/login",
         payload
       );
 
@@ -76,12 +74,12 @@ function SidebarLayout() {
         closeOnClick
         draggable
       />
-      <PageBreadcrumb pageTitle="Sidebar layout" />
+      <PageBreadcrumb pageTitle={`Login page`} />
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-4 py-6 dark:border-gray-800 dark:bg-white/[0.03] sm:px-5 sm:py-7 xl:px-10 xl:py-12">
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-8">
-            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-              {(pageContent?.sidebar_buttons || []).map((button, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {(pageContent?.buttons || []).map((button, index) => (
                 <div
                   key={index}
                   className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 flex-1 min-w-[280px]"
@@ -93,7 +91,7 @@ function SidebarLayout() {
                       </label>
                       <input
                         type="text"
-                        {...register(`sidebar_buttons.${index}.text`, {
+                        {...register(`login_content.${index}.text`, {
                           required: "Button text is required",
                         })}
                         defaultValue={button.text}
@@ -101,19 +99,21 @@ function SidebarLayout() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                        Button URL
-                      </label>
-                      <input
-                        type="text"
-                        {...register(`sidebar_buttons.${index}.url`, {
-                          required: "Button URL is required",
-                        })}
-                        defaultValue={button.url}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700"
-                      />
-                    </div>
+                    {button.url && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                          Button URL
+                        </label>
+                        <input
+                          type="text"
+                          {...register(`login_content.${index}.url`, {
+                            required: "Button URL is required",
+                          })}
+                          defaultValue={button.url}
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700"
+                        />
+                      </div>
+                    )}
 
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -121,7 +121,7 @@ function SidebarLayout() {
                       </label>
                       <input
                         type="text"
-                        {...register(`sidebar_buttons.${index}.name`, {
+                        {...register(`login_content.${index}.name`, {
                           required: "Button name is required",
                         })}
                         defaultValue={button.name}
@@ -137,19 +137,19 @@ function SidebarLayout() {
                         <input
                           type="color"
                           id={`button-color-${index}`}
-                          {...register(`sidebar_buttons.${index}.text_color`)}
+                          {...register(`login_content.${index}.text_color`)}
                           defaultValue={button.text_color}
                           className="p-1 h-10 w-14 block bg-white border border-gray-200 cursor-pointer rounded-lg dark:bg-gray-700"
                         />
                         <input
                           type="text"
                           value={
-                            watch(`sidebar_buttons.${index}.text_color`) ||
+                            watch(`login_content.${index}.text_color`) ||
                             button.text_color
                           }
                           onChange={(e) => {
                             setValue(
-                              `sidebar_buttons.${index}.text_color`,
+                              `login_content.${index}.text_color`,
                               e.target.value
                             );
                           }}
@@ -165,19 +165,21 @@ function SidebarLayout() {
                         <input
                           type="color"
                           id={`button-color-${index}`}
-                          {...register(`sidebar_buttons.${index}.background_color`)}
+                          {...register(
+                            `login_content.${index}.background_color`
+                          )}
                           defaultValue={button.background_color}
                           className="p-1 h-10 w-14 block bg-white border border-gray-200 cursor-pointer rounded-lg dark:bg-gray-700"
                         />
                         <input
                           type="text"
                           value={
-                            watch(`sidebar_buttons.${index}.background_color`) ||
+                            watch(`login_content.${index}.background_color`) ||
                             button.background_color
                           }
                           onChange={(e) => {
                             setValue(
-                              `sidebar_buttons.${index}.background_color`,
+                              `login_content.${index}.background_color`,
                               e.target.value
                             );
                           }}
@@ -190,6 +192,7 @@ function SidebarLayout() {
               ))}
             </div>
           </div>
+
           <div className="mt-6">
             <button
               type="submit"
@@ -204,4 +207,4 @@ function SidebarLayout() {
   );
 }
 
-export default withProtectedRoute(SidebarLayout, ["Admin"]);
+export default withProtectedRoute(EditPage, ["Admin"]);

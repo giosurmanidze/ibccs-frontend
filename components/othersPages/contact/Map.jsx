@@ -1,7 +1,36 @@
 import { socialLinksWithBorder } from "@/data/socials";
 import React from "react";
 
-export default function Map() {
+export default function Map({ pageContent }) {
+  // Function to get pairs of name/value fields
+  const getContactPairs = () => {
+    if (!pageContent) return [];
+    
+    const pairs = [];
+    const nameKeys = Object.keys(pageContent).filter(key => 
+      key.match(/detail_name_\d+$/) && !key.includes('_value')
+    );
+    
+    nameKeys.forEach(nameKey => {
+      const match = nameKey.match(/detail_name_(\d+)$/);
+      if (match) {
+        const index = match[1];
+        const valueKey = `detail_name_${index}_value`;
+        
+        if (pageContent[nameKey] && pageContent[valueKey]) {
+          pairs.push({
+            label: pageContent[nameKey].value,
+            value: pageContent[valueKey].value
+          });
+        }
+      }
+    });
+    
+    return pairs;
+  };
+  
+  const contactPairs = getContactPairs();
+
   return (
     <section className="flat-spacing-9">
       <div className="container">
@@ -21,7 +50,6 @@ export default function Map() {
               />{" "}
             </div>
             <div>
-              {" "}
               <b> Batumi Office</b>
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2981.7650713671337!2d41.617024!3d41.639209199999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x406787fa943e18cd%3A0x105adfdfaf372335!2sIBCCS%20GEORGIA%20Batumi!5e0!3m2!1sen!2sge!4v1739518954554!5m2!1sen!2sge"
@@ -37,53 +65,30 @@ export default function Map() {
           <div className="tf-content-left has-mt">
             <div className="sticky-top">
               <h4 className="mb_20">Contact us</h4>
-              <div className="mb_20">
-                <p className="mb_15">
-                  <strong>Country/City</strong>
-                </p>
-                <p>Georgia,Tbilisi</p>
-              </div>{" "}
-              <div className="mb_20">
-                <p className="mb_15">
-                  <strong>Address</strong>
-                </p>
-                <p>66 Mott St, New York, New York, Zip Code: 10006, AS</p>
-              </div>
-              <div className="mb_20">
-                <p className="mb_15">
-                  <strong>Phone</strong>
-                </p>
-                <p>(623) 934-2400</p>
-              </div>
-              <div className="mb_20">
-                <p className="mb_15">
-                  <strong>Email</strong>
-                </p>
-                <p>EComposer@example.com</p>
-              </div>
-              <div className="mb_36">
-                <p className="mb_15">
-                  <strong>Open Time</strong>
-                </p>
-                <p className="mb_15">Our store has re-opened for shopping,</p>
-                <p>exchange Every day 11am to 7pm</p>
-              </div>
-              <div>
-                <ul className="tf-social-icon d-flex gap-20 style-default">
-                  {socialLinksWithBorder.map((link, index) => (
-                    <li key={index}>
-                      <a
-                        href={link.href}
-                        className={`box-icon link round ${link.className} ${link.borderClass}`}
-                      >
-                        <i
-                          className={`icon ${link.iconSize} ${link.iconClass}`}
-                        />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              
+              {contactPairs.length > 0 ? (
+                contactPairs.map((pair, index) => (
+                  <div key={index} className="mb_20">
+                    <p className="mb_15">
+                      <strong>{pair.label}</strong>
+                    </p>
+                    <p>{pair.value}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="mb_20">
+                  <p>Contact information not available</p>
+                </div>
+              )}
+              
+              {/* You can add social links here if needed */}
+              {/* <div className="social-item">
+                {socialLinksWithBorder.map((item, idx) => (
+                  <a key={idx} href={item.url} target="_blank">
+                    {item.icon}
+                  </a>
+                ))}
+              </div> */}
             </div>
           </div>
         </div>

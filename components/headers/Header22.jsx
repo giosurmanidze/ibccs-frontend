@@ -39,23 +39,26 @@ export default function Header22({ pageContent }) {
     }
   };
 
-  const header_bg = pageContent?.header?.bg_color["value"];
+  const header_background = pageContent?.header?.background_color["value"];
   const placeholder_text =
     pageContent?.header?.search_placeholder_text["value"];
-  const placeholder_bg_color = pageContent?.header?.search_bg_color["value"];
+  const placeholder_background_color =
+    pageContent?.header?.search_background_color["value"];
   const search_placeholder_text_color =
     pageContent?.header?.search_placeholder_text_color["value"];
-  const search_icon_bg = pageContent?.header?.search_icon_bg["value"];
+  const search_icon_background =
+    pageContent?.header?.search_icon_background["value"];
   const search_icon_color = pageContent?.header?.search_icon_color["value"];
   const cart_color = pageContent?.header?.cart_color["value"];
   const quantity_circle = pageContent?.header?.quantity_circle["value"];
   const quantity_circle_text =
     pageContent?.header?.quantity_circle_text["value"];
-  const categories_dropdown_bg =
-    pageContent?.header?.categories_dropdown_bg["value"];
+  const categories_dropdown_background =
+    pageContent?.header?.categories_dropdown_background["value"];
   const categories_dropdown_text =
     pageContent?.header?.categories_dropdown_text["value"];
-  const bottom_header_bg = pageContent?.header?.bottom_header_bg["value"];
+  const bottom_header_background =
+    pageContent?.header?.bottom_header_background["value"];
   const support_center_number =
     pageContent?.header?.support_center_number["value"];
   const support_number_color =
@@ -74,7 +77,7 @@ export default function Header22({ pageContent }) {
     >
       <div
         className="main-header line-1"
-        style={{ backgroundColor: header_bg }}
+        style={{ backgroundColor: header_background }}
       >
         <div className="container">
           <div className="row wrapper-header align-items-center">
@@ -120,7 +123,7 @@ export default function Header22({ pageContent }) {
                     type="text"
                     placeholder={placeholder_text}
                     style={{
-                      backgroundColor: placeholder_bg_color,
+                      backgroundColor: placeholder_background_color,
                       "&::placeholder": {
                         color: search_placeholder_text_color,
                       },
@@ -132,7 +135,7 @@ export default function Header22({ pageContent }) {
                     className="tf-btn"
                     type="button"
                     style={{
-                      backgroundColor: search_icon_bg,
+                      backgroundColor: search_icon_background,
                     }}
                   >
                     <i
@@ -255,7 +258,7 @@ export default function Header22({ pageContent }) {
       </div>
       <div
         className="header-bottom tf-md-hidden"
-        style={{ backgroundColor: bottom_header_bg }}
+        style={{ backgroundColor: bottom_header_background }}
       >
         <div className="container">
           <div className="wrapper-header d-flex justify-content-between align-items-center">
@@ -264,7 +267,7 @@ export default function Header22({ pageContent }) {
                 <a
                   href="#"
                   className="categories-title"
-                  style={{ backgroundColor: categories_dropdown_bg }}
+                  style={{ backgroundColor: categories_dropdown_background }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -29,6 +29,18 @@ const emailShecma = yup.object().shape({
 });
 
 export default function Login() {
+  const [pageContent, setPageContent] = useState({});
+
+  useEffect(() => {
+    const getPageContent = async () => {
+      const response = await axiosInstance.get(`pages/login`);
+      setPageContent(JSON.parse(response.data?.dynamic_content).buttons);
+    };
+    getPageContent();
+  }, []);
+
+  console.log(pageContent);
+
   const {
     register,
     handleSubmit,
@@ -91,7 +103,6 @@ export default function Login() {
                       className="tf-field-input tf-input"
                       placeholder=" "
                       type="email"
-                      autoComplete="abc@xyz.com"
                       id="property5"
                       name="email"
                       {...registerEmail("email")}
@@ -108,19 +119,21 @@ export default function Login() {
                       Cancel
                     </a>
                   </div>
-                  <div className="">
+                  {Array.isArray(pageContent) && pageContent[1] && (
                     <button
                       type="submit"
                       className="tf-btn w-100 radius-3 btn-fill animate-hover-btn justify-content-center"
+                      style={{
+                        backgroundColor: pageContent[1].background_color,
+                        color: pageContent[1].text_color,
+                      }}
                     >
-                      Reset password
+                      {pageContent[1].text}
                     </button>
-                  </div>
+                  )}
                 </form>
               </div>
             </div>
-
-            {/* Login Form */}
             <div id="login">
               <h5 className="mb_36">Log in</h5>
               <div>
@@ -172,14 +185,18 @@ export default function Login() {
                       Forgot your password?
                     </a>
                   </div>
-                  <div className="">
+                  {Array.isArray(pageContent) && pageContent[0] && (
                     <button
                       type="submit"
                       className="tf-btn w-100 radius-3 btn-fill animate-hover-btn justify-content-center"
+                      style={{
+                        backgroundColor: pageContent[0].background_color,
+                        color: pageContent[0].text_color,
+                      }}
                     >
-                      Log in
+                      {pageContent[0].text}
                     </button>
-                  </div>
+                  )}
                 </form>
               </div>
             </div>

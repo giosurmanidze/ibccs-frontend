@@ -28,14 +28,14 @@ export default function Footer2({ pageContent }) {
     };
   }, []);
 
-  const footer_bg_color = pageContent?.bg_color["value"];
-  const footer_text_color = pageContent?.text_color["value"];
+  const background_color = pageContent?.background_color["value"];
+  const footer_texts_color = pageContent?.texts_color["value"];
 
   return (
     <footer
       id="footer"
       className="footer"
-      style={{ backgroundColor: footer_bg_color }}
+      style={{ backgroundColor: background_color }}
     >
       <div className="footer-wrap wow fadeIn" data-wow-delay="0s">
         <div className="footer-body">
@@ -43,7 +43,7 @@ export default function Footer2({ pageContent }) {
             <div className="row">
               <div
                 className="col-xl-3 col-md-6 col-12"
-                style={{ color: footer_text_color }}
+                style={{ color: footer_texts_color }}
               >
                 <div className="footer-infor">
                   <ul>
@@ -72,10 +72,10 @@ export default function Footer2({ pageContent }) {
               </div>
               <div className="col-xl-3 col-md-6 col-12 footer-col-block">
                 <div className="footer-heading footer-heading-desktop">
-                  <h6 style={{ color: footer_text_color }}>About us</h6>
+                  <h6 style={{ color: footer_texts_color }}>About us</h6>
                 </div>
                 <div className="footer-heading footer-heading-moblie">
-                  <h6 style={{ color: footer_text_color }}>About us</h6>
+                  <h6 style={{ color: footer_texts_color }}>About us</h6>
                 </div>
                 <ul className="footer-menu-list tf-collapse-content">
                   {aboutLinks.slice(0, 4).map((link, index) => (
@@ -83,7 +83,7 @@ export default function Footer2({ pageContent }) {
                       <Link
                         href={link.href}
                         className="footer-menu_item"
-                        style={{ color: footer_text_color }}
+                        style={{ color: footer_texts_color }}
                       >
                         {link.text}
                       </Link>

@@ -96,48 +96,60 @@ export default function ContactForm({ dynamicFields = {} }) {
     return name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
-  const renderDynamicField = (key, field) => {
-    console.log(field);
-    switch (field.type) {
-      case "textarea":
-        return (
-          <div className="tf-field style-1 mb_15" key={key}>
-            <textarea
-              placeholder={`${formatFieldName(key)} ${
-                field.required ? "*" : ""
-              }`}
-              name={key}
-              id={key}
-              cols={30}
-              rows={field.rows || 5}
-              {...register(key)}
-              className="w-100"
-            />
-            {errors[key] && <p className="error">{errors[key].message}</p>}
-          </div>
-        );
-
-      default:
-        return (
-          <div className="tf-field style-1 mb_15" key={key}>
-            <input
-              className="tf-field-input tf-input"
-              placeholder={`${formatFieldName(key)} ${
-                field.required ? "*" : ""
-              }`}
-              type={field.type || "text"}
-              id={key}
-              name={key}
-              {...register(key)}
-            />
-            <label className="tf-field-label fw-4 text_black-2" htmlFor={key}>
-              {formatFieldName(key)} {field.required ? "*" : ""}
-            </label>
-            {errors[key] && <p className="error">{errors[key].message}</p>}
-          </div>
-        );
-    }
+  const renderField = (key, field) => {
+    return (
+      <div className="tf-field style-1 mb_15" key={key}>
+        <input
+          className="tf-field-input tf-input"
+          placeholder={`${formatFieldName(key)} ${field.required ? "*" : ""}`}
+          type={field.type || "text"}
+          id={key}
+          name={key}
+          {...register(key)}
+        />
+        <label className="tf-field-label fw-4 text_black-2" htmlFor={key}>
+          {formatFieldName(key)} {field.required ? "*" : ""}
+        </label>
+        {errors[key] && <p className="error">{errors[key].message}</p>}
+      </div>
+    );
   };
+
+  const renderTextarea = (key, field) => {
+    return (
+      <div className="tf-field style-1 mb_15" key={key}>
+        <textarea
+          placeholder={`${formatFieldName(key)} ${field.required ? "*" : ""}`}
+          name={key}
+          id={key}
+          cols={30}
+          rows={field.rows || 5}
+          {...register(key)}
+          className="w-100"
+        />
+        {errors[key] && <p className="error">{errors[key].message}</p>}
+      </div>
+    );
+  };
+
+  const getRegularAndTextareaFields = () => {
+    const regularFields = [];
+    const textareaFields = [];
+
+    if (dynamicFields && Object.keys(dynamicFields).length > 0) {
+      Object.entries(dynamicFields).forEach(([key, field]) => {
+        if (field.type === "textarea") {
+          textareaFields.push([key, field]);
+        } else {
+          regularFields.push([key, field]);
+        }
+      });
+    }
+
+    return { regularFields, textareaFields };
+  };
+
+  const { regularFields, textareaFields } = getRegularAndTextareaFields();
 
   return (
     <section className="bg_grey-7 flat-spacing-9">
@@ -160,9 +172,12 @@ export default function ContactForm({ dynamicFields = {} }) {
             id="contactform"
           >
             {dynamicFields && Object.keys(dynamicFields).length > 0 ? (
-              Object.entries(dynamicFields).map(([key, field]) =>
-                renderDynamicField(key, field)
-              )
+              <>
+                {regularFields.map(([key, field]) => renderField(key, field))}
+                {textareaFields.map(([key, field]) =>
+                  renderTextarea(key, field)
+                )}
+              </>
             ) : (
               <div className="tf-field style-1 mb_15">
                 <p>

@@ -6,12 +6,10 @@ import React, { useEffect, useState } from "react";
 
 export default function Page() {
   const [pageContent, setPageContent] = useState({});
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const getPageContent = async () => {
       try {
-        setLoading(true);
         const response = await axiosInstance.get(`pages/contact`);
         const content = JSON.parse(response.data?.dynamic_content || "{}");
 
@@ -22,8 +20,6 @@ export default function Page() {
         setPageContent(content);
       } catch (error) {
         console.error("Error fetching contact page data:", error);
-      } finally {
-        setLoading(false);
       }
     };
 

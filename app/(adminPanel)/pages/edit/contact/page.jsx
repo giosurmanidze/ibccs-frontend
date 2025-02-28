@@ -46,12 +46,10 @@ function EditPage() {
       if (response.data?.dynamic_content) {
         content = JSON.parse(response.data.dynamic_content);
 
-        // ALWAYS convert dynamic_fields to an object if it's an array
         if (Array.isArray(content.dynamic_fields)) {
           content.dynamic_fields = {};
         }
 
-        // Ensure dynamic_fields exists
         if (!content.dynamic_fields) {
           content.dynamic_fields = {};
         }
@@ -61,7 +59,6 @@ function EditPage() {
 
       setPageContent(content);
 
-      // Find highest detail number for counter
       const keys = Object.keys(content?.contact_details || {});
       const detailNumbers = keys
         .filter((key) => key.startsWith("detail_name_"))
@@ -93,41 +90,34 @@ function EditPage() {
   }, []);
 
   const initializeForm = (content) => {
-    // Reset form with the new data
     const formData = {
       contact_details: {},
       dynamic_fields: {},
     };
 
-    // Initialize contact details
     if (content?.contact_details) {
       Object.entries(content.contact_details).forEach(([key, fieldData]) => {
         formData.contact_details[key] = {
           value: fieldData.value || "",
           type: fieldData.type || "text",
-          required:
-            fieldData.required !== undefined ? fieldData.required : false,
+          required: Boolean(fieldData.required), 
         };
       });
     }
 
-    // Initialize dynamic fields
     if (content?.dynamic_fields && !Array.isArray(content.dynamic_fields)) {
       Object.entries(content.dynamic_fields).forEach(([key, fieldData]) => {
         formData.dynamic_fields[key] = {
           value: fieldData.value || "",
           type: fieldData.type || "text",
-          required:
-            fieldData.required !== undefined ? fieldData.required : false,
+          required: Boolean(fieldData.required), 
           placeholder: fieldData.placeholder || "",
         };
       });
     }
 
-    // Use reset with the fully populated formData
     reset(formData);
 
-    // Optionally, update pageContent to ensure state is in sync
     setPageContent(content);
   };
 
@@ -140,13 +130,11 @@ function EditPage() {
     const nameKey = `detail_name_${detailCounter}`;
     const valueKey = `detail_name_${detailCounter}_value`;
 
-    // Create updated content
     const updatedContent = { ...pageContent };
     if (!updatedContent.contact_details) {
       updatedContent.contact_details = {};
     }
 
-    // Add the new fields
     updatedContent.contact_details[nameKey] = {
       type: "text",
       value: newFieldName,
@@ -159,10 +147,8 @@ function EditPage() {
       required: isRequired,
     };
 
-    // Update state and form
     setPageContent(updatedContent);
 
-    // Update form values
     setValue(`contact_details.${nameKey}.value`, newFieldName);
     setValue(`contact_details.${nameKey}.type`, "text");
     setValue(`contact_details.${nameKey}.required`, isRequired);
@@ -171,10 +157,8 @@ function EditPage() {
     setValue(`contact_details.${valueKey}.type`, newFieldType);
     setValue(`contact_details.${valueKey}.required`, isRequired);
 
-    // Increment counter for next field pair
     setDetailCounter((prev) => prev + 1);
 
-    // Reset the input fields
     setNewFieldName("");
     setNewFieldValue("");
 
@@ -187,13 +171,11 @@ function EditPage() {
       return;
     }
 
-    // Convert the key to snake_case
     const formattedKey = newDynamicFieldName
       .toLowerCase()
       .replace(/\s+/g, "_")
       .replace(/[^a-z0-9_]/g, "");
 
-    // Check if field already exists
     if (
       pageContent?.dynamic_fields &&
       pageContent.dynamic_fields[formattedKey]
@@ -202,7 +184,6 @@ function EditPage() {
       return;
     }
 
-    // Create updated content
     const updatedContent = { ...pageContent };
     if (
       !updatedContent.dynamic_fields ||
@@ -211,18 +192,15 @@ function EditPage() {
       updatedContent.dynamic_fields = {};
     }
 
-    // Add the new field
     updatedContent.dynamic_fields[formattedKey] = {
       type: newDynamicFieldType,
       value: "",
       required: isDynamicRequired,
-      placeholder: newDynamicFieldPlaceholder || "", // Add placeholder
+      placeholder: newDynamicFieldPlaceholder || "", 
     };
 
-    // Update state and form
     setPageContent(updatedContent);
 
-    // Update form values
     setValue(`dynamic_fields.${formattedKey}.value`, "");
     setValue(`dynamic_fields.${formattedKey}.type`, newDynamicFieldType);
     setValue(`dynamic_fields.${formattedKey}.required`, isDynamicRequired);
@@ -231,7 +209,6 @@ function EditPage() {
       newDynamicFieldPlaceholder
     );
 
-    // Reset the input fields
     setNewDynamicFieldName("");
     setNewDynamicFieldPlaceholder("");
     setNewDynamicFieldType("text");
@@ -241,7 +218,6 @@ function EditPage() {
   };
 
   const removeField = (index) => {
-    // Create a copy of the current pageContent
     const updatedContent = { ...pageContent };
 
     const nameKey = `detail_name_${index}`;
@@ -265,7 +241,6 @@ function EditPage() {
         dynamic_fields: pageContent.dynamic_fields || {},
       };
 
-      // Rebuild contact details, excluding the deleted fields
       Object.entries(updatedContent.contact_details).forEach(
         ([key, fieldData]) => {
           if (key.startsWith("detail_name_")) {
@@ -278,7 +253,6 @@ function EditPage() {
         }
       );
 
-      // Reset the form with updated data
       reset(updatedFormData);
 
       toast.success("Contact field removed successfully");
@@ -286,23 +260,18 @@ function EditPage() {
   };
 
   const removeDynamicField = (key) => {
-    // Create a copy of the current pageContent
     const updatedContent = { ...pageContent };
 
-    // Remove the field
     if (updatedContent.dynamic_fields && updatedContent.dynamic_fields[key]) {
       delete updatedContent.dynamic_fields[key];
 
-      // Update state
       setPageContent(updatedContent);
 
-      // Update form by resetting the form with updated content
       const updatedFormData = {
         contact_details: pageContent.contact_details || {},
         dynamic_fields: {},
       };
 
-      // Rebuild dynamic fields, excluding the deleted field
       Object.entries(updatedContent.dynamic_fields).forEach(
         ([fieldKey, fieldData]) => {
           updatedFormData.dynamic_fields[fieldKey] = {
@@ -314,21 +283,19 @@ function EditPage() {
         }
       );
 
-      // Reset the form with updated data
       reset(updatedFormData);
 
       toast.success("Dynamic field removed successfully");
     }
   };
 
-  // Helper function to get detail pairs
   const getDetailPairs = () => {
     if (!pageContent?.contact_details) return [];
 
     const details = [];
     const nameKeys = Object.keys(pageContent.contact_details).filter((key) =>
       key.match(/detail_name_\d+$/)
-    ); // Only get keys without _value suffix
+    ); 
 
     nameKeys.forEach((nameKey) => {
       const match = nameKey.match(/detail_name_(\d+)$/);
@@ -358,26 +325,35 @@ function EditPage() {
     try {
       setLoading(true);
 
-      // Get existing data structure
-      const currentContent = JSON.parse(JSON.stringify(pageContent));
+      const updatedContent = { ...pageContent };
 
-      // Update the specific sections we're working with
-      const updatedContent = {
-        ...currentContent,
-        contact_details: data.contact_details || {},
-        dynamic_fields: currentContent.dynamic_fields || {}, // Preserve existing dynamic fields
-      };
-
-      // Convert checkbox strings to booleans and ensure dynamic_fields is an object
-      if (data.dynamic_fields && typeof data.dynamic_fields === "object") {
-        Object.keys(data.dynamic_fields).forEach((key) => {
-          updatedContent.dynamic_fields[key] = {
-            ...currentContent.dynamic_fields[key], // Preserve existing field data
-            value: data.dynamic_fields[key].value || "",
-            type: data.dynamic_fields[key].type || "text",
+      updatedContent.contact_details = {};
+      if (data.contact_details) {
+        Object.entries(data.contact_details).forEach(([key, fieldData]) => {
+          updatedContent.contact_details[key] = {
+            value: fieldData.value || "",
+            type: fieldData.type || "text",
             required:
-              data.dynamic_fields[key].required === "true" ? true : false,
-            placeholder: data.dynamic_fields[key].placeholder || "",
+              fieldData.required === true || fieldData.required === "true",
+          };
+        });
+      }
+
+      if (
+        !updatedContent.dynamic_fields ||
+        Array.isArray(updatedContent.dynamic_fields)
+      ) {
+        updatedContent.dynamic_fields = {};
+      }
+
+      if (data.dynamic_fields) {
+        Object.entries(data.dynamic_fields).forEach(([key, fieldData]) => {
+          updatedContent.dynamic_fields[key] = {
+            value: fieldData.value || "",
+            type: fieldData.type || "text",
+            required:
+              fieldData.required === true || fieldData.required === "true",
+            placeholder: fieldData.placeholder || "",
           };
         });
       }
@@ -397,8 +373,9 @@ function EditPage() {
       if (response.status === 200) {
         toast.success("Contact page updated successfully!");
 
-        // Refresh data to ensure UI stays in sync with database
-        await fetchPageData();
+        const freshData = await fetchPageData();
+
+        initializeForm(freshData);
       }
     } catch (error) {
       console.error("Error updating page:", error);
@@ -795,14 +772,12 @@ function EditPage() {
                             type="checkbox"
                             id={`dynamic-required-${key}`}
                             checked={
-                              watch(`dynamic_fields.${key}.required`) ===
-                                true ||
-                              watch(`dynamic_fields.${key}.required`) === "true"
+                              watch(`dynamic_fields.${key}.required`) === true
                             }
                             onChange={(e) => {
                               setValue(
                                 `dynamic_fields.${key}.required`,
-                                e.target.checked ? "true" : "false"
+                                e.target.checked
                               );
                             }}
                             className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"

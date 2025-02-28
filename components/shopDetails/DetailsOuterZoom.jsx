@@ -27,10 +27,7 @@ export default function DetailsOuterZoom({ product }) {
   const button3 = pageContent?.buttons?.[2] ?? null;
 
   return (
-    <section
-      className="flat-spacing-4 pt_0"
-      style={{ maxWidth: "100vw", overflow: "clip" }}
-    >
+    <section style={{ maxWidth: "100vw", overflow: "clip" }}>
       <div
         className="tf-main-product section-image-zoom"
         style={{ maxWidth: "100vw", overflow: "clip" }}

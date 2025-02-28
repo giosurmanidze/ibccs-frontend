@@ -1,21 +1,21 @@
 "use client";
 
-import { sliderData7 } from "@/data/heroslides";
-import { useGetService } from "@/hooks/useGetService";
 import Image from "next/image";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 
-export default function Hero() {
-  const { data: services } = useGetService();
+export default function Hero({ pageContent }) {
+  const banner_buttons = pageContent?.banner_buttons;
+  const banner_bg_image = pageContent?.banner_bg?.value;
+  console.log(pageContent);
 
   return (
     <section className=" flat-spacing-5 slider-gaming-accessories">
       <Image
         className="lazyload"
-        data-src="/images/logo/businessman-hand-holding-blocks.jpeg"
+        data-src={banner_bg_image}
         alt="collection-img"
-        src="/images/logo/banner.avif"
+        src={banner_bg_image}
         width={2000}
         height={855}
       />
@@ -29,38 +29,60 @@ export default function Hero() {
           className="swiper tf-sw-recent"
           dir="ltr"
         >
-          {sliderData7.map((slide) => (
-            <SwiperSlide key={slide.id}>
+          {pageContent.banner_cards?.map((slide, index) => (
+            <SwiperSlide key={index}>
               <div className="collection-item-v4 style-2 hover-img">
                 <div className="collection-inner">
-                  <Link
-                    href={`/shop-collection-sub`} 
-                    className="collection-image img-style radius-10 o-hidden"
-                  >
-                    <Image
-                      className="lazyload"
-                      data-src={slide.imgSrc}
-                      alt={slide.alt}
-                      src={slide.imgSrc}
-                      width={800}
-                      height={747}
-                    />
-                  </Link>
+                  {banner_buttons && banner_buttons[index] && (
+                    <Link
+                      href={`/shop-collection-sub`}
+                      className="collection-image img-style radius-10 o-hidden"
+                    >
+                      <Image
+                        className="lazyload"
+                        data-src={slide.imgSrc}
+                        alt={slide.alt}
+                        src={banner_buttons[index]?.banner_img?.value}
+                        width={800}
+                        height={747}
+                      />
+                    </Link>
+                  )}
                   <div
                     className="collection-content text-start wow fadeInUp"
                     data-wow-delay="0s"
                   >
-                    <p className="subheading text-white">{slide.subheading}</p>
-                    <h5 className="heading text-white fw-6 font-readex-pro">
-                      {slide.heading}
-                    </h5>
-                    <p className="subtext text-white">{slide.subtext}</p>
-                    <Link
-                      href={`/shop-collection-sub`} // Add the link here as well
-                      className="tf-btn style-3 fw-6 btn-light-icon radius-3 animate-hover-btn"
+                    <p
+                      className="subheading"
+                      style={{ color: slide.top_text_color.value }}
                     >
-                      <span>Shop now</span>
-                    </Link>
+                      {slide.top_text.value}
+                    </p>
+                    <h5
+                      className="heading fw-6 font-readex-pro"
+                      style={{ color: slide.header_text_color.value }}
+                    >
+                      {slide.header_text.value}
+                    </h5>
+                    <p
+                      className="subtext"
+                      style={{ color: slide.smaller_text_color.value }}
+                    >
+                      {slide.smaller_text.value}
+                    </p>
+                    {banner_buttons && banner_buttons[index] && (
+                      <Link
+                        href={`/shop-collection-sub`}
+                        className="tf-btn style-3 fw-6 btn-light-icon radius-3 animate-hover-btn"
+                        style={{
+                          color: banner_buttons[index]?.text_color,
+                          backgroundColor:
+                            banner_buttons[index]?.background_color,
+                        }}
+                      >
+                        <span>{banner_buttons[index]?.text}</span>
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

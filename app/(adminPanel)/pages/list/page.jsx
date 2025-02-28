@@ -65,7 +65,9 @@ function PageManager() {
             <tbody>
               {pages.map((page) => {
                 const hideDeleteButton =
-                  page.slug !== "view-cart" && page.slug !== "login";
+                  page.slug !== "view-cart" &&
+                  page.slug !== "login" &&
+                  page.slug !== "contact";
                 return (
                   <tr key={page.id}>
                     <td className="py-2 px-4 border-b">{page.title}</td>

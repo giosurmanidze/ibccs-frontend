@@ -1,11 +1,6 @@
 "use client";
-import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import Input from "@/components/form/input/InputField";
-import Label from "@/components/form/Label";
-import BasicTableOne from "@/components/tables/BasicTableOne";
 import { Modal } from "@/components/ui/modal";
-import { useModal } from "@/hooks/useModal";
 import * as yup from "yup";
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -20,8 +15,6 @@ import { useGetUser } from "@/hooks/useGetUser";
 import { useDeleteUser } from "@/hooks/useDeleteUser";
 import { toast, ToastContainer } from "react-toastify";
 import { useToggleActivation } from "@/hooks/useToggleActivation";
-import { Deactivate } from "@/icons/Deactivate";
-import { Activate } from "@/icons/Activate";
 
 const ALL_SOCIAL_PLATFORMS = ["whatsapp", "telegram", "viber", "botim"];
 

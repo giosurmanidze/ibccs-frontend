@@ -1,15 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { createPage, getPage, updatePage } from "@/services/pageService";
 import { toast, ToastContainer } from "react-toastify";
-import dynamic from "next/dynamic";
 
-// const ReactQuill = dynamic(() => import("react-quill"), {
-//   ssr: false,
-//   loading: () => <p>Loading editor...</p>,
-// });
 import "react-quill/dist/quill.snow.css";
 import { withProtectedRoute } from "@/components/auth/ProtectedRoute";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
@@ -17,7 +11,6 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 
 function PageEditor({ pageId }) {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -27,7 +20,6 @@ function PageEditor({ pageId }) {
 
   const {
     register,
-    // handleSubmit,
     formState: { errors },
     reset,
   } = useForm({
@@ -59,145 +51,7 @@ function PageEditor({ pageId }) {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const handleMetaChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      meta_data: {
-        ...prev.meta_data,
-        [name]: value,
-      },
-    }));
-  };
-
-  const handleContentChange = (content) => {
-    setFormData((prev) => ({
-      ...prev,
-      content,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (isEditMode) {
-        await updatePage(pageId, formData);
-        toast.success("Page updated successfully");
-      } else {
-        await createPage(formData);
-        toast.success("Page created successfully");
-      }
-      // router.push("/admin/pages");
-    } catch (error) {
-      toast.error("Failed to save page");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    // <div className="container mx-auto p-4">
-    //   <h1 className="text-2xl font-bold mb-6">
-    //     {isEditMode ? "Edit Page" : "Create New Page"}
-    //   </h1>
-    //   <form onSubmit={handleSubmit} className="space-y-6">
-    //     <div>
-    //       <label className="block text-sm font-medium text-gray-700">
-    //         Title
-    //       </label>
-    //       <input
-    //         type="text"
-    //         name="title"
-    //         value={formData.title}
-    //         onChange={handleChange}
-    //         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-    //         required
-    //       />
-    //     </div>
-
-    //     {/* <div>
-    //       <label className="block text-sm font-medium text-gray-700">
-    //         Content
-    //       </label>
-    //       <ReactQuill
-    //         value={formData.content}
-    //         onChange={handleContentChange}
-    //         className="h-64 mb-12"
-    //       />
-    //     </div> */}
-
-    //     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    //       <div>
-    //         <label className="block text-sm font-medium text-gray-700">
-    //           Meta Description
-    //         </label>
-    //         <input
-    //           type="text"
-    //           name="description"
-    //           value={formData.meta_data.description}
-    //           onChange={handleMetaChange}
-    //           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-    //         />
-    //       </div>
-    //       <div>
-    //         <label className="block text-sm font-medium text-gray-700">
-    //           Meta Keywords
-    //         </label>
-    //         <input
-    //           type="text"
-    //           name="keywords"
-    //           value={formData.meta_data.keywords}
-    //           onChange={handleMetaChange}
-    //           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-    //         />
-    //       </div>
-    //     </div>
-
-    //     <div className="flex items-center">
-    //       <input
-    //         type="checkbox"
-    //         id="is_published"
-    //         name="is_published"
-    //         checked={formData.is_published}
-    //         onChange={handleChange}
-    //         className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-    //       />
-    //       <label
-    //         htmlFor="is_published"
-    //         className="ml-2 block text-sm text-gray-900"
-    //       >
-    //         Publish this page
-    //       </label>
-    //     </div>
-
-    //     <div className="flex space-x-2">
-    //       <button
-    //         type="submit"
-    //         disabled={loading}
-    //         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    //       >
-    //         {loading ? "Saving..." : "Save Page"}
-    //       </button>
-    //       <button
-    //         type="button"
-    //         onClick={() => router.push("/admin/pages")}
-    //         className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-    //       >
-    //         Cancel
-    //       </button>
-    //     </div>
-    //   </form>
-    // </div>
     <div>
       <ToastContainer
         position="top-left"
@@ -333,4 +187,4 @@ function PageEditor({ pageId }) {
   );
 }
 
-export default withProtectedRoute(PageEditor, ["Admin"]);
+export default withProtectedRoute(PageEditor, ["Admin", "DataManager"]);

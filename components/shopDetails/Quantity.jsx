@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from "react";
 
-export default function Quantity({ setQuantity = (value) => {} }) {
+export default function Quantity({ setQuantity = (value) => {}, button2 }) {
   const [count, setCount] = useState(1);
   useEffect(() => {
     setQuantity(count);
   }, [count]);
 
   return (
-    <div className="wg-quantity">
+    <div className="wg-quantity"  style={{
+      color: button2?.text_color,
+      backgroundColor: button2?.background_color,
+    }}>
       <span
         className="btn-quantity minus-btn"
         onClick={() => setCount((pre) => (pre == 1 ? 1 : pre - 1))}

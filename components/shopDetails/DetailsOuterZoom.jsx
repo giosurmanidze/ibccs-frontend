@@ -1,6 +1,5 @@
 "use client";
-import React, { useState } from "react";
-
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { paymentImages } from "@/data/singleProductOptions";
 import StickyItem from "./StickyItem";
@@ -8,11 +7,24 @@ import Quantity from "./Quantity";
 import Slider1ZoomOuter from "./sliders/Slider1ZoomOuter";
 import { useContextElement } from "@/context/Context";
 import { openCartModal } from "@/utlis/openCartModal";
+import axiosInstance from "@/config/axios";
 
 export default function DetailsOuterZoom({ product }) {
   const [quantity, setQuantity] = useState(1);
-
   const { addProductToCart, isAddedToCartProducts } = useContextElement();
+  const [pageContent, setPageContent] = useState({});
+
+  useEffect(() => {
+    const getPageContent = async () => {
+      const response = await axiosInstance.get("pages/product-detail");
+      setPageContent(JSON.parse(response.data?.dynamic_content));
+    };
+    getPageContent();
+  }, []);
+
+  const button1 = pageContent?.buttons?.[0] ?? null;
+  const button2 = pageContent?.buttons?.[1] ?? null;
+  const button3 = pageContent?.buttons?.[2] ?? null;
 
   return (
     <section
@@ -28,9 +40,7 @@ export default function DetailsOuterZoom({ product }) {
             <div className="col-md-6">
               <div className="tf-product-media-wrap sticky-top">
                 <div className="thumbs-slider">
-                  <Slider1ZoomOuter
-                    firstImage={product?.icon}
-                  />
+                  <Slider1ZoomOuter firstImage={product?.icon} />
                 </div>
               </div>
             </div>
@@ -43,14 +53,36 @@ export default function DetailsOuterZoom({ product }) {
                   </div>
                   <div className="tf-product-info-price">
                     <div className="price-on-sale">${product?.base_price}</div>
-                    <div className="badges-on-sale">
+                    <div
+                      className="badges-on-sale"
+                      style={{
+                        color: button3?.text_color,
+                        backgroundColor: button3?.background_color,
+                      }}
+                    >
                       <span>20</span>% OFF
                     </div>
                   </div>
                   <div className="tf-product-info-quantity">
                     <div className="quantity-title fw-6">Quantity</div>
-                    <Quantity setQuantity={setQuantity} />
+                    <Quantity setQuantity={setQuantity} button2={button2} />
                   </div>
+                  <div className="product-description-container my-5">
+                    <h5 className="text-lg font-semibold mb-2 text-gray-800">
+                      Service Details
+                    </h5>
+                    <div className="description-content">
+                      {product?.description && (
+                        <p className="text-gray-700 leading-relaxed">
+                          <span className="float-left text-3xl font-serif mr-2 mt-1 text-gray-900">
+                            {product.description.charAt(0)}
+                          </span>
+                          {product.description.substring(1)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="tf-product-info-buy-button">
                     <form onSubmit={(e) => e.preventDefault()} className="">
                       <a
@@ -62,6 +94,10 @@ export default function DetailsOuterZoom({ product }) {
                           );
                         }}
                         className="tf-btn btn-fill justify-content-center fw-6 fs-16 flex-grow-1 animate-hover-btn"
+                        style={{
+                          color: button1?.text_color,
+                          backgroundColor: button1?.background_color,
+                        }}
                       >
                         <span>
                           {isAddedToCartProducts(product?.id)
@@ -75,49 +111,9 @@ export default function DetailsOuterZoom({ product }) {
                           ${(product?.base_price * quantity).toFixed(2)}
                         </span>
                       </a>
-                      <div className="w-100">
-                        <a href="#" className="btns-full">
-                          Buy with
-                          <Image
-                            alt="image"
-                            src="/images/payments/paypal.png"
-                            width={64}
-                            height={18}
-                          />
-                        </a>
-                      </div>
                     </form>
                   </div>
 
-                  <div className="tf-product-info-delivery-return">
-                    <div className="row">
-                      <div className="col-xl-6 col-12">
-                        <div className="tf-product-delivery">
-                          <div className="icon">
-                            <i className="icon-delivery-time" />
-                          </div>
-                          <p>
-                            Estimate delivery times:
-                            <span className="fw-7">12-26 days</span>
-                            (International),
-                            <span className="fw-7">3-6 days</span> (United
-                            States).
-                          </p>
-                        </div>
-                      </div>
-                      <div className="col-xl-6 col-12">
-                        <div className="tf-product-delivery mb-0">
-                          <div className="icon">
-                            <i className="icon-return-order" />
-                          </div>
-                          <p>
-                            Return within <span className="fw-7">30 days</span>{" "}
-                            of purchase. Duties &amp; taxes are non-refundable.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                   <div className="tf-product-info-trust-seal">
                     <div className="tf-product-trust-mess">
                       <i className="icon-safe" />

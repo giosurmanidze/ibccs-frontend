@@ -6,8 +6,10 @@ import { withProtectedRoute } from "@/components/auth/ProtectedRoute";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useForm } from "react-hook-form";
 import axiosInstance from "@/config/axios";
+import { useRouter } from "next/navigation";
 
 function EditPage() {
+  const router = useRouter();
   const [pageContent, setPageContent] = useState({});
   const [newFieldType, setNewFieldType] = useState("text");
   const [newFieldName, setNewFieldName] = useState("");
@@ -19,8 +21,7 @@ function EditPage() {
   // For dynamic fields
   const [newDynamicFieldName, setNewDynamicFieldName] = useState("");
   const [newDynamicFieldType, setNewDynamicFieldType] = useState("text");
-  const [newDynamicFieldPlaceholder, setNewDynamicFieldPlaceholder] =
-    useState("");
+  const [newDynamicFieldPlaceholder, setNewDynamicFieldPlaceholder] = useState("");
   const [isDynamicRequired, setIsDynamicRequired] = useState(false);
 
   const {
@@ -80,6 +81,7 @@ function EditPage() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     const loadData = async () => {
       const content = await fetchPageData();
@@ -391,7 +393,7 @@ function EditPage() {
     <div>
       <ToastContainer
         position="top-left"
-        autoClose={2000}
+        autoClose={2000}n
         hideProgressBar={false}
         closeOnClick
         draggable

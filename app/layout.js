@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import Context from "@/context/Context";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import UnreadMessagesProvider from "@/context/UnreadMessagesContext";
 
 function AuthWrapper({ children }) {
   const { fetchUserData, user } = useAuth();
@@ -132,7 +133,6 @@ export default function RootLayout({ children }) {
     initializeDirection();
   }, []);
 
-
   const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
@@ -145,13 +145,15 @@ export default function RootLayout({ children }) {
           </div>
           <Context>
             <AuthProvider>
-              <AuthWrapper>
-                <ThemeProvider>
-                  <SidebarProvider>
-                    <div id="wrapper">{children}</div>
-                  </SidebarProvider>
-                </ThemeProvider>
-              </AuthWrapper>
+              <UnreadMessagesProvider>
+                <AuthWrapper>
+                  <ThemeProvider>
+                    <SidebarProvider>
+                      <div id="wrapper">{children}</div>
+                    </SidebarProvider>
+                  </ThemeProvider>
+                </AuthWrapper>
+              </UnreadMessagesProvider>
             </AuthProvider>
           </Context>
         </body>

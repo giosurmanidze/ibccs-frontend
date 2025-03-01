@@ -1,94 +1,67 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
-  BoxCubeIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
   PageIcon,
-  PlugInIcon,
+  TaskIcon,
   UserCircleIcon,
 } from "../icons/index";
-
-type NavItem = {
-  name: string;
-  icon: React.ReactNode;
-  path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
-};
-
-const navItems = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/dashboard", pro: false }],
-  },
-  {
-    name: "Users",
-    icon: <UserCircleIcon />,
-    subItems: [
-      { name: "User create", path: "/user-create", pro: false },
-      { name: "List", path: "/users-list", pro: false },
-    ],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
-    subItems: [
-      { name: "Create page", path: "/pages/create", pro: false },
-      { name: "List Pages", path: "/pages/list", pro: false },
-      {
-        name: "Edit Layouts",
-        path: "",
-        pro: false,
-        childItems: [
-          { name: "Header", path: "/pages/layouts/header", pro: false },
-          { name: "Footer", path: "/pages/layouts/footer", pro: false },
-          { name: "Sidebar", path: "/pages/layouts/sidebar", pro: false },
-        ],
-      },
-    ],
-  },
-];
-
-const othersItems: NavItem[] = [
-  {
-    icon: <UserCircleIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
-    ],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
-  },
-];
+import { useUnreadMessages } from "@/context/UnreadMessagesContext";
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+
+  const { unreadCount, fetchUnreadMessages } = useUnreadMessages();
+
+  useEffect(() => {
+    fetchUnreadMessages();
+  }, [fetchUnreadMessages]);
+
+  const navItems = [
+    {
+      icon: <GridIcon />,
+      name: "Dashboard",
+      subItems: [{ name: "Ecommerce", path: "/dashboard", pro: false }],
+    },
+    {
+      name: "Users",
+      icon: <UserCircleIcon />,
+      subItems: [
+        { name: "User create", path: "/user-create", pro: false },
+        { name: "List", path: "/users-list", pro: false },
+      ],
+    },
+    {
+      name: "Pages",
+      icon: <PageIcon />,
+      subItems: [
+        { name: "Create page", path: "/pages/create", pro: false },
+        { name: "List Pages", path: "/pages/list", pro: false },
+        {
+          name: "Edit Layouts",
+          path: "",
+          pro: false,
+          childItems: [
+            { name: "Header", path: "/pages/layouts/header", pro: false },
+            { name: "Footer", path: "/pages/layouts/footer", pro: false },
+            { name: "Sidebar", path: "/pages/layouts/sidebar", pro: false },
+          ],
+        },
+      ],
+    },
+    {
+      icon: <TaskIcon />,
+      name: "Messages from contact",
+      unreadCount: unreadCount,
+      subItems: [{ name: "Messages", path: "/messages", pro: false }],
+    },
+  ];
 
   const renderMenuItems = (navItems, menuType: "main" | "others") => (
     <ul className="flex flex-col gap-4">
@@ -97,7 +70,7 @@ const AppSidebar: React.FC = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group ${
+              className={`menu-item group relative ${
                 openSubmenu?.type === menuType && openSubmenu?.index === index
                   ? "menu-item-active"
                   : "menu-item-inactive"
@@ -119,6 +92,19 @@ const AppSidebar: React.FC = () => {
               {(isExpanded || isHovered || isMobileOpen) && (
                 <span className={`menu-item-text`}>{nav.name}</span>
               )}
+
+              {nav.unreadCount > 0 && (
+                <span
+                  className={`absolute ${
+                    isExpanded || isHovered || isMobileOpen
+                      ? "right-9"
+                      : "top-0 right-0"
+                  } flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full`}
+                >
+                  {nav.unreadCount}
+                </span>
+              )}
+
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon
                   className={`ml-auto w-5 h-5 transition-transform duration-200 ${
@@ -134,7 +120,7 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <Link
                 href={nav.path}
-                className={`menu-item group ${
+                className={`menu-item group relative ${
                   isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
                 }`}
               >
@@ -149,6 +135,18 @@ const AppSidebar: React.FC = () => {
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
                   <span className={`menu-item-text`}>{nav.name}</span>
+                )}
+
+                {nav.unreadCount > 0 && (
+                  <span
+                    className={`absolute ${
+                      isExpanded || isHovered || isMobileOpen
+                        ? "right-2"
+                        : "top-0 right-0"
+                    } flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full`}
+                  >
+                    {nav.unreadCount}
+                  </span>
                 )}
               </Link>
             )
@@ -171,7 +169,6 @@ const AppSidebar: React.FC = () => {
                   <li key={subItem.name}>
                     {subItem.childItems ? (
                       <div>
-                        {/* Parent item with link */}
                         <Link
                           href={subItem.path}
                           className={`menu-dropdown-item flex items-center justify-between ${
@@ -191,7 +188,6 @@ const AppSidebar: React.FC = () => {
                           />
                         </Link>
 
-                        {/* Child items that automatically show when parent is active */}
                         <div
                           className={`overflow-hidden transition-all duration-300 ${
                             isActive(pathname) &&
@@ -233,7 +229,7 @@ const AppSidebar: React.FC = () => {
                     ) : (
                       <Link
                         href={subItem.path}
-                        className={`menu-dropdown-item ${
+                        className={`menu-dropdown-item relative ${
                           isActive(subItem.path)
                             ? "menu-dropdown-item-active"
                             : "menu-dropdown-item-inactive"
@@ -246,6 +242,11 @@ const AppSidebar: React.FC = () => {
                           )}
                           {subItem.pro && (
                             <span className="menu-dropdown-badge">pro</span>
+                          )}
+                          {subItem.unreadCount > 0 && (
+                            <span className="flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full">
+                              {subItem.unreadCount}
+                            </span>
                           )}
                         </span>
                       </Link>
@@ -270,30 +271,6 @@ const AppSidebar: React.FC = () => {
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const isActive = useCallback((path: string) => path === pathname, [pathname]);
-
-  useEffect(() => {
-    let submenuMatched = false;
-    ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
-      items.forEach((nav, index) => {
-        if (nav.subItems) {
-          nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
-              setOpenSubmenu({
-                type: menuType as "main" | "others",
-                index,
-              });
-              submenuMatched = true;
-            }
-          });
-        }
-      });
-    });
-
-    if (!submenuMatched) {
-      setOpenSubmenu(null);
-    }
-  }, [pathname, isActive]);
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -358,23 +335,6 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(navItems, "main")}
-            </div>
-
-            <div className="">
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(othersItems, "others")}
             </div>
           </div>
         </nav>

@@ -9,6 +9,7 @@ import BoltIcon from "./bolt.svg";
 import ArrowUpIcon from "./arrow-up.svg";
 import ArrowDownIcon from "./arrow-down.svg";
 import FolderIcon from "./folder.svg";
+import MessageIcon from "./message.svg";
 import VideoIcon from "./videos.svg";
 import AudioIcon from "./audio.svg";
 import GridIcon from "./grid.svg";
@@ -106,4 +107,5 @@ export {
   HorizontaLDots,
   ChevronUpIcon,
   ChatIcon,
+  MessageIcon,
 };

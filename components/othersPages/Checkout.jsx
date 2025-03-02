@@ -107,7 +107,7 @@ export default function Checkout() {
     // Append order items (and handle file fields)
     validatedData.order_items?.forEach((item, index) => {
       formData.append(`order_items[${index}][service_id]`, item.service_id);
-      
+
       // Add the total_price at the item level - THIS WAS MISSING
       formData.append(`order_items[${index}][total_price]`, item.total_price);
 
@@ -163,12 +163,12 @@ export default function Checkout() {
       });
       console.log(response);
 
-      // Clear the cart after successful order
-      localStorage.removeItem("order_details");
-      setCartProducts([]);
+      // // Clear the cart after successful order
+      // localStorage.removeItem("order_details");
+      // setCartProducts([]);
 
-      // Redirect to a thank you page or order confirmation
-      router.push("/order-confirmation");
+      // // Redirect to a thank you page or order confirmation
+      // router.push("/order-confirmation");
     } catch (error) {
       console.error("Order submission error:", error);
       toast.error(

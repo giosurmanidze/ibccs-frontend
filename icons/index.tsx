@@ -21,6 +21,7 @@ import BoxIconLine from "./box-line.svg";
 import ShootingStarIcon from "./shooting-star.svg";
 import DollarLineIcon from "./dollar-line.svg";
 import TrashBinIcon from "./trash.svg";
+import OrdersIcon from "./orders.svg";
 import AngleUpIcon from "./angle-up.svg";
 import AngleDownIcon from "./angle-down.svg";
 import PencilIcon from "./pencil.svg";
@@ -89,6 +90,7 @@ export {
   LockIcon,
   UserIcon,
   CalenderIcon,
+  OrdersIcon,
   EyeIcon,
   EyeCloseIcon,
   TimeIcon,

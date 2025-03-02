@@ -10,6 +10,7 @@ import {
   PageIcon,
   TaskIcon,
   UserCircleIcon,
+  OrdersIcon,
 } from "../icons/index";
 import { useUnreadMessages } from "@/context/UnreadMessagesContext";
 
@@ -39,10 +40,8 @@ const AppSidebar: React.FC = () => {
     },
     {
       name: "Orders",
-      icon: <UserCircleIcon />,
-      subItems: [
-        { name: "List", path: "/orders-list", pro: false },
-      ],
+      icon: <OrdersIcon />,
+      subItems: [{ name: "List", path: "/orders-list", pro: false }],
     },
     {
       name: "Pages",
@@ -67,6 +66,12 @@ const AppSidebar: React.FC = () => {
       name: "Messages from contact",
       unreadCount: unreadCount,
       subItems: [{ name: "Messages", path: "/messages", pro: false }],
+    },
+    {
+      icon: <OrdersIcon />,
+      name: "Files and images",
+      unreadCount: unreadCount,
+      subItems: [{ name: "medias", path: "/medias", pro: false }],
     },
   ];
 

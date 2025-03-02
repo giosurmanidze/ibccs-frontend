@@ -37,8 +37,6 @@ export default function Cart() {
 
   const router = useRouter();
 
-  console.log(pageContent);
-
   const setQuantity = (id, quantity) => {
     if (quantity >= 1) {
       const item = cartProducts.filter((elm) => elm.id == id)[0];
@@ -660,8 +658,6 @@ export default function Cart() {
       if (field.calculation_fee) {
         countWords(file, fieldName);
       }
-    } else {
-      alert("Please upload a .docx file.");
     }
   };
 
@@ -1299,7 +1295,6 @@ export default function Cart() {
                                     <div className="file-upload button-wrap">
                                       <input
                                         type="file"
-                                        accept=".docx"
                                         id={field.name}
                                         {...register(field.name)}
                                         onChange={(e) =>

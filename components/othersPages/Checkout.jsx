@@ -12,7 +12,7 @@ import { toast, ToastContainer } from "react-toastify";
 import * as yup from "yup";
 
 export default function Checkout() {
-  const { cartProducts, totalPrice } = useContextElement();
+  const { cartProducts, totalPrice, setCartProducts } = useContextElement();
   const router = useRouter();
 
   const validationSchema = useMemo(
@@ -65,12 +65,15 @@ export default function Checkout() {
       }));
     };
 
-    // Loop through the order items and clean the fields
-    const order_items = order_details.map(({ type, ...item }) => ({
+    console.log(order_details);
+
+    // Loop through the order items and clean the fields, include total_price in service_details
+    const order_items = order_details?.map(({ type, ...item }) => ({
       service_id: item.service_id,
-      // Clean fields array (sanitize field names inside)
+      total_price: item.total_price,
       service_details: {
         ...item,
+        // Include total_price inside service_details
         fields: cleanFieldNames(item.fields), // Clean the fields array
       },
     }));
@@ -87,6 +90,8 @@ export default function Checkout() {
       order_items: order_items,
     };
 
+    console.log(validatedData);
+
     // Create a FormData instance
     const formData = new FormData();
 
@@ -100,8 +105,17 @@ export default function Checkout() {
     formData.append("delivery_option", validatedData.delivery_option);
 
     // Append order items (and handle file fields)
-    validatedData.order_items.forEach((item, index) => {
+    validatedData.order_items?.forEach((item, index) => {
       formData.append(`order_items[${index}][service_id]`, item.service_id);
+      
+      // Add the total_price at the item level - THIS WAS MISSING
+      formData.append(`order_items[${index}][total_price]`, item.total_price);
+
+      // Add the total_price within service_details
+      formData.append(
+        `order_items[${index}][service_details][total_price]`,
+        item.service_details.total_price
+      );
 
       // Append the full field information including name and type
       item.service_details.fields.forEach((field, fieldIndex) => {
@@ -148,11 +162,24 @@ export default function Checkout() {
         autoClose: 2000,
       });
       console.log(response);
+
+      // Clear the cart after successful order
+      localStorage.removeItem("order_details");
+      setCartProducts([]);
+
+      // Redirect to a thank you page or order confirmation
+      router.push("/order-confirmation");
     } catch (error) {
-      console.log(error);
+      console.error("Order submission error:", error);
+      toast.error(
+        "There was an error processing your order. Please try again.",
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
     }
   };
-
   useEffect(() => {
     if (user) {
       setValue("firstname", user.name);

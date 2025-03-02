@@ -27,7 +27,7 @@ const AppSidebar: React.FC = () => {
     {
       icon: <GridIcon />,
       name: "Dashboard",
-      subItems: [{ name: "Ecommerce", path: "/dashboard", pro: false }],
+      subItems: [{ name: "dashboard", path: "/dashboard", pro: false }],
     },
     {
       name: "Users",
@@ -35,6 +35,13 @@ const AppSidebar: React.FC = () => {
       subItems: [
         { name: "User create", path: "/user-create", pro: false },
         { name: "List", path: "/users-list", pro: false },
+      ],
+    },
+    {
+      name: "Orders",
+      icon: <UserCircleIcon />,
+      subItems: [
+        { name: "List", path: "/orders-list", pro: false },
       ],
     },
     {

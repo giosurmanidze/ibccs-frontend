@@ -10,28 +10,20 @@ export default function EnhancedFileLibrary() {
   const [searchTerm, setSearchTerm] = useState("");
   const [hoveredFile, setHoveredFile] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
-  const [viewMode, setViewMode] = useState("grid"); // grid or list
+  const [viewMode, setViewMode] = useState("grid");
 
-  // Fetch files from the server
   useEffect(() => {
     const fetchFiles = async () => {
       try {
         const response = await axiosInstance("files");
 
-        // Enhance file data with correct type and URL
         const enhancedFiles = response.data.map((file) => {
-          // Determine file type
           const type = determineFileType(file.mimetype);
-
-          // Correct URL
-          const correctedUrl = file.url.includes("/uploads/order_files/")
-            ? file.url.replace("/uploads/order_files/", "/uploads/")
-            : file.url;
 
           return {
             ...file,
             type,
-            url: file.url, // Use original or corrected URL as needed
+            url: file.url,
           };
         });
 
@@ -47,7 +39,6 @@ export default function EnhancedFileLibrary() {
     fetchFiles();
   }, []);
 
-  // Determine file type based on MIME type
   const determineFileType = (mimeType) => {
     if (mimeType && mimeType.startsWith("image/")) return "image";
     if (mimeType === "application/pdf") return "pdf";
@@ -61,14 +52,12 @@ export default function EnhancedFileLibrary() {
     return "other";
   };
 
-  // Format file size
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // Format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -77,14 +66,12 @@ export default function EnhancedFileLibrary() {
     });
   };
 
-  // Filter files based on type and search term
   const filteredFiles = files.filter(
     (file) =>
       (activeTab === "all" || file.type === activeTab) &&
       file.file_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get file counts by type
   const fileCounts = {
     all: files.length,
     image: files.filter((file) => file.type === "image").length,
@@ -96,42 +83,24 @@ export default function EnhancedFileLibrary() {
     ).length,
   };
 
-  // Handle file preview
   const handlePreview = (file) => {
-    setPreviewFile(file);
+    if (file?.url) {
+      window.open(file.url, "_blank");
+    } else {
+      console.error("File URL is missing");
+    }
   };
 
-  // Handle file download
-  const handleDownload = (url, filename) => {
+  const handleDownload = (fileId, filename) => {
+    const url = `http://localhost:8000/api/download/${fileId}`;
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Handle file deletion
-  const handleDelete = async (fileId) => {
-    try {
-      const response = await fetch(`/api/files/${fileId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete file");
-      }
-
-      setFiles(files.filter((file) => file.id !== fileId));
-    } catch (err) {
-      console.error("Error deleting file:", err);
-      // TODO: Add user-friendly error notification
-    }
-  };
-
-  // Render file icon based on type
   const renderFileIcon = (type) => {
     switch (type) {
       case "image":
@@ -207,7 +176,6 @@ export default function EnhancedFileLibrary() {
     }
   };
 
-  // Render tab icon based on type
   const renderTabIcon = (type) => {
     switch (type) {
       case "all":
@@ -278,13 +246,8 @@ export default function EnhancedFileLibrary() {
     }
   };
 
-  // Render preview modal
   const renderPreviewModal = () => {
     if (!previewFile) return null;
-
-    const isImage = previewFile.type === "image";
-    const isPdf = previewFile.type === "pdf";
-    const isDocument = previewFile.type === "word";
 
     return (
       <div
@@ -295,7 +258,6 @@ export default function EnhancedFileLibrary() {
           className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl max-h-[90vh] w-full h-[80vh] relative shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Modal Header */}
           <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-750 rounded-t-2xl">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
@@ -326,33 +288,31 @@ export default function EnhancedFileLibrary() {
             </button>
           </div>
 
-          {/* Preview Content */}
-          <div className="p-4 h-[calc(100%-140px)] overflow-auto flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-            {isImage ? (
-              <img
-                src={previewFile.url}
-                alt={previewFile.file_name}
-                className="max-w-full max-h-full mx-auto object-contain rounded-lg shadow-lg"
-              />
-            ) : isPdf || isDocument ? (
-              <iframe
-                src={`https://docs.google.com/viewer?url=${encodeURIComponent(
-                  previewFile.url
-                )}&embedded=true`}
-                className="w-full h-full rounded-lg shadow-lg"
-                title="Document Preview"
-              ></iframe>
-            ) : (
-              <div className="text-center text-gray-500 p-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-                <div className="mb-4">{renderFileIcon(previewFile.type)}</div>
-                <p className="font-semibold">
-                  Preview not available for this file type.
-                </p>
-                <p className="mt-2">File type: {previewFile.mimetype}</p>
-              </div>
-            )}
-          </div>
-
+          {previewFile.mimetype.includes("image") ? (
+            <img
+              src={previewFile.url}
+              alt="Preview"
+              className="w-full h-full object-contain"
+            />
+          ) : previewFile.mimetype.includes("pdf") ? (
+            <iframe
+              src={previewFile.url}
+              className="w-full h-full"
+              title="PDF Preview"
+            ></iframe>
+          ) : (
+            <p className="text-center">
+              Preview not available.{" "}
+              <a
+                href={previewFile.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                Open file
+              </a>
+            </p>
+          )}
           <div className="p-4 border-t dark:border-gray-700 flex justify-between items-center rounded-b-2xl bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-750">
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {formatFileSize(parseInt(previewFile.file_size_bytes))} • Uploaded
@@ -371,7 +331,6 @@ export default function EnhancedFileLibrary() {
     );
   };
 
-  // Render grid view
   const renderGridView = () => {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -383,7 +342,6 @@ export default function EnhancedFileLibrary() {
             onMouseLeave={() => setHoveredFile(null)}
           >
             <div className="border border-gray-100 dark:border-gray-700 rounded-2xl p-4 transition-all duration-300 bg-white dark:bg-gray-800 hover:shadow-2xl transform hover:-translate-y-2 h-full flex flex-col">
-              {/* File Preview or Icon */}
               <div
                 className="flex justify-center items-center mb-4 cursor-pointer flex-grow"
                 onClick={() => handlePreview(file)}
@@ -403,7 +361,6 @@ export default function EnhancedFileLibrary() {
                 )}
               </div>
 
-              {/* File Details */}
               <div className="text-center mt-auto">
                 <p className="font-semibold text-sm text-gray-800 dark:text-white/90 truncate max-w-full mb-1">
                   {file.file_name}
@@ -414,14 +371,13 @@ export default function EnhancedFileLibrary() {
                 </p>
               </div>
 
-              {/* Action Buttons */}
               <div
                 className={`absolute inset-0 bg-gradient-to-b from-black/60 to-black/80 dark:from-black/70 dark:to-black/90 rounded-2xl flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
                   hoveredFile === file.id ? "visible" : "invisible"
                 }`}
               >
                 <button
-                  onClick={() => handleDownload(file.url, file.file_name)}
+                  onClick={() => handleDownload(file.id, file.file_name)}
                   className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
                   title="Download"
                 >
@@ -440,46 +396,27 @@ export default function EnhancedFileLibrary() {
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                   </svg>
                 </button>
-                <button
-                  onClick={() => handlePreview(file)}
-                  className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
-                  title="Preview"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-5 h-5 text-green-600"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                {["image", "pdf"].includes(file.type) && (
+                  <button
+                    onClick={() => handlePreview(file)}
+                    className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
+                    title="Preview"
                   >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleDelete(file.id)}
-                  className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
-                  title="Delete"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-5 h-5 text-red-600"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                  </svg>
-                </button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5 text-green-600"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -488,7 +425,6 @@ export default function EnhancedFileLibrary() {
     );
   };
 
-  // Render list view
   const renderListView = () => {
     return (
       <div className="overflow-x-auto">
@@ -549,33 +485,35 @@ export default function EnhancedFileLibrary() {
                 </td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex justify-end space-x-2">
-                    <button
-                      onClick={() => handlePreview(file)}
-                      className="text-green-600 hover:text-green-800 dark:hover:text-green-400"
-                      title="Preview"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                    {["image", "pdf"].includes(file.type) && (
+                      <button
+                        onClick={() => handlePreview(file)}
+                        className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
+                        title="Preview"
                       >
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    </button>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-5 h-5 text-green-600"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleDownload(file.url, file.file_name)}
-                      className="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400"
+                      onClick={() => handleDownload(file.id, file.file_name)}
+                      className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
                       title="Download"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5"
+                        className="w-5 h-5 text-blue-600"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -586,27 +524,6 @@ export default function EnhancedFileLibrary() {
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => handleDelete(file.id)}
-                      className="text-red-600 hover:text-red-800 dark:hover:text-red-400"
-                      title="Delete"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
                       </svg>
                     </button>
                   </div>
@@ -671,10 +588,8 @@ export default function EnhancedFileLibrary() {
       </div>
     );
   }
-
   return (
     <div className="w-full rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-      {/* Header with search and filters */}
       <div className="border-b border-gray-200 dark:border-gray-800">
         <div className="p-4 md:p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900/50 dark:to-gray-900/30 rounded-t-2xl">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -682,7 +597,6 @@ export default function EnhancedFileLibrary() {
               File Library
             </h1>
 
-            {/* Search Box */}
             <div className="relative w-full md:w-64">
               <input
                 type="text"
@@ -708,7 +622,6 @@ export default function EnhancedFileLibrary() {
             </div>
           </div>
 
-          {/* Tab Navigation for file types */}
           <div className="mt-6 flex flex-wrap items-center space-x-1 md:space-x-2">
             {["all", "image", "pdf", "word", "other"].map((type) => (
               <button
@@ -733,8 +646,8 @@ export default function EnhancedFileLibrary() {
         {/* View Mode Toggle and Stats */}
         <div className="px-6 py-3 bg-white dark:bg-gray-900/20 flex flex-wrap justify-between items-center">
           <div className="text-sm text-gray-600 dark:text-gray-300">
-            Showing{" "}
-            <span className="font-semibold">{filteredFiles.length}</span> of{" "}
+            Showing
+            <span className="font-semibold">{filteredFiles.length}</span> of
             <span className="font-semibold">{files.length}</span> files
           </div>
 
@@ -795,9 +708,7 @@ export default function EnhancedFileLibrary() {
         </div>
       </div>
 
-      {/* Content Area */}
       <div className="p-6">
-        {/* Files Display (Grid or List View) */}
         {filteredFiles.length > 0 ? (
           viewMode === "grid" ? (
             renderGridView()
@@ -836,7 +747,6 @@ export default function EnhancedFileLibrary() {
         )}
       </div>
 
-      {/* Preview Modal */}
       {renderPreviewModal()}
     </div>
   );

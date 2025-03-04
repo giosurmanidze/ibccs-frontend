@@ -48,7 +48,6 @@ export default function MessageDetail() {
         };
       });
 
-      // Decrement unread count in context and refresh
       decrementUnreadCount();
       await refreshUnreadMessages();
     } catch (error) {

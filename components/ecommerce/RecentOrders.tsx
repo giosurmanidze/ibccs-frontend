@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -40,12 +40,12 @@ export default function RecentOrders() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await axiosInstance.get('/orders');
-        setOrders(response.data);
+        const response = await axiosInstance.get("/orders");
+        setOrders(response.data.data);
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError('Failed to load orders');
+        console.error("Error fetching orders:", err);
+        setError("Failed to load orders");
         setLoading(false);
       }
     };
@@ -55,19 +55,20 @@ export default function RecentOrders() {
 
   // Format date to more readable format
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   // Calculate total order price
   const calculateTotalPrice = (orderItems: OrderItem[]) => {
-    return orderItems.reduce((total, item) => 
-      total + parseFloat(item.total_price), 0).toFixed(2);
+    return orderItems
+      .reduce((total, item) => total + parseFloat(item.total_price), 0)
+      .toFixed(2);
   };
 
   if (loading) {
@@ -108,8 +109,8 @@ export default function RecentOrders() {
         {/* Mobile View - Card Layout */}
         <div className="block sm:hidden">
           {orders.map((order) => (
-            <div 
-              key={order.id} 
+            <div
+              key={order.id}
               className="mb-4 p-4 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700"
             >
               <div className="flex justify-between items-center mb-2">
@@ -140,7 +141,10 @@ export default function RecentOrders() {
                   Services:
                 </p>
                 {order.order_items.map((item) => (
-                  <p key={item.id} className="text-xs text-gray-500 dark:text-gray-400">
+                  <p
+                    key={item.id}
+                    className="text-xs text-gray-500 dark:text-gray-400"
+                  >
                     {item.service.name}
                   </p>
                 ))}

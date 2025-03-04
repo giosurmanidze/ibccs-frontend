@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import "@/public/scss/main.scss";
 import "photoswipe/dist/photoswipe.css";
 import "rc-slider/assets/index.css";
@@ -32,9 +31,7 @@ export default function RootLayout({ children }) {
   const pathname = usePathname();
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Import the script only on the client side
       import("bootstrap/dist/js/bootstrap.esm").then(() => {
-        // Module is imported, you can access any exported functionality if
       });
     }
   }, []);
@@ -50,11 +47,10 @@ export default function RootLayout({ children }) {
 
     window.addEventListener("scroll", handleScroll);
 
-    // Cleanup function to remove event listener on component unmount
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
+  }, []);
 
   const [scrollDirection, setScrollDirection] = useState("down");
 
@@ -65,14 +61,11 @@ export default function RootLayout({ children }) {
 
       if (currentScrollY > 250) {
         if (currentScrollY > lastScrollY.current) {
-          // Scrolling down
           setScrollDirection("down");
         } else {
-          // Scrolling up
           setScrollDirection("up");
         }
       } else {
-        // Below 250px
         setScrollDirection("down");
       }
 
@@ -81,17 +74,14 @@ export default function RootLayout({ children }) {
 
     const lastScrollY = { current: window.scrollY };
 
-    // Add scroll event listener
     window.addEventListener("scroll", handleScroll);
 
-    // Cleanup: remove event listener when component unmounts
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, [pathname]);
   useEffect(() => {
-    // Close any open modal
-    const bootstrap = require("bootstrap"); // dynamically import bootstrap
+    const bootstrap = require("bootstrap");
     const modalElements = document.querySelectorAll(".modal.show");
     modalElements.forEach((modal) => {
       const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -100,7 +90,6 @@ export default function RootLayout({ children }) {
       }
     });
 
-    // Close any open offcanvas
     const offcanvasElements = document.querySelectorAll(".offcanvas.show");
     offcanvasElements.forEach((offcanvas) => {
       const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvas);
@@ -108,7 +97,7 @@ export default function RootLayout({ children }) {
         offcanvasInstance.hide();
       }
     });
-  }, [pathname]); // Runs every time the route changes
+  }, [pathname]);
 
   useEffect(() => {
     const header = document.querySelector("header");

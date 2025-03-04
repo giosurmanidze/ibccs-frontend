@@ -1,12 +1,10 @@
 "use client";
 import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
-import React, { useEffect } from "react";
-import MonthlyTarget from "@/components/ecommerce/MonthlyTarget";
+import React from "react";
 import MonthlySalesChart from "@/components/ecommerce/MonthlySalesChart";
-import StatisticsChart from "@/components/ecommerce/StatisticsChart";
 import RecentOrders from "@/components/ecommerce/RecentOrders";
-import DemographicCard from "@/components/ecommerce/DemographicCard";
 import { withProtectedRoute } from "@/components/auth/ProtectedRoute";
+import DemographicCard from "@/components/ecommerce/DemographicCard";
 
 function Dashboard() {
   return (

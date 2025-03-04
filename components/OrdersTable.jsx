@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import axios from "axios";
 import axiosInstance from "@/config/axios";
 import { toast } from "react-toastify";
@@ -12,22 +11,95 @@ const OrdersTable = () => {
   const [AuthUser, setAuthUser] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [metricsData, setMetricsData] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+  });
 
-  // Fetch orders data
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchDashboardMetrics = async () => {
       try {
-        const response = await axiosInstance.get("orders");
-        console.log("Order data:", response.data);
-        setOrders(response.data);
-        setLoading(false);
+        const response = await axiosInstance.get("orders/dashboard-metrics");
+        const metrics = response.data.data;
+
+        setMetricsData({
+          totalOrders: metrics.total_orders,
+          totalRevenue: metrics.total_revenue,
+          loading: false,
+        });
       } catch (error) {
-        console.error("Error fetching orders:", error);
-        setLoading(false);
+        console.error("Fallback method also failed:");
+        setMetricsData((prev) => ({ ...prev, loading: false }));
       }
     };
 
-    // Get auth user
+    fetchDashboardMetrics();
+  }, []);
+
+  const getFilteredOrders = () => {
+    if (statusFilter === "all") {
+      return orders;
+    }
+    return orders.filter((order) => order.status === statusFilter);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    fetchOrders(page);
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+
+    if (lastPage <= 7) {
+      for (let i = 1; i <= lastPage; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(lastPage - 1, currentPage + 1);
+
+      if (startPage > 2) {
+        pages.push("...");
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      if (endPage < lastPage - 1) {
+        pages.push("...");
+      }
+
+      pages.push(lastPage);
+    }
+
+    return pages;
+  };
+  const fetchOrders = async (page = 1) => {
+    try {
+      const response = await axiosInstance.get(`orders?page=${page}`);
+      console.log(response.data);
+      setOrders(response.data.data);
+      setLoading(false);
+      setCurrentPage(response.data.meta.current_page || page);
+      setLastPage(response.data.meta.last_page || 1);
+      setTotalOrders(response.data.meta.total || response.data.data.length);
+      setPerPage(response.data.meta.per_page || 10);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
     const getAuthUser = async () => {
       try {
         const response = await axiosInstance.get("user");
@@ -37,16 +109,13 @@ const OrdersTable = () => {
       }
     };
 
-    fetchOrders();
     getAuthUser();
   }, []);
 
-  // Handle order deletion
   const handleDeleteOrder = async (orderId) => {
     if (confirm("Are you sure you want to delete this order?")) {
       try {
         await axios.delete(`orders/${orderId}`);
-        // Remove order from state
         setOrders(orders.filter((order) => order.id !== orderId));
         toast.success("Order deleted successfully");
       } catch (error) {
@@ -56,25 +125,16 @@ const OrdersTable = () => {
     }
   };
 
-  // Open modal with order details
   const openDetailsModal = (order) => {
     setSelectedOrder(order);
     setIsModalOpen(true);
   };
 
-  // Close details modal
   const closeDetailsModal = () => {
     setIsModalOpen(false);
     setSelectedOrder(null);
   };
 
-  // Handle edit modal
-  const openEditModal = (order) => {
-    // Implement edit modal functionality here
-    console.log("Open edit modal for order:", order);
-  };
-
-  // Format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -83,7 +143,6 @@ const OrdersTable = () => {
     });
   };
 
-  // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -92,7 +151,6 @@ const OrdersTable = () => {
     }).format(parseFloat(amount) || 0);
   };
 
-  // Get service details for an item
   const parseServiceDetails = (item) => {
     if (item.service_details) {
       if (typeof item.service_details === "string") {
@@ -108,24 +166,19 @@ const OrdersTable = () => {
     return {};
   };
 
-  // Get total price for an item
   const getItemPrice = (item) => {
-    // First check the direct total_price property
     if (item.total_price) {
       return parseFloat(item.total_price);
     }
 
-    // Then check in service_details
     const details = parseServiceDetails(item);
     if (details && details.total_price) {
       return parseFloat(details.total_price);
     }
 
-    // Default to 0 if no price is found
     return 0;
   };
 
-  // Calculate total for an order
   const calculateOrderTotal = (order) => {
     if (!order.order_items || order.order_items.length === 0) return 0;
 
@@ -134,13 +187,34 @@ const OrdersTable = () => {
     }, 0);
   };
 
+  const handleStatusSubmit = async (orderId, newStatus) => {
+    try {
+      await axiosInstance.patch(`orders/${orderId}/status`, {
+        status: newStatus,
+      });
+
+      const updatedOrders = orders.map((order) =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      );
+      setOrders(updatedOrders);
+      setSelectedStatus((prev) => {
+        const updated = { ...prev };
+        delete updated[orderId];
+        return updated;
+      });
+
+      toast.success("Order status updated successfully");
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      toast.error("Failed to update order status");
+    }
+  };
   if (loading) {
     return <div className="flex justify-center p-8">Loading orders...</div>;
   }
 
   return (
     <div className="w-full rounded-2xl border border-gray-200 overflow-hidden shadow-xl bg-white dark:bg-gray-800 dark:border-gray-700">
-      {/* Header with Gradient Background */}
       <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -152,7 +226,6 @@ const OrdersTable = () => {
             </p>
           </div>
 
-          {/* Search Bar with Animation */}
           <div className="relative group md:w-80">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <svg
@@ -180,27 +253,60 @@ const OrdersTable = () => {
           </div>
         </div>
 
-        {/* Status Filter Pills */}
         <div className="flex flex-wrap gap-2 mt-6">
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:bg-blue-600 active:bg-blue-700">
+          <button
+            onClick={() => setStatusFilter("all")}
+            className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 ${
+              statusFilter === "all"
+                ? "bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700"
+                : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
+          >
             All Orders
           </button>
-          <button className="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+          <button
+            onClick={() => setStatusFilter("pending")}
+            className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 ${
+              statusFilter === "pending"
+                ? "bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700"
+                : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
+          >
             Pending
           </button>
-          <button className="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+          <button
+            onClick={() => setStatusFilter("processing")}
+            className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 ${
+              statusFilter === "processing"
+                ? "bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700"
+                : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
+          >
             Processing
           </button>
-          <button className="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+          <button
+            onClick={() => setStatusFilter("completed")}
+            className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 ${
+              statusFilter === "completed"
+                ? "bg-green-500 text-white hover:bg-green-600 active:bg-green-700"
+                : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
+          >
             Completed
           </button>
-          <button className="px-4 py-2 bg-white text-gray-700 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+          <button
+            onClick={() => setStatusFilter("cancelled")}
+            className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 ${
+              statusFilter === "cancelled"
+                ? "bg-red-500 text-white hover:bg-red-600 active:bg-red-700"
+                : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            }`}
+          >
             Cancelled
           </button>
         </div>
       </div>
 
-      {/* Dashboard Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-800/50">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
@@ -209,7 +315,7 @@ const OrdersTable = () => {
                 Total Orders
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                247
+                {metricsData.totalOrders}
               </p>
             </div>
             <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
@@ -255,7 +361,7 @@ const OrdersTable = () => {
                 Revenue
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                $18,245
+                {metricsData.totalRevenue}
               </p>
             </div>
             <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300">
@@ -301,7 +407,11 @@ const OrdersTable = () => {
                 Pending Orders
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                35
+                {
+                  orders
+                    .filter((s) => s.status === "pending")
+                    .map((s) => ({ id: s.id, item: s.item })).length
+                }
               </p>
             </div>
             <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-300">
@@ -339,68 +449,15 @@ const OrdersTable = () => {
             <span>Requires attention</span>
           </div>
         </div>
-
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Completed Orders
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {
-                        orders.filter((order) => order.status === "completed")
-                          .length
-                      }
-                    </p>
-                  </div>
-                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center text-xs text-green-600 dark:text-green-400">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 10l7-7m0 0l7 7m-7-7v18"
-                    />
-                  </svg>
-                  <span>
-                    {orders.length > 0
-                      ? `${Math.round(
-                          (orders.filter(
-                            (order) => order.status === "completed"
-                          ).length /
-                            orders.length) *
-                            100
-                        )}% of total orders`
-                      : "No orders yet"}
-                  </span>
-                </div>
-              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Completed Orders
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {orders.filter((order) => order.status === "completed").length}
+              </p>
             </div>
             <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300">
               <svg
@@ -438,8 +495,6 @@ const OrdersTable = () => {
           </div>
         </div>
       </div>
-
-      {/* Table Container with Shadow */}
       <div className="overflow-x-auto relative shadow-inner">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-300 sticky top-0">
@@ -536,7 +591,7 @@ const OrdersTable = () => {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
+            {getFilteredOrders().map((order) => (
               <tr
                 key={order.id}
                 className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
@@ -619,72 +674,35 @@ const OrdersTable = () => {
                   {formatDate(order.created_at)}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="relative group">
-                    <button
-                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium capitalize ${
+                  <div className="flex items-center space-x-2">
+                    <select
+                      id={`order-status-${order.id}`}
+                      value={selectedStatus?.[order.id] || order.status}
+                      onChange={(e) => {
+                        handleStatusSubmit(order.id, e.target.value);
+                      }}
+                      className={`block w-full p-2.5 text-sm rounded-lg focus:ring-2 ${
                         order.status === "completed"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          ? "bg-green-100 text-green-800 border-green-300 focus:ring-green-500 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600"
                           : order.status === "pending"
-                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                          ? "bg-yellow-100 text-yellow-800 border-yellow-300 focus:ring-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-600"
                           : order.status === "cancelled"
-                          ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                          : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                          ? "bg-red-100 text-red-800 border-red-300 focus:ring-red-500 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600"
+                          : "bg-blue-100 text-blue-800 border-blue-300 focus:ring-blue-500 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600"
                       }`}
                     >
-                      {order.status || "processing"}
-                      {AuthUser?.role?.name === "Admin" && (
-                        <svg
-                          className="w-3 h-3 ml-1.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      )}
-                    </button>
-
-                    {/* Status dropdown (hidden by default) */}
-                    <div className="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-100 dark:border-gray-700 transition-opacity duration-150">
-                      <div className="py-1" role="menu">
-                        {[
-                          "pending",
-                          "processing",
-                          "completed",
-                          "cancelled",
-                        ].map((status) => (
-                          <button
+                      {["pending", "processing", "completed", "cancelled"].map(
+                        (status) => (
+                          <option
                             key={status}
-                            className={`w-full text-left block px-4 py-2 text-sm ${
-                              order.status === status
-                                ? "bg-gray-100 dark:bg-gray-700 font-medium"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            } capitalize`}
+                            value={status}
+                            className="bg-white text-gray-800"
                           >
-                            <div className="flex items-center">
-                              <span
-                                className={`w-2 h-2 rounded-full mr-2 ${
-                                  status === "completed"
-                                    ? "bg-green-500"
-                                    : status === "pending"
-                                    ? "bg-yellow-500"
-                                    : status === "cancelled"
-                                    ? "bg-red-500"
-                                    : "bg-blue-500"
-                                }`}
-                              ></span>
-                              {status}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                            {status}
+                          </option>
+                        )
+                      )}
+                    </select>
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -780,23 +798,52 @@ const OrdersTable = () => {
           </tbody>
         </table>
       </div>
-
-      {/* Pagination */}
       <div className="px-6 py-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="flex-1 flex justify-between sm:hidden">
-          <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+          <button
+            onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+              currentPage === 1
+                ? "text-gray-400 bg-gray-100 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500 dark:border-gray-600"
+                : "text-gray-700 bg-white hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            }`}
+          >
             Previous
           </button>
-          <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+          <button
+            onClick={() =>
+              currentPage < lastPage && handlePageChange(currentPage + 1)
+            }
+            disabled={currentPage === lastPage}
+            className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+              currentPage === lastPage
+                ? "text-gray-400 bg-gray-100 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500 dark:border-gray-600"
+                : "text-gray-700 bg-white hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            }`}
+          >
             Next
           </button>
         </div>
         <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              Showing <span className="font-medium">1</span> to{" "}
-              <span className="font-medium">10</span> of{" "}
-              <span className="font-medium">{orders.length}</span> results
+              Showing{" "}
+              <span className="font-medium">
+                {getFilteredOrders().length > 0
+                  ? (currentPage - 1) * perPage + 1
+                  : 0}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium">
+                {Math.min(currentPage * perPage, getFilteredOrders().length)}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium">{getFilteredOrders().length}</span>{" "}
+              {statusFilter !== "all" && (
+                <span className="italic">filtered</span>
+              )}{" "}
+              results
             </p>
           </div>
           <div>
@@ -804,7 +851,17 @@ const OrdersTable = () => {
               className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
               aria-label="Pagination"
             >
-              <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+              <button
+                onClick={() =>
+                  currentPage > 1 && handlePageChange(currentPage - 1)
+                }
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 ${
+                  currentPage === 1
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500 dark:border-gray-600"
+                    : "bg-white text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                }`}
+              >
                 <span className="sr-only">Previous</span>
                 <svg
                   className="h-5 w-5"
@@ -820,22 +877,41 @@ const OrdersTable = () => {
                   />
                 </svg>
               </button>
-              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
-                1
-              </button>
-              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-gradient-to-r from-blue-50 to-blue-100 text-sm font-medium text-blue-700 dark:border-blue-500 dark:bg-gradient-to-r dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300">
-                2
-              </button>
-              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
-                3
-              </button>
-              <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                ...
-              </span>
-              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
-                8
-              </button>
-              <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={`page-${page}`}
+                    onClick={() => handlePageChange(page)}
+                    className={`relative inline-flex items-center px-4 py-2 border ${
+                      currentPage === page
+                        ? "border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 dark:border-blue-500 dark:bg-gradient-to-r dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300"
+                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                    } text-sm font-medium`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+
+              <button
+                onClick={() =>
+                  currentPage < lastPage && handlePageChange(currentPage + 1)
+                }
+                disabled={currentPage === lastPage}
+                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 ${
+                  currentPage === lastPage
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500 dark:border-gray-600"
+                    : "bg-white text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                }`}
+              >
                 <span className="sr-only">Next</span>
                 <svg
                   className="h-5 w-5"
@@ -855,7 +931,6 @@ const OrdersTable = () => {
           </div>
         </div>
       </div>
-      {/* Order Details Modal */}
       {isModalOpen && selectedOrder && (
         <OrderDetailsModal
           order={selectedOrder}

@@ -21,7 +21,6 @@ import BoxIconLine from "./box-line.svg";
 import ShootingStarIcon from "./shooting-star.svg";
 import DollarLineIcon from "./dollar-line.svg";
 import TrashBinIcon from "./trash.svg";
-import OrdersIcon from "./orders.svg";
 import AngleUpIcon from "./angle-up.svg";
 import AngleDownIcon from "./angle-down.svg";
 import PencilIcon from "./pencil.svg";
@@ -37,8 +36,10 @@ import CalenderIcon from "./calender-line.svg";
 import EyeIcon from "./eye.svg";
 import EyeCloseIcon from "./eye-close.svg";
 import TimeIcon from "./time.svg";
+import FilesIcon from "./files.svg";
 import CopyIcon from "./copy.svg";
 import ChevronLeftIcon from "./chevron-left.svg";
+import OrderIcon from "./order.svg";
 import UserCircleIcon from "./user-circle.svg";
 import TaskIcon from "./task-icon.svg";
 import ListIcon from "./list.svg";
@@ -52,16 +53,16 @@ import MailIcon from "./mail-line.svg";
 import HorizontaLDots from "./horizontal-dots.svg";
 import ChatIcon from "./chat.svg";
 import MoreDotIcon from "./more-dot.svg";
-import BellIcon from "./bell.svg";
 
 export {
   DownloadIcon,
-  BellIcon,
   MoreDotIcon,
+  FilesIcon,
   FileIcon,
   GridIcon,
   AudioIcon,
   VideoIcon,
+  OrderIcon,
   BoltIcon,
   PlusIcon,
   BoxIcon,
@@ -90,7 +91,6 @@ export {
   LockIcon,
   UserIcon,
   CalenderIcon,
-  OrdersIcon,
   EyeIcon,
   EyeCloseIcon,
   TimeIcon,

@@ -57,7 +57,6 @@ export default function Checkout() {
 
     const order_details = JSON.parse(localStorage.getItem("order_details"));
 
-    // Helper function to clean the field names (remove suffix)
     const cleanFieldNames = (fields) => {
       return fields.map((field) => ({
         ...field,
@@ -65,7 +64,18 @@ export default function Checkout() {
       }));
     };
 
-    console.log(order_details);
+    // Get client IP address
+    let clientIP = "";
+    try {
+      // Option 1: Using a public IP API
+      const ipResponse = await fetch("https://api.ipify.org?format=json");
+      const ipData = await ipResponse.json();
+      clientIP = ipData.ip;
+    } catch (error) {
+      console.error("Error fetching IP address:", error);
+      // Fallback - if we can't get the IP, we'll send an empty string
+      clientIP = "unknown";
+    }
 
     // Loop through the order items and clean the fields, include total_price in service_details
     const order_items = order_details?.map(({ type, ...item }) => ({
@@ -88,6 +98,7 @@ export default function Checkout() {
       note: data["note"],
       delivery_option: data["delivery"],
       order_items: order_items,
+      ip_address: clientIP, // Add the IP address to the validated data
     };
 
     console.log(validatedData);
@@ -103,6 +114,7 @@ export default function Checkout() {
     formData.append("city", validatedData.city);
     formData.append("note", validatedData.note);
     formData.append("delivery_option", validatedData.delivery_option);
+    formData.append("ip_address", validatedData.ip_address); // Add IP address to form data
 
     // Append order items (and handle file fields)
     validatedData.order_items?.forEach((item, index) => {

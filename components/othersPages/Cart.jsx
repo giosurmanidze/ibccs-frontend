@@ -178,7 +178,9 @@ export default function Cart() {
 
   const parsedFields = productData?.additional_fields
     ? makeFieldsUnique(
-        JSON.parse(productData?.additional_fields),
+        typeof productData.additional_fields === "string"
+          ? JSON.parse(productData.additional_fields)
+          : productData.additional_fields,
         productData.id
       )
     : [];
@@ -633,18 +635,20 @@ export default function Cart() {
     const serviceId = productData?.id;
 
     if (file) {
+      // Store the raw file for base64 conversion later
       setFiles((prev) => ({
         ...prev,
         [fieldName]: file,
       }));
 
-      const currentValues = getValues();
-
-      setValue(fieldName, file, {
+      // For form validation only, we can set a simple value
+      setValue(fieldName, file.name, {
         shouldValidate: true,
         shouldDirty: true,
       });
 
+      // Preserve other form values
+      const currentValues = getValues();
       Object.entries(currentValues).forEach(([key, value]) => {
         if (key !== fieldName && value) {
           setValue(key, value, {

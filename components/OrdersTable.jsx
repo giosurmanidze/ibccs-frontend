@@ -4,6 +4,13 @@ import axios from "axios";
 import axiosInstance from "@/config/axios";
 import { toast } from "react-toastify";
 import OrderDetailsModal from "./OrderDetailsModal";
+import {
+  ChevronDown,
+  TrendingUp,
+  ShoppingCart,
+  Globe,
+  RefreshCcw,
+} from "lucide-react";
 
 const OrdersTable = () => {
   const [orders, setOrders] = useState([]);
@@ -16,7 +23,21 @@ const OrdersTable = () => {
   const [perPage, setPerPage] = useState(10);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const [countries, setCountries] = useState([]);
+  const [services, setServices] = useState([]);
+
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedServiceName, setSelectedServiceName] = useState("");
+  const [timeframe, setTimeframe] = useState("month");
+
   const [metricsData, setMetricsData] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+  });
+
+  const [serviceData, setServiceData] = useState({
+    services: [],
     totalOrders: 0,
     totalRevenue: 0,
   });
@@ -42,12 +63,30 @@ const OrdersTable = () => {
   }, []);
 
   const getFilteredOrders = () => {
-    if (statusFilter === "all") {
-      return orders;
-    }
-    return orders.filter((order) => order.status === statusFilter);
-  };
+    let filteredOrders = orders;
 
+    if (statusFilter !== "all") {
+      filteredOrders = filteredOrders.filter(
+        (order) => order.status === statusFilter
+      );
+    }
+
+    if (selectedCountry) {
+      filteredOrders = filteredOrders.filter(
+        (order) => order.country_code === selectedCountry
+      );
+    }
+
+    if (selectedServiceName) {
+      filteredOrders = filteredOrders.filter((order) =>
+        order.order_items?.some(
+          (item) => item.service?.name === selectedServiceName
+        )
+      );
+    }
+
+    return filteredOrders;
+  };
   const handlePageChange = (page) => {
     setCurrentPage(page);
     fetchOrders(page);
@@ -85,12 +124,10 @@ const OrdersTable = () => {
   const fetchOrders = async (page = 1) => {
     try {
       const response = await axiosInstance.get(`orders?page=${page}`);
-      console.log(response.data);
       setOrders(response.data.data);
       setLoading(false);
       setCurrentPage(response.data.meta.current_page || page);
       setLastPage(response.data.meta.last_page || 1);
-      setTotalOrders(response.data.meta.total || response.data.data.length);
       setPerPage(response.data.meta.per_page || 10);
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -180,6 +217,7 @@ const OrdersTable = () => {
   };
 
   const calculateOrderTotal = (order) => {
+    console.log(order);
     if (!order.order_items || order.order_items.length === 0) return 0;
 
     return order.order_items.reduce((total, item) => {
@@ -209,6 +247,98 @@ const OrdersTable = () => {
       toast.error("Failed to update order status");
     }
   };
+
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await axiosInstance.get("/services");
+        setServices(response.data.services);
+      } catch (err) {
+        console.error("Failed to fetch services", err);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  const getCountryName = (countryCode) => {
+    const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+    try {
+      return regionNames.of(countryCode) || countryCode;
+    } catch (error) {
+      console.warn(`Could not find country name for code: ${countryCode}`);
+      return countryCode;
+    }
+  };
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await axiosInstance.get(
+          "/customer-demographics/countries"
+        );
+        setCountries(response.data.countries);
+      } catch (err) {
+        console.error("Failed to fetch countries", err);
+      }
+    };
+
+    fetchCountries();
+  }, []);
+
+  // Fetch services when country or other filters change
+  useEffect(() => {
+    const fetchServicesByCountry = async () => {
+      if (!selectedCountry) return;
+
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get(
+          "/customer-demographics/services-by-country",
+          {
+            params: {
+              country_code: selectedCountry,
+              service_name: selectedServiceName || undefined,
+              timeframe: timeframe,
+            },
+          }
+        );
+
+        const data = response.data.data;
+        setServiceData({
+          services: data.services,
+          totalOrders: data.total_orders,
+          totalRevenue: data.total_revenue,
+        });
+      } catch (err) {
+        setError("Failed to fetch service data");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServicesByCountry();
+  }, [selectedCountry, selectedServiceName, timeframe]);
+
+  const resetFilters = () => {
+    setSelectedCountry("");
+    setSelectedServiceName("");
+    setTimeframe("month");
+
+    // Reset service data
+    setServiceData({
+      services: [],
+      totalOrders: 0,
+      totalRevenue: 0,
+      pendingOrdersTotal: 0,
+      completedOrdersTotal: 0,
+    });
+  };
+
   if (loading) {
     return <div className="flex justify-center p-8">Loading orders...</div>;
   }
@@ -252,7 +382,163 @@ const OrdersTable = () => {
             />
           </div>
         </div>
+        <div className="container mx-auto p-6 bg-gradient-to-br from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl shadow-2xl mt-8">
+          <div className="flex items-center mb-6 space-x-4">
+            <Globe className="text-blue-600 w-10 h-10" />
+            <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              Service Country Analytics
+            </h2>
+          </div>
+          {(selectedCountry ||
+            selectedServiceName !== "" ||
+            timeframe !== "month") && (
+            <button
+              onClick={resetFilters}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 
+                       text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 
+                       dark:hover:bg-gray-600 transition-colors group mb-2"
+            >
+              <RefreshCcw
+                className="w-4 h-4 text-gray-500 group-hover:text-blue-600 
+                         dark:text-gray-400 dark:group-hover:text-blue-400 
+                         transition-colors"
+              />
+              <span>Reset Filters</span>
+            </button>
+          )}
 
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2 flex items-center">
+                <Globe className="mr-2 w-4 h-4 text-blue-500" />
+                Country
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                  className="w-full p-3 pl-10 border-2 border-gray-200 dark:border-gray-700 rounded-xl 
+                         focus:ring-2 focus:ring-blue-500 focus:border-transparent 
+                         dark:bg-gray-800 dark:text-white transition-all duration-300 
+                         appearance-none hover:shadow-md"
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((country) => (
+                    <option key={country} value={country}>
+                      {getCountryName(country)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2 flex items-center">
+                <ShoppingCart className="mr-2 w-4 h-4 text-green-500" />
+                Service (Optional)
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedServiceName}
+                  onChange={(e) => setSelectedServiceName(e.target.value)}
+                  disabled={!selectedCountry}
+                  className="w-full p-3 pl-10 border-2 border-gray-200 dark:border-gray-700 rounded-xl 
+                         focus:ring-2 focus:ring-green-500 focus:border-transparent 
+                         dark:bg-gray-800 dark:text-white transition-all duration-300 
+                         appearance-none hover:shadow-md disabled:opacity-50"
+                >
+                  <option value="">All Services</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.name}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2 flex items-center">
+                <TrendingUp className="mr-2 w-4 h-4 text-purple-500" />
+                Timeframe
+              </label>
+              <div className="relative">
+                <select
+                  value={timeframe}
+                  onChange={(e) => setTimeframe(e.target.value)}
+                  className="w-full p-3 pl-10 border-2 border-gray-200 dark:border-gray-700 rounded-xl 
+                         focus:ring-2 focus:ring-purple-500 focus:border-transparent 
+                         dark:bg-gray-800 dark:text-white transition-all duration-300 
+                         appearance-none hover:shadow-md"
+                >
+                  <option value="week">Last Week</option>
+                  <option value="month">Last Month</option>
+                  <option value="year">Last Year</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-center text-gray-500 animate-pulse">
+              Loading...
+            </div>
+          ) : (
+            <div>
+              <div className="space-y-4">
+                {serviceData.services.map((service, index) => (
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-900 border dark:border-gray-700 
+                           p-5 rounded-xl shadow-md hover:shadow-xl transition-all 
+                           duration-300 transform hover:-translate-y-1"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-4">
+                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
+                          <ShoppingCart className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <span className="font-bold text-lg text-gray-800 dark:text-white">
+                          {service.name}
+                        </span>
+                      </div>
+                      <div className="flex space-x-6">
+                        <div className="text-center">
+                          <span className="text-blue-600 font-semibold block mb-1">
+                            Orders
+                          </span>
+                          <span className="font-bold text-gray-800 dark:text-white">
+                            {service.order_count}
+                          </span>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-green-600 font-semibold block mb-1">
+                            Revenue
+                          </span>
+                          <span className="font-bold text-gray-800 dark:text-white">
+                            {new Intl.NumberFormat("en-US", {
+                              style: "currency",
+                              currency: "USD",
+                            }).format(service.total_revenue)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {serviceData.services.length === 0 && (
+                <div className="text-center text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-6 rounded-xl">
+                  No services found for the selected criteria
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2 mt-6">
           <button
             onClick={() => setStatusFilter("all")}
@@ -306,7 +592,6 @@ const OrdersTable = () => {
           </button>
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-800/50">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
@@ -315,7 +600,9 @@ const OrdersTable = () => {
                 Total Orders
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {metricsData.totalOrders}
+                {selectedCountry
+                  ? serviceData.totalOrders
+                  : metricsData.totalOrders}
               </p>
             </div>
             <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
@@ -361,7 +648,14 @@ const OrdersTable = () => {
                 Revenue
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {metricsData.totalRevenue}
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(
+                  selectedCountry
+                    ? serviceData.totalRevenue
+                    : metricsData.totalRevenue
+                )}
               </p>
             </div>
             <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300">
@@ -408,7 +702,7 @@ const OrdersTable = () => {
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {
-                  orders
+                  getFilteredOrders()
                     .filter((s) => s.status === "pending")
                     .map((s) => ({ id: s.id, item: s.item })).length
                 }
@@ -456,7 +750,11 @@ const OrdersTable = () => {
                 Completed Orders
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {orders.filter((order) => order.status === "completed").length}
+                {
+                  getFilteredOrders().filter(
+                    (order) => order.status === "completed"
+                  ).length
+                }
               </p>
             </div>
             <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300">

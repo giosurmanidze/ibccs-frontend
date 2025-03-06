@@ -5,15 +5,13 @@ import { useContextElement } from "@/context/Context";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast, ToastContainer } from "react-toastify";
 import * as yup from "yup";
 
 export default function Checkout() {
-  const { cartProducts, totalPrice, setCartProducts } = useContextElement();
-  const router = useRouter();
+  const { cartProducts } = useContextElement();
 
   const validationSchema = useMemo(
     () =>
@@ -57,34 +55,48 @@ export default function Checkout() {
 
     const order_details = JSON.parse(localStorage.getItem("order_details"));
 
+    const getIPDetails = async () => {
+      const apis = [
+        "https://ipapi.co/json/",
+        "https://ipinfo.io/json",
+        "https://json.geoiplookup.io/",
+      ];
+
+      for (const api of apis) {
+        try {
+          const response = await fetch(api);
+          const data = await response.json();
+
+          return {
+            ip: data.ip || data.query || data.clientIP,
+            countryCode: data.country_code || data.country || data.countryCode,
+          };
+        } catch (error) {
+          console.error(`Failed to fetch from ${api}:`, error);
+          continue;
+        }
+      }
+
+      return {
+        ip: "unknown",
+        countryCode: "",
+      };
+    };
+
     const cleanFieldNames = (fields) => {
       return fields.map((field) => ({
         ...field,
-        name: field.name.replace(/_\d+$/, ""), // Remove the "_number" suffix
+        name: field.name.replace(/_\d+$/, ""),
       }));
     };
+    let { ip: clientIP, countryCode } = await getIPDetails();
 
-    // Get client IP address
-    let clientIP = "";
-    try {
-      // Option 1: Using a public IP API
-      const ipResponse = await fetch("https://api.ipify.org?format=json");
-      const ipData = await ipResponse.json();
-      clientIP = ipData.ip;
-    } catch (error) {
-      console.error("Error fetching IP address:", error);
-      // Fallback - if we can't get the IP, we'll send an empty string
-      clientIP = "unknown";
-    }
-
-    // Loop through the order items and clean the fields, include total_price in service_details
     const order_items = order_details?.map(({ type, ...item }) => ({
       service_id: item.service_id,
       total_price: item.total_price,
       service_details: {
         ...item,
-        // Include total_price inside service_details
-        fields: cleanFieldNames(item.fields), // Clean the fields array
+        fields: cleanFieldNames(item.fields),
       },
     }));
 
@@ -98,12 +110,10 @@ export default function Checkout() {
       note: data["note"],
       delivery_option: data["delivery"],
       order_items: order_items,
-      ip_address: clientIP, // Add the IP address to the validated data
+      ip_address: clientIP,
+      country_code: countryCode,
     };
 
-    console.log(validatedData);
-
-    // Create a FormData instance
     const formData = new FormData();
 
     formData.append("firstname", validatedData.firstname);
@@ -114,22 +124,20 @@ export default function Checkout() {
     formData.append("city", validatedData.city);
     formData.append("note", validatedData.note);
     formData.append("delivery_option", validatedData.delivery_option);
-    formData.append("ip_address", validatedData.ip_address); // Add IP address to form data
+    formData.append("ip_address", validatedData.ip_address);
+    formData.append("country_code", validatedData.country_code);
 
-    // Append order items (and handle file fields)
     validatedData.order_items?.forEach((item, index) => {
+      console.log(item);
       formData.append(`order_items[${index}][service_id]`, item.service_id);
 
-      // Add the total_price at the item level - THIS WAS MISSING
       formData.append(`order_items[${index}][total_price]`, item.total_price);
 
-      // Add the total_price within service_details
       formData.append(
         `order_items[${index}][service_details][total_price]`,
         item.service_details.total_price
       );
 
-      // Append the full field information including name and type
       item.service_details.fields.forEach((field, fieldIndex) => {
         formData.append(
           `order_items[${index}][service_details][fields][${fieldIndex}][name]`,
@@ -152,7 +160,6 @@ export default function Checkout() {
           );
         }
 
-        // If it's a dropdown, include the options
         if (field.type === "dropdown" && field.options) {
           formData.append(
             `order_items[${index}][service_details][fields][${fieldIndex}][options]`,
@@ -173,13 +180,9 @@ export default function Checkout() {
         position: "top-right",
         autoClose: 2000,
       });
-      console.log(response);
-
-      // // Clear the cart after successful order
       // localStorage.removeItem("order_details");
       // setCartProducts([]);
 
-      // // Redirect to a thank you page or order confirmation
       // router.push("/order-confirmation");
     } catch (error) {
       console.error("Order submission error:", error);

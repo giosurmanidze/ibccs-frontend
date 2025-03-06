@@ -14,7 +14,8 @@ export default function page() {
   const { data: product } = useGetService(id);
   const { data: category } = useGetCategory(categoryId);
 
-  
+  console.log(product);
+
   return (
     <>
       <div className="tf-breadcrumb">

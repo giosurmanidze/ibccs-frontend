@@ -1,13 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
-import { paymentImages } from "@/data/singleProductOptions";
 import StickyItem from "./StickyItem";
 import Quantity from "./Quantity";
 import Slider1ZoomOuter from "./sliders/Slider1ZoomOuter";
 import { useContextElement } from "@/context/Context";
 import { openCartModal } from "@/utlis/openCartModal";
 import axiosInstance from "@/config/axios";
+import { FileDown } from "lucide-react";
 
 export default function DetailsOuterZoom({ product }) {
   const [quantity, setQuantity] = useState(1);
@@ -25,6 +24,24 @@ export default function DetailsOuterZoom({ product }) {
   const button1 = pageContent?.buttons?.[0] ?? null;
   const button2 = pageContent?.buttons?.[1] ?? null;
   const button3 = pageContent?.buttons?.[2] ?? null;
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const handleDownload = (fileId, filename) => {
+    const url = `http://localhost:8000/api/download/${fileId}`;
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <section style={{ maxWidth: "100vw", overflow: "clip" }}>
@@ -64,7 +81,11 @@ export default function DetailsOuterZoom({ product }) {
                     <div className="quantity-title fw-6">Quantity</div>
                     <Quantity setQuantity={setQuantity} button2={button2} />
                   </div>
-                  <div className="product-description-container my-5">
+                  <div
+                    clasGuarantee
+                    Safe
+                    CheckoutsName="product-description-container my-5"
+                  >
                     <h5 className="text-lg font-semibold mb-2 text-gray-800">
                       Service Details
                     </h5>
@@ -79,6 +100,45 @@ export default function DetailsOuterZoom({ product }) {
                       )}
                     </div>
                   </div>
+
+                  {/* Files Section */}
+                  {product?.files && product.files.length > 0 && (
+                    <div className="files-section mt-4 mb-4">
+                      <h5 className="text-lg font-semibold mb-2 text-gray-800">
+                        Attached Files
+                      </h5>
+                      <div className="files-list space-y-2">
+                        {product.files.map((file) => (
+                          <div
+                            key={file.id}
+                            className="file-item mt-2 flex items-center justify-between p-2 border rounded-md hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="file-info flex items-center space-x-3">
+                              <FileDown className="text-gray-600" size={24} />
+                              <div>
+                                <p className="font-medium text-gray-800">
+                                  {file.file_name}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {formatFileSize(file.file_size_bytes)}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() =>
+                                handleDownload(file.id, file.filename)
+                              }
+                              rel="noopener noreferrer"
+                              download
+                              className="download-btn bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition-colors"
+                            >
+                              Download
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="tf-product-info-buy-button">
                     <form onSubmit={(e) => e.preventDefault()} className="">
@@ -109,27 +169,6 @@ export default function DetailsOuterZoom({ product }) {
                         </span>
                       </a>
                     </form>
-                  </div>
-
-                  <div className="tf-product-info-trust-seal">
-                    <div className="tf-product-trust-mess">
-                      <i className="icon-safe" />
-                      <p className="fw-6">
-                        Guarantee Safe <br />
-                        Checkout
-                      </p>
-                    </div>
-                    <div className="tf-payment">
-                      {paymentImages.map((image, index) => (
-                        <Image
-                          key={index}
-                          alt={image.alt}
-                          src={image.src}
-                          width={image.width}
-                          height={image.height}
-                        />
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>

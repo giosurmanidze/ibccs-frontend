@@ -74,6 +74,14 @@ const AppSidebar: React.FC = () => {
       unreadCount: unreadCount,
       subItems: [{ name: "Files and images", path: "/medias", pro: false }],
     },
+    {
+      icon: <FilesIcon />,
+      name: "Services",
+      unreadCount: unreadCount,
+      subItems: [
+        { name: "services configuration", path: "/services", pro: false },
+      ],
+    },
   ];
 
   const renderMenuItems = (navItems, menuType: "main" | "others") => (

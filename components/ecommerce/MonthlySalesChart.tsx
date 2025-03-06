@@ -23,23 +23,19 @@ export default function MonthlySalesChart() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Inside your fetchMonthlySalesData function
     const fetchMonthlySalesData = async () => {
       try {
-        // First try to get data from dashboard-metrics endpoint
         const response = await axiosInstance.get("orders/dashboard-metrics");
         const metrics = response.data.data;
 
         if (metrics.monthly_sales && Array.isArray(metrics.monthly_sales)) {
-          // Extract data for the chart
-          // Make sure we're using the months in the correct order
           const months = metrics.monthly_sales.map((item) => item.month);
           const sales = metrics.monthly_sales.map(
             (item) => parseFloat(item.revenue) || 0
-          ); // Handle string values
+          );
           const orders = metrics.monthly_sales.map(
             (item) => parseInt(item.orders) || 0
-          ); // Handle string values
+          );
 
           setChartData({
             months,
@@ -51,7 +47,6 @@ export default function MonthlySalesChart() {
 
           console.log("Chart data processed:", { months, sales, orders });
         } else {
-          // Set error state instead of using dummy data
           setChartData((prevState) => ({
             ...prevState,
             loading: false,
@@ -60,7 +55,6 @@ export default function MonthlySalesChart() {
         }
       } catch (error) {
         console.error("Error fetching monthly sales data:", error);
-        // Set error state instead of using dummy data
         setChartData((prevState) => ({
           ...prevState,
           loading: false,
@@ -85,7 +79,6 @@ export default function MonthlySalesChart() {
     closeDropdown();
   };
 
-  // Determine chart options based on current state
   const getChartOptions = (): ApexOptions => {
     return {
       colors: chartView === "sales" ? ["#465fff"] : ["#34d399"],
@@ -194,7 +187,6 @@ export default function MonthlySalesChart() {
     };
   };
 
-  // Create the series based on current view
   const getChartSeries = () => {
     return [
       {
@@ -204,7 +196,6 @@ export default function MonthlySalesChart() {
     ];
   };
 
-  // Function to retry data fetching
   const handleRetry = async () => {
     setChartData((prevState) => ({
       ...prevState,

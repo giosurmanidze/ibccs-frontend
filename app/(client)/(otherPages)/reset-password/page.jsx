@@ -1,5 +1,6 @@
 "use client";
-import { useMemo } from "react";
+
+import { Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
@@ -7,7 +8,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import axiosInstance from "@/config/axios";
 import { ToastContainer, toast } from "react-toastify";
 
-export default function Page() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
   const token = searchParams.get("token");
@@ -46,7 +47,7 @@ export default function Page() {
     try {
       await axiosInstance.post("reset-password", validatedData);
       reset();
-      toast.success("Password changed succesfully.", {
+      toast.success("Password changed successfully.", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -55,6 +56,10 @@ export default function Page() {
       }, 2000);
     } catch (error) {
       console.error("Error:", error);
+      toast.error("Failed to change password.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -95,5 +100,13 @@ export default function Page() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

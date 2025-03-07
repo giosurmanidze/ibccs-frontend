@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { getPages, deletePage } from "@/services/pageService";
 import Link from "next/link";

@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -144,16 +143,17 @@ export default function Register() {
   };
 
   useEffect(() => {
-    const userDataExists = localStorage.getItem("store_user_data");
-    if (userDataExists) {
-      const userData = JSON.parse(localStorage.getItem("store_user_data"));
-      setValue("name", userData.firstname);
-      setValue("lastname", userData.lastname);
-      setValue("phone_number", userData.phone_number);
-      setValue("email", userData.email);
+    if (typeof window !== "undefined") {
+      const userDataExists = localStorage.getItem("store_user_data");
+      if (userDataExists) {
+        const userData = JSON.parse(localStorage.getItem("store_user_data"));
+        setValue("name", userData.firstname);
+        setValue("lastname", userData.lastname);
+        setValue("phone_number", userData.phone_number);
+        setValue("email", userData.email);
+      }
     }
   }, [selectRegisterOption]);
-
   return (
     <section className="flat-spacing-10">
       <div className="container">

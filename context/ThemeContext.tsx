@@ -1,5 +1,4 @@
 "use client";
-
 import type React from "react";
 import { createContext, useState, useContext, useEffect } from "react";
 
@@ -16,27 +15,39 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [theme, setTheme] = useState<Theme>("light");
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // This code will only run on the client side
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    const initialTheme = savedTheme || "light"; // Default to light theme
+    // This code will only run on the client side after component mounts
+    setIsMounted(true);
 
-    setTheme(initialTheme);
-    setIsInitialized(true);
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme") as Theme | null;
+      const initialTheme = savedTheme || "light"; // Default to light theme
+
+      setTheme(initialTheme);
+
+      // Apply theme immediately on first load
+      if (initialTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    }
   }, []);
 
   useEffect(() => {
-    if (isInitialized) {
+    // Only update localStorage and DOM after initial mount
+    if (isMounted && typeof window !== "undefined") {
       localStorage.setItem("theme", theme);
+
       if (theme === "dark") {
         document.documentElement.classList.add("dark");
       } else {
         document.documentElement.classList.remove("dark");
       }
     }
-  }, [theme, isInitialized]);
+  }, [theme, isMounted]);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));

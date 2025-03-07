@@ -50,13 +50,30 @@ export default function Cart() {
   const removeItem = (id) => {
     setCartProducts((pre) => pre.filter((elm) => elm.id !== id));
 
-    let existingOrderDetails =
-      JSON.parse(localStorage.getItem("order_details")) || [];
-    existingOrderDetails = existingOrderDetails.filter(
-      (order) => order.service_id !== id
-    );
+    if (typeof window !== "undefined") {
+      try {
+        let existingOrderDetails = JSON.parse(
+          localStorage.getItem("order_details") || "[]"
+        );
 
-    localStorage.setItem("order_details", JSON.stringify(existingOrderDetails));
+        const updatedOrderDetails = existingOrderDetails.filter(
+          (order) => order.service_id !== id
+        );
+
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              "order_details",
+              JSON.stringify(updatedOrderDetails)
+            );
+          } catch (error) {
+            console.error("Error saving order details to localStorage:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error updating localStorage:", error);
+      }
+    }
   };
 
   const [productData, setProductData] = useState(null);
@@ -78,7 +95,10 @@ export default function Cart() {
       const response = await axiosInstance.get(`services/${id}`);
       setProductData(response.data);
 
-      const savedData = JSON.parse(localStorage.getItem("order_details")) || [];
+      const savedData =
+        typeof window !== "undefined"
+          ? JSON.parse(localStorage.getItem("order_details") || "[]")
+          : [];
       const existingOrder = savedData.find((order) => order.service_id === id);
 
       if (existingOrder?.fields) {
@@ -225,8 +245,10 @@ export default function Cart() {
     setTempCartChanges(null);
     setIsModalOpen(false);
     const serviceId = productData?.id;
-    let existingOrderDetails =
-      JSON.parse(localStorage.getItem("order_details")) || [];
+    const existingOrderDetails =
+      typeof window !== "undefined"
+        ? JSON.parse(localStorage.getItem("order_details") || "[]")
+        : [];
     let serviceOrder = existingOrderDetails.find(
       (order) => order.service_id === serviceId
     );
@@ -305,9 +327,10 @@ export default function Cart() {
     setIsModalOpen(false);
   };
   const updatelocalStorage = (serviceId, fieldName, fieldValue) => {
-    let existingOrderDetails =
-      JSON.parse(localStorage.getItem("order_details")) || [];
-
+    const existingOrderDetails =
+      typeof window !== "undefined"
+        ? JSON.parse(localStorage.getItem("order_details") || "[]")
+        : [];
     const calculateTotalPrice = (fields) => {
       // Find the corresponding cart product
       const product = cartProducts.find((p) => p.id === serviceId);
@@ -460,14 +483,25 @@ export default function Cart() {
       }
     }
 
-    localStorage.setItem("order_details", JSON.stringify(existingOrderDetails));
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          "order_details",
+          JSON.stringify(existingOrderDetails)
+        );
+      } catch (error) {
+        console.error("Error saving order details to localStorage:", error);
+      }
+    }
   };
   const getCleanFieldName = (fieldName) => {
     return fieldName.split("_")[0];
   };
 
-  const savedData = JSON.parse(localStorage.getItem("order_details")) || [];
-
+  const savedData =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("order_details") || "[]")
+      : [];
   const serviceOrder = savedData.find(
     (order) => order.service_id === productData?.id
   );
@@ -542,9 +576,10 @@ export default function Cart() {
     }
   };
   const handleCheckOrder = () => {
-    let existingOrderDetails =
-      JSON.parse(localStorage.getItem("order_details")) || [];
-
+    const existingOrderDetails =
+      typeof window !== "undefined"
+        ? JSON.parse(localStorage.getItem("order_details") || "[]")
+        : [];
     if (existingOrderDetails.length === cartProducts.length) {
       if (cartProducts.length !== 0) {
         router.push("/checkout");
@@ -677,7 +712,10 @@ export default function Cart() {
   };
 
   const [totalExtraCategoryPrice, setTotalExtraCategoryPrice] = useState(() => {
-    const savedPrice = localStorage.getItem("total_extra_category_price");
+    const savedPrice =
+      typeof window !== "undefined"
+        ? localStorage.getItem("total_extra_category_price")
+        : null;
     const parsedPrice = parseFloat(savedPrice);
     return !isNaN(parsedPrice) ? parsedPrice : 0;
   });
@@ -686,7 +724,19 @@ export default function Cart() {
     const priceToStore = !isNaN(totalExtraCategoryPrice)
       ? totalExtraCategoryPrice
       : 0;
-    localStorage.setItem("total_extra_category_price", priceToStore.toString());
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          "total_extra_category_price",
+          priceToStore.toString()
+        );
+      } catch (error) {
+        console.error(
+          "Error saving total extra category price to localStorage:",
+          error
+        );
+      }
+    }
   }, [totalExtraCategoryPrice]);
 
   const handleSelectChange = (e) => {
@@ -1235,10 +1285,22 @@ export default function Cart() {
                                                         field.extra_tax
                                                       : totalExtraCategoryPrice -
                                                         field.extra_category_tax;
-                                                  localStorage.setItem(
-                                                    "total_extra_category_price",
-                                                    newTotal.toString()
-                                                  );
+                                                  if (
+                                                    typeof window !==
+                                                    "undefined"
+                                                  ) {
+                                                    try {
+                                                      localStorage.setItem(
+                                                        "total_extra_category_price",
+                                                        newTotal.toString()
+                                                      );
+                                                    } catch (error) {
+                                                      console.error(
+                                                        "Error saving total extra category price to localStorage:",
+                                                        error
+                                                      );
+                                                    }
+                                                  }
                                                 }}
                                               >
                                                 -

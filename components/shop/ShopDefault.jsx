@@ -1,14 +1,15 @@
 "use client";
+
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { layouts } from "@/data/shop";
 import ProductGrid from "./ProductGrid";
-import { useState } from "react";
 import ShopFilter from "./ShopFilter";
 import Sorting from "./Sorting";
 import { useGetCategory } from "@/hooks/useCategory";
-import { useSearchParams } from "next/navigation";
 import { useGetCategories } from "@/hooks/useGetCategories";
 
-export default function ShopDefault() {
+function ShopDefaultContent() {
   const [gridItems, setGridItems] = useState();
   const [products, setProducts] = useState([]);
   const [finalSorted, setFinalSorted] = useState([]);
@@ -57,15 +58,18 @@ export default function ShopDefault() {
           <div className="wrapper-control-shop">
             <div className="meta-filter-shop" />
             <ProductGrid gridItems={gridItems} allproducts={services} />
-            {/* {servicesLength > 0 && (
-              <ul className="tf-pagination-wrap tf-pagination-list tf-pagination-btn">
-                <Pagination />
-              </ul>
-            )} */}
           </div>
         </div>
       </section>
       <ShopFilter setProducts={setProducts} />
     </>
+  );
+}
+
+export default function ShopDefault() {
+  return (
+    <Suspense fallback={<div>Loading shop...</div>}>
+      <ShopDefaultContent />
+    </Suspense>
   );
 }

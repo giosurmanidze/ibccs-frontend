@@ -18,7 +18,7 @@ import { useToggleActivation } from "@/hooks/useToggleActivation";
 
 const ALL_SOCIAL_PLATFORMS = ["whatsapp", "telegram", "viber", "botim"];
 
-export default function BasicTables() {
+export default function UsersListPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState({});
 

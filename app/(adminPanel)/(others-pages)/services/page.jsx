@@ -52,7 +52,7 @@ const ServicesTable = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await axiosInstance.get(`services`);
+      const response = await axiosInstance.get(`/services`);
       console.log(response.data);
 
       if (Array.isArray(response.data.services)) {

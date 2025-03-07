@@ -1,9 +1,10 @@
 "use client";
-import { useEffect } from "react";
+
+import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axiosInstance from "@/config/axios";
 
-export default function Page() {
+function EmailVerificationContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
   const router = useRouter();
@@ -28,5 +29,13 @@ export default function Page() {
     <div className="success-page">
       <h3>Verification completed successfully! ✔</h3>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EmailVerificationContent />
+    </Suspense>
   );
 }

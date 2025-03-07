@@ -104,7 +104,7 @@ export default function UserMetaCard({ user, fetchUserData }) {
                       )}
                     </div>
                     <span className="text-sm sm:text-base truncate">
-                      {phone}
+                      {/* {phone} */}
                     </span>
                   </div>
                 )

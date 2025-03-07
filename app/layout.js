@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "@/context/ThemeContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import Context from "@/context/Context";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -114,23 +113,39 @@ export default function RootLayout({ children }) {
 
   useEffect(() => {
     const initializeDirection = () => {
-      const direction = localStorage.getItem("direction");
-
-      if (direction) {
-        const parsedDirection = JSON.parse(direction);
-        document.documentElement.dir = parsedDirection.dir;
-        document.body.classList.add(parsedDirection.dir);
-      } else {
+      // Only access localStorage on the client side
+      if (typeof window === "undefined") {
+        // Default direction for server-side rendering
         document.documentElement.dir = "ltr";
+        return;
       }
 
-      const preloader = document.getElementById("preloader");
-      if (preloader) {
-        preloader.classList.add("disabled");
+      try {
+        const direction = localStorage.getItem("direction");
+
+        if (direction) {
+          const parsedDirection = JSON.parse(direction);
+          document.documentElement.dir = parsedDirection.dir;
+          document.body.classList.add(parsedDirection.dir);
+        } else {
+          document.documentElement.dir = "ltr";
+        }
+
+        const preloader = document.getElementById("preloader");
+        if (preloader) {
+          preloader.classList.add("disabled");
+        }
+      } catch (error) {
+        // Fallback in case of errors
+        console.error("Error initializing direction:", error);
+        document.documentElement.dir = "ltr";
       }
     };
 
-    initializeDirection();
+    // Only run initialization on the client side
+    if (typeof window !== "undefined") {
+      initializeDirection();
+    }
   }, []);
 
   const queryClient = new QueryClient();
@@ -147,11 +162,9 @@ export default function RootLayout({ children }) {
             <AuthProvider>
               <UnreadMessagesProvider>
                 <AuthWrapper>
-                  <ThemeProvider>
                     <SidebarProvider>
                       <div id="wrapper">{children}</div>
                     </SidebarProvider>
-                  </ThemeProvider>
                 </AuthWrapper>
               </UnreadMessagesProvider>
             </AuthProvider>

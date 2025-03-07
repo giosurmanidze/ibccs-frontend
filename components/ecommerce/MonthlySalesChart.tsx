@@ -91,7 +91,6 @@ export default function MonthlySalesChart() {
         },
         animations: {
           enabled: true,
-          easing: "easeinout",
           speed: 800,
           animateGradually: {
             enabled: true,
@@ -255,7 +254,7 @@ export default function MonthlySalesChart() {
             <MoreDotIcon className="h-4 w-4" />
           </button>
 
-          {isOpen && (
+          {/* {isOpen && (
             <Dropdown
               isOpen={isOpen}
               setIsOpen={setIsOpen}
@@ -270,7 +269,7 @@ export default function MonthlySalesChart() {
                 </DropdownItem>
               )}
             </Dropdown>
-          )}
+          )} */}
         </div>
       </div>
 

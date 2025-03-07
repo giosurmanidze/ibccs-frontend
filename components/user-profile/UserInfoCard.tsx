@@ -96,7 +96,7 @@ export default function UserInfoCard({ user, fetchUserData }) {
       if (user.platforms_number) {
         const platforms = JSON.parse(user.platforms_number);
         Object.entries(platforms).forEach(([platform, value]) => {
-          setValue(platform, value);
+          setValue(platform as any, value);
         });
       }
     }
@@ -203,7 +203,7 @@ export default function UserInfoCard({ user, fetchUserData }) {
                         id={platform}
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         placeholder={`Enter ${platform} number`}
-                        {...register(platform)}
+                        {...register(platform as any)}
                       />
                       <p className="error">{errors[platform]?.message}</p>
                     </div>
@@ -218,7 +218,7 @@ export default function UserInfoCard({ user, fetchUserData }) {
                             ...prev,
                             [platform]: "",
                           }));
-                          setValue(platform, "");
+                          setValue(platform as any, "");
                         }}
                         className="flex items-center gap-2 p-2.5 w-full border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
                       >
@@ -249,10 +249,10 @@ export default function UserInfoCard({ user, fetchUserData }) {
                 <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                   <div className="mb-5">
                     <label
-                      for="name"
+                      htmlFor="lastname"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
-                      Firstname
+                      Lastname
                     </label>
                     <input
                       type="text"
@@ -265,7 +265,7 @@ export default function UserInfoCard({ user, fetchUserData }) {
                   </div>
                   <div className="mb-5">
                     <label
-                      for="lastname"
+                      htmlFor="lastname"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Lastname
@@ -281,7 +281,7 @@ export default function UserInfoCard({ user, fetchUserData }) {
                   </div>
                   <div className="mb-5">
                     <label
-                      for="email"
+                      htmlFor="email"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Email address
@@ -297,7 +297,7 @@ export default function UserInfoCard({ user, fetchUserData }) {
                   </div>
                   <div className="mb-5">
                     <label
-                      for="phone_number"
+                      htmlFor="phone_number"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Phone number
@@ -318,9 +318,8 @@ export default function UserInfoCard({ user, fetchUserData }) {
               <Button size="sm" variant="outline" onClick={closeModal}>
                 Close
               </Button>
-              <Button size="sm" onClick={handleSave}>
-                Save Changes
-              </Button>
+              {/* onClick={handleSave} */}
+              <Button size="sm">Save Changes</Button>
             </div>
           </form>
         </div>

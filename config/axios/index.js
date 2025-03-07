@@ -1,13 +1,25 @@
 import axios from "axios";
 
-const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api/",
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    "X-Requested-With": "XMLHttpRequest",
-    Authorization: "Bearer " + localStorage.getItem("jwt_token"),
-  },
-});
+const createAxiosInstance = () => {
+  const baseConfig = {
+    baseURL: "http://localhost:8000/api/",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  };
+
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("jwt_token");
+    if (token) {
+      baseConfig.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return axios.create(baseConfig);
+};
+
+const axiosInstance = createAxiosInstance();
 
 export default axiosInstance;

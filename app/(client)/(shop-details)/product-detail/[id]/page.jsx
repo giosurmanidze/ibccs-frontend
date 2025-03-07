@@ -6,7 +6,8 @@ import DetailsOuterZoom from "@/components/shopDetails/DetailsOuterZoom";
 import { useParams, useSearchParams } from "next/navigation";
 import { useGetService } from "@/hooks/useGetService";
 import { useGetCategory } from "@/hooks/useCategory";
-export default function page() {
+
+export default function Page() {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");

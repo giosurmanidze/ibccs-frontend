@@ -327,7 +327,7 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
                       Note:
                     </span>
                     <div className="ml-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-gray-700 dark:text-gray-300 italic">
-                      "{order.comment}"
+                      {order.comment}
                     </div>
                   </div>
                 )}

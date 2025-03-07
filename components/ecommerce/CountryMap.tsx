@@ -37,6 +37,7 @@ const CountryMap: React.FC<CountryMapProps> = ({ countries }) => {
       series={{
         regions: [
           {
+            attribute: "fill", // Add this missing property
             values: seriesData,
             scale: ["#FF0000"], // Use red color
             normalizeFunction: "polynomial",

@@ -7,7 +7,7 @@ import Store from "@/components/homes/home-gaming-accessories/Store";
 import axiosInstance from "@/config/axios";
 import React, { useEffect, useState } from "react";
 
-export default function page() {
+export default function Page() {
   const [pageContent, setPageContent] = useState({});
 
   useEffect(() => {
@@ -18,6 +18,7 @@ export default function page() {
     };
     getPageContent();
   }, []);
+
   return (
     <>
       <div className="home-gaming-accessories color-primary-14">

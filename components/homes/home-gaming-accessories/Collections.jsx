@@ -26,10 +26,10 @@ export default function Collections() {
             className="swiper tf-sw-testimonial"
             spaceBetween={20}
             breakpoints={{
-              1024: { slidesPerView: 4 }, // 4 cards on larger screens
-              768: { slidesPerView: 3 }, // 3 cards on medium screens
-              480: { slidesPerView: 2 }, // 2 cards on smaller screens
-              0: { slidesPerView: 1 }, // 1 card on extra small screens
+              1024: { slidesPerView: 4 }, 
+              768: { slidesPerView: 3 },
+              480: { slidesPerView: 2 }, 
+              0: { slidesPerView: 1 },
             }}
             modules={[Pagination, Navigation]}
             pagination={{

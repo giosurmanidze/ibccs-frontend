@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axiosInstance from "@/config/axios";
 
-export default function page() {
+export default function Page() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function page() {
           console.error("Error verifying email:", error);
         });
     }
-  }, [email]);
+  }, [email, router]);
 
   return (
     <div className="success-page">

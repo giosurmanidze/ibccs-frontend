@@ -150,6 +150,8 @@ export default function RootLayout({ children }) {
     getPageContent();
   }, []);
 
+  console.log(pageContent);
+
   return (
     <QueryClientProvider client={queryClient}>
       <html lang="en">

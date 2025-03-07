@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "@/config/axios";
 import { toast } from "react-toastify";
+import Image from "next/image";
 
 const ServiceFieldEditor = ({ service, onClose, onSave }) => {
   const fileInputRef = useRef(null);
@@ -17,7 +18,7 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
     files: [],
   });
 
-  const [uploadedFiles, setUploadedFiles] = useState([]); 
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [existingFiles, setExistingFiles] = useState([]);
   const [fieldTypes] = useState([
     { value: "text", label: "Text Input" },
@@ -126,7 +127,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
     const updatedExistingFiles = [...existingFiles];
     updatedExistingFiles.splice(index, 1);
     setExistingFiles(updatedExistingFiles);
-
   };
 
   const addField = () => {
@@ -809,10 +809,12 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                       <div className="flex items-center space-x-3">
                         {file.preview ? (
                           <div className="flex-shrink-0 w-10 h-10">
-                            <img
+                            <Image
                               src={file.preview}
                               alt="Preview"
-                              className="w-10 h-10 object-cover rounded"
+                              width={40}
+                              height={40}
+                              className="object-cover rounded"
                             />
                           </div>
                         ) : (
@@ -966,7 +968,7 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
             {formData.additional_fields.length === 0 && (
               <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg dark:border-gray-600">
                 <p className="text-gray-500 dark:text-gray-400">
-                  No fields added yet. Click "Add Field" to start.
+                  No fields added yet. Click Add Field to start.
                 </p>
               </div>
             )}

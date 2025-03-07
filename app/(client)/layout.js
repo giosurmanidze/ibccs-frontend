@@ -31,8 +31,7 @@ export default function RootLayout({ children }) {
   const pathname = usePathname();
   useEffect(() => {
     if (typeof window !== "undefined") {
-      import("bootstrap/dist/js/bootstrap.esm").then(() => {
-      });
+      import("bootstrap/dist/js/bootstrap.esm").then(() => {});
     }
   }, []);
   useEffect(() => {
@@ -180,7 +179,7 @@ export default function RootLayout({ children }) {
             </AuthProvider>
           </Context>
           <ScrollTop />
-          <Footer2 pageContent={pageContent?.footer}/>
+          <Footer2 pageContent={pageContent?.footer} />
         </body>
       </html>
     </QueryClientProvider>

@@ -45,7 +45,7 @@ export default function Collections() {
               <SwiperSlide key={index}>
                 <Link
                   href={`/shop-default?categoryId=${item.id}`}
-                  className="card p-3 category-card"
+                  className="card p-3 "
                 >
                   <div className="icon-name">
                     <div>
@@ -76,17 +76,6 @@ export default function Collections() {
                       </svg>
                     </div>
                   </div>
-                  {/* <span>
-                    <Image
-                      className="lazyload"
-                      data-src={item.imgSrc}
-                      alt="collection-img"
-                      src={`http://localhost:8000/storage/${item.icon}`}
-                      width={60}
-                      height={60}
-                    />
-                  </span>
-                  <p class="card__title"> {item.name}</p> */}
                 </Link>
               </SwiperSlide>
             ))}

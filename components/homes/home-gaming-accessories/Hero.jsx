@@ -10,16 +10,38 @@ export default function Hero({ pageContent }) {
   console.log(pageContent);
 
   return (
-    <section className=" flat-spacing-5 slider-gaming-accessories">
+    <section className="flat-spacing-5 slider-gaming-accessories position-relative">
+      {/* Black overlay for background image only */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          zIndex: 1
+        }}
+      ></div>
+      
       <Image
-        className="lazyload"
         data-src={banner_bg_image}
         alt="collection-img"
         src={banner_bg_image}
         width={2000}
         height={855}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: 0
+        }}
       />
-      <div className="container">
+      
+      <div className="container position-relative" style={{ zIndex: 2 }}>
         <Swiper
           spaceBetween={15}
           breakpoints={{
@@ -44,7 +66,7 @@ export default function Hero({ pageContent }) {
                         alt={slide.alt}
                         src={banner_buttons[index]?.banner_img?.value}
                         width={800}
-                        height={747}
+                        height={847}
                       />
                     </Link>
                   )}

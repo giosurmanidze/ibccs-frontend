@@ -82,6 +82,12 @@ const AppSidebar: React.FC = () => {
         { name: "services configuration", path: "/services", pro: false },
       ],
     },
+    {
+      icon: <GridIcon />,
+      name: "Categories",
+      unreadCount: unreadCount,
+      subItems: [{ name: "List categories", path: "/categories", pro: false }],
+    },
   ];
 
   const renderMenuItems = (navItems, menuType: "main" | "others") => (

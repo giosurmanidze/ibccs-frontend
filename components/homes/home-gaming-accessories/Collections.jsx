@@ -2,24 +2,86 @@
 import { useGetCategories } from "@/hooks/useGetCategories";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useRef } from "react";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
-import "swiper/css/autoplay";
+import React, { useState } from "react";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 export default function Collections() {
   const { data: categories } = useGetCategories();
-  const swiperRef = useRef(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  useEffect(() => {
-    if (swiperRef.current && swiperRef.current.swiper) {
-      const swiperInstance = swiperRef.current.swiper;
-      swiperInstance.autoplay.start();
-    }
-  }, [categories]);
+  // Custom previous arrow component
+  const PrevArrow = (props) => {
+    const { onClick } = props;
+    return (
+      <div
+        className="nav-sw nav-prev-slider nav-prev-testimonial lg snbncoll1"
+        onClick={onClick}
+      >
+        <span className="icon icon-arrow-right" />
+      </div>
+    );
+  };
+
+  // Custom next arrow component
+  const NextArrow = (props) => {
+    const { onClick } = props;
+    return (
+      <div
+        className="nav-sw nav-next-slider nav-next-testimonial lg snbpcoll1"
+        onClick={onClick}
+      >
+        <span className="icon icon-arrow-left" />
+      </div>
+    );
+  };
+
+  const sliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 800,
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    pauseOnHover: false,
+    beforeChange: (current, next) => setCurrentSlide(next),
+    prevArrow: <PrevArrow />,
+    nextArrow: <NextArrow />,
+    appendDots: (dots) => (
+      <div className="sw-dots style-2 sw-pagination-testimonial justify-content-center spdcoll1">
+        <ul>{dots}</ul>
+      </div>
+    ),
+    customPaging: (i) => <div className="custom-dot"></div>,
+    responsive: [
+      {
+        breakpoint: 1024,
+        settings: {
+          slidesToShow: 4,
+        },
+      },
+      {
+        breakpoint: 768,
+        settings: {
+          slidesToShow: 3,
+        },
+      },
+      {
+        breakpoint: 480,
+        settings: {
+          slidesToShow: 2,
+        },
+      },
+      {
+        breakpoint: 0,
+        settings: {
+          slidesToShow: 1,
+        },
+      },
+    ],
+  };
 
   return (
     <section className="flat-spacing-10 flat-testimonial">
@@ -40,39 +102,10 @@ export default function Collections() {
             ></div>
           </div>
         </div>
-        <div className="hover-sw-nav padding-content radius-10">
-          <Swiper
-            ref={swiperRef}
-            dir="ltr"
-            className="swiper tf-sw-testimonial"
-            spaceBetween={20}
-            breakpoints={{
-              1024: { slidesPerView: 4 },
-              768: { slidesPerView: 3 },
-              480: { slidesPerView: 2 },
-              0: { slidesPerView: 1 },
-            }}
-            modules={[Pagination, Navigation, Autoplay]}
-            pagination={{
-              clickable: true,
-              el: ".spdcoll1",
-            }}
-            navigation={{
-              prevEl: ".snbpcoll1",
-              nextEl: ".snbncoll1",
-            }}
-            autoplay={{
-              delay: 3000,
-              disableOnInteraction: false,
-              pauseOnMouseEnter: false,
-            }}
-            speed={800}
-            loop={true}
-            loopAdditionalSlides={4}
-            slidesPerGroup={1}
-          >
+        <div className="hover-sw-nav padding-content radius-10 relative">
+          <Slider {...sliderSettings}>
             {categories?.map((item, index) => (
-              <SwiperSlide key={index}>
+              <div key={index} className="px-2">
                 <Link
                   href={`/shop-default?categoryId=${item.id}`}
                   className="card p-3 border-0 shadow-none transition-colors"
@@ -107,18 +140,58 @@ export default function Collections() {
                     </div>
                   </div>
                 </Link>
-              </SwiperSlide>
+              </div>
             ))}
-          </Swiper>
-          <div className="nav-sw nav-next-slider nav-next-testimonial lg snbpcoll1">
-            <span className="icon icon-arrow-left" />
-          </div>
-          <div className="nav-sw nav-prev-slider nav-prev-testimonial lg snbncoll1">
-            <span className="icon icon-arrow-right" />
-          </div>
-          <div className="sw-dots style-2 sw-pagination-testimonial justify-content-center spdcoll1" />
+          </Slider>
         </div>
       </div>
+
+      <style jsx global>{`
+        /* Custom dot styles */
+        .spdcoll1 .slick-dots {
+          position: static;
+          display: flex !important;
+          justify-content: center;
+          padding-top: 15px;
+        }
+
+        .spdcoll1 .slick-dots li {
+          margin: 0 5px;
+        }
+
+        .custom-dot {
+          width: 10px;
+          height: 10px;
+          background-color: rgba(0, 0, 0, 0.3);
+          border-radius: 50%;
+          display: inline-block;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .spdcoll1 .slick-dots li.slick-active .custom-dot {
+          background-color: #5ca595;
+          width: 12px;
+          height: 12px;
+        }
+
+        /* Navigation arrows */
+        .nav-sw {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          cursor: pointer;
+          z-index: 10;
+        }
+
+        .nav-prev-slider {
+          left: -30px;
+        }
+
+        .nav-next-slider {
+          right: -30px;
+        }
+      `}</style>
     </section>
   );
 }

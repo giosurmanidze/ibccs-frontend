@@ -20,7 +20,7 @@ export default function Page() {
 
   return (
     <>
-      <div className="home-gaming-accessories color-primary-14">
+      <div >
         <Hero pageContent={pageContent} />
         <Collections />
         <Products2 />

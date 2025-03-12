@@ -2,11 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
-import { Autoplay, Pagination, Navigation } from "swiper/modules";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import { useEffect, useState } from "react";
 
 export default function Hero({ pageContent }) {
@@ -19,8 +17,47 @@ export default function Hero({ pageContent }) {
     setIsClient(true);
   }, []);
 
+  const sliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 3,
+    slidesToScroll: 1,
+    centerMode: true,
+    centerPadding: '30px',
+    autoplay: true,
+    autoplaySpeed: 2000,
+    responsive: [
+      {
+        breakpoint: 1200,
+        settings: {
+          slidesToShow: 3,
+          centerPadding: '30px'
+        }
+      },
+      {
+        breakpoint: 768,
+        settings: {
+          slidesToShow: 2,
+          centerPadding: '30px'
+        }
+      },
+      {
+        breakpoint: 480,
+        settings: {
+          slidesToShow: 1,
+          centerPadding: '20px'
+        }
+      }
+    ],
+    customPaging: (i) => (
+      <div className="custom-dot"></div>
+    )
+  };
+
   return (
     <section className="flat-spacing-5 slider-gaming-accessories position-relative">
+      {/* Background overlay */}
       <div
         style={{
           position: "absolute",
@@ -33,6 +70,7 @@ export default function Hero({ pageContent }) {
         }}
       ></div>
 
+      {/* Background Image */}
       <Image
         alt="collection-img"
         src={banner_bg_image}
@@ -51,39 +89,14 @@ export default function Hero({ pageContent }) {
 
       <div className="container position-relative" style={{ zIndex: 2 }}>
         {isClient && (
-          <Swiper
-            spaceBetween={30}
-            slidesPerView={3}
-            loop={true}
-            centeredSlides={true}
-            autoplay={{
-              delay: 3000,
-              disableOnInteraction: false,
-            }}
-            pagination={{
-              clickable: true,
-              el: ".custom-pagination",
-              bulletClass: "custom-bullet",
-              bulletActiveClass: "custom-bullet-active",
-            }}
-            navigation={true}
-            breakpoints={{
-              1200: { slidesPerView: 3, spaceBetween: 30 },
-              768: { slidesPerView: 2, spaceBetween: 30 },
-              0: { slidesPerView: 1, spaceBetween: 20 },
-            }}
-            className="swiper tf-sw-recent"
-            dir="ltr"
-            modules={[Autoplay, Pagination, Navigation]}
-          >
+          <Slider {...sliderSettings}>
             {banner_cards.map((slide, index) => {
+              // Find the corresponding button for this card
               const correspondingButton =
                 banner_buttons[index] || banner_buttons[0];
 
-              console.log(correspondingButton);
-
               return (
-                <SwiperSlide key={index}>
+                <div key={index} className="px-2">
                   <div
                     className="card-container"
                     style={{
@@ -96,6 +109,7 @@ export default function Hero({ pageContent }) {
                       boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
                     }}
                   >
+                    {/* Image background */}
                     {correspondingButton?.banner_img?.value && (
                       <div
                         style={{
@@ -114,6 +128,7 @@ export default function Hero({ pageContent }) {
                             objectFit: "cover",
                           }}
                         />
+                        {/* Dark overlay for better text readability */}
                         <div
                           style={{
                             position: "absolute",
@@ -129,6 +144,7 @@ export default function Hero({ pageContent }) {
                       </div>
                     )}
 
+                    {/* Content overlay (positioned above the image) */}
                     <div
                       className="collection-content text-center"
                       style={{
@@ -201,48 +217,34 @@ export default function Hero({ pageContent }) {
                       )}
                     </div>
                   </div>
-                </SwiperSlide>
+                </div>
               );
             })}
-          </Swiper>
+          </Slider>
         )}
-
-        <div
-          className="custom-pagination"
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            left: "0",
-            right: "0",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 10,
-          }}
-        ></div>
       </div>
 
+      {/* Add custom CSS for pagination bullets */}
       <style jsx global>{`
-        .custom-bullet {
+        /* Custom dot styles */
+        .slick-dots li {
+          margin: 0 5px;
+        }
+
+        .custom-dot {
           width: 10px;
           height: 10px;
           background-color: rgba(255, 255, 255, 0.5);
           border-radius: 50%;
           display: inline-block;
-          margin: 0 5px;
           cursor: pointer;
           transition: all 0.3s ease;
         }
 
-        .custom-bullet-active {
+        .slick-dots li.slick-active .custom-dot {
           background-color: white;
           width: 12px;
           height: 12px;
-        }
-
-        /* Ensure consistent card sizes */
-        .swiper-slide {
-          height: auto !important;
         }
 
         /* Text responsiveness */

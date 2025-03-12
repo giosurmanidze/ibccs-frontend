@@ -37,6 +37,8 @@ export default function Cart() {
     setTotalPrice(subtotal);
   };
 
+  const { removeItemFromCart } = useContextElement();
+
   const fetchCartData = async () => {
     setIsLoading(true);
     try {
@@ -54,22 +56,38 @@ export default function Cart() {
       setIsLoading(false);
     }
   };
+
   const removeItem = async (id) => {
     try {
-      await axiosInstance.delete(`/carts/${id}`);
-      toast.success("Item removed from cart", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      fetchCartData(); // Refresh cart data
+      // Use the removeItemFromCart function from context
+      await removeItemFromCart(id);
+
+      // After successful removal, fetch updated cart data for your component
+      await fetchCartData();
     } catch (error) {
-      console.error("Error removing item from cart:", error);
-      toast.error("Failed to remove item from cart", {
+      console.error("Error removing item:", error);
+      toast.error("Failed to remove item", {
         position: "top-right",
         autoClose: 3000,
       });
     }
   };
+  // const removeItem = async (id) => {
+  //   try {
+  //     await axiosInstance.delete(`/carts/${id}`);
+  //     toast.success("Item removed from cart", {
+  //       position: "top-right",
+  //       autoClose: 3000,
+  //     });
+  //     fetchCartData(); // Refresh cart data
+  //   } catch (error) {
+  //     console.error("Error removing item from cart:", error);
+  //     toast.error("Failed to remove item from cart", {
+  //       position: "top-right",
+  //       autoClose: 3000,
+  //     });
+  //   }
+  // };
   function ensureDateFormat(dateStr) {
     if (!dateStr) return null;
 
@@ -500,10 +518,6 @@ export default function Cart() {
       }
     }
   };
-
-  let existingOrderDetails = JSON.parse(
-    localStorage.getItem("order_details") || "[]"
-  );
 
   // Instead of taking a serviceId
   const handleOpenModal = async (cartItem) => {

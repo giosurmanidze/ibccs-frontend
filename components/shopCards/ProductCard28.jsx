@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
@@ -23,16 +22,9 @@ export default function Shopcard28({ product }) {
 
           <div className="flex flex-col h-full relative z-10">
             <div className="p-3 sm:p-4">
-              {/* <Image
-                src={product?.icon}
-                alt="Preview"
-                width={40}
-                height={40}
-                className="object-cover rounded mb-2"
-              /> */}
               <p className="font-medium text-white !text-xl sm:text-xl">{product.name}</p>
               <h5 className="text-md sm:text-2xl font-bold mt-1 text-white ">
-                €{product.base_price}
+                {product.base_price} Euro
               </h5>
               {product.delivery_time && (
                 <div className="mt-4 inline-flex items-center text-blue-600 bg-white px-3 py-1 rounded-full text-sm">

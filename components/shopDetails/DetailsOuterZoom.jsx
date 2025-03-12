@@ -297,6 +297,7 @@ export default function DetailsOuterZoom({ product }) {
   const {
     addProductToCart,
     isAddedToCartProducts,
+    fetchCartData,
     cartProducts,
     totalPrice,
     setCartProducts,
@@ -490,22 +491,19 @@ export default function DetailsOuterZoom({ product }) {
         quantity: quantity,
       };
 
-      // Make API request to store cart data
       const response = await axiosInstance.post("/carts", cartData);
 
       console.log(response.data);
 
-      // If successful
       if (response.data.success) {
         toast.success("Item added to cart successfully", {
           position: "top-right",
           autoClose: 3000,
         });
 
-        // You might still want to update UI state
-        addProductToCart(serviceId, quantity);
+        addProductToCart(quantity);
+        fetchCartData();
 
-        // Reset form
         reset();
         setQuantity(1);
       } else {
@@ -519,6 +517,7 @@ export default function DetailsOuterZoom({ product }) {
       });
     }
   };
+
   const savedData =
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("order_details") || "[]")
@@ -1334,7 +1333,9 @@ export default function DetailsOuterZoom({ product }) {
                     <h6>{product?.name}</h6>
                   </div>
                   <div className="tf-product-info-price">
-                    <div className="price-on-sale">${product?.base_price}</div>
+                    <div className="price-on-sale">
+                      {product?.base_price} Euro
+                    </div>
                     <div
                       className="badges-on-sale"
                       style={{
@@ -1915,7 +1916,8 @@ export default function DetailsOuterZoom({ product }) {
                               className="tf-qty-price"
                               style={{ marginLeft: "10px" }}
                             >
-                              ${(product?.base_price * quantity).toFixed(2)}
+                              ({(product?.base_price * quantity).toFixed(2)}{" "}
+                              euro)
                             </span>
                           </button>
                         </div>

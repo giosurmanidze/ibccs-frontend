@@ -231,6 +231,34 @@ function EditPage() {
     return "/placeholder-image.jpg";
   };
 
+  const addNewBannerButton = () => {
+    const currentButtons = watch("banner_buttons") || [];
+
+    const newButton = {
+      url: "",
+      name: `shop_now_${currentButtons.length + 1}`,
+      text: "More details",
+      text_color: "#000000",
+      background_color: "#ffffff",
+      banner_img: {
+        type: "file",
+        value: "",
+      },
+    };
+
+    setValue("banner_buttons", [...currentButtons, newButton]);
+  };
+
+  const removeBannerButton = (indexToRemove) => {
+    const currentButtons = watch("banner_buttons") || [];
+
+    const updatedButtons = currentButtons.filter(
+      (_, index) => index !== indexToRemove
+    );
+
+    setValue("banner_buttons", updatedButtons);
+  };
+
   if (loading && !pageContent.banner_cards) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -273,6 +301,8 @@ function EditPage() {
             setValue={setValue}
             getImageUrl={getImageUrl}
             handleFileChange={handleFileChange}
+            addNewBannerButton={addNewBannerButton}
+            removeBannerButton={removeBannerButton}
           />
           <SubmitButton loading={loading} />
         </form>

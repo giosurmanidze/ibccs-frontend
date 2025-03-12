@@ -1,6 +1,5 @@
 "use client";
 import { useContextElement } from "@/context/Context";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import * as yup from "yup";
@@ -11,19 +10,465 @@ import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import mammoth from "mammoth";
+import CartTable from "./CartTable";
 
 export default function Cart() {
-  const { cartProducts, setCartProducts } = useContextElement();
+  const [cartItems, setCartItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [conditionalOptions, setConditionalOptions] = useState({});
+  const [blockingErrors, setBlockingErrors] = useState({});
+  const [loadingItemId, setLoadingItemId] = useState(null);
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState({});
   const [pageContent, setPageContent] = useState({});
+  const [productData, setProductData] = useState(null);
+  const [files, setFiles] = useState({});
+  const [wordCounts, setWordCounts] = useState({});
+  const [extraInputs, setExtraInputs] = useState([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(null);
+  const [tempCartChanges, setTempCartChanges] = useState(null);
+  const [totalPrice, setTotalPrice] = useState(0);
+
+  const calculateTotalPrice = (items) => {
+    const subtotal = items.reduce((total, item) => {
+      const itemTotal = parseFloat(item.total_price) || 0;
+      return total + itemTotal;
+    }, 0);
+    setTotalPrice(subtotal);
+  };
+
+  const fetchCartData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.get("/carts");
+      // console.log("test", response.data);
+      setCartItems(response.data || []);
+      calculateTotalPrice(response.data || []);
+    } catch (error) {
+      console.error("Error fetching cart data:", error);
+      toast.error("Failed to load cart items", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const removeItem = async (id) => {
+    try {
+      await axiosInstance.delete(`/carts/${id}`);
+      toast.success("Item removed from cart", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      fetchCartData(); // Refresh cart data
+    } catch (error) {
+      console.error("Error removing item from cart:", error);
+      toast.error("Failed to remove item from cart", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+  function ensureDateFormat(dateStr) {
+    if (!dateStr) return null;
+
+    // If already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
+
+    // Try to parse MM/DD/YYYY format
+    const mmddyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dateStr);
+    if (mmddyyyy) {
+      const [_, month, day, year] = mmddyyyy;
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+
+    // Try to create a date and format it
+    try {
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return formatDateToYYYYMMDD(date);
+      }
+    } catch (e) {
+      console.error("Could not parse date:", dateStr);
+    }
+
+    return dateStr; // Return original if we can't parse it
+  }
+  function ensureTimeFormat(timeStr) {
+    if (!timeStr) return "00:00";
+
+    // If already in HH:MM format
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+      // Ensure hours have leading zero
+      const [hours, minutes] = timeStr.split(":");
+      return `${hours.padStart(2, "0")}:${minutes}`;
+    }
+
+    // Handle 12-hour format with AM/PM
+    const twelveHourFormat = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(timeStr);
+    if (twelveHourFormat) {
+      let [_, hours, minutes, period] = twelveHourFormat;
+      hours = parseInt(hours);
+
+      // Convert to 24-hour
+      if (period.toUpperCase() === "PM" && hours < 12) {
+        hours += 12;
+      } else if (period.toUpperCase() === "AM" && hours === 12) {
+        hours = 0;
+      }
+
+      return `${hours.toString().padStart(2, "0")}:${minutes}`;
+    }
+
+    // Try to use Date object to parse
+    try {
+      // Create a date with the time string
+      const today = new Date();
+      const dateWithTime = new Date(
+        `${formatDateToYYYYMMDD(today)} ${timeStr}`
+      );
+
+      if (!isNaN(dateWithTime.getTime())) {
+        return `${dateWithTime
+          .getHours()
+          .toString()
+          .padStart(2, "0")}:${dateWithTime
+          .getMinutes()
+          .toString()
+          .padStart(2, "0")}`;
+      }
+    } catch (e) {
+      console.error("Could not parse time:", timeStr);
+    }
+
+    return timeStr; // Return original if we can't parse it
+  }
+  function formatDateToYYYYMMDD(date) {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  // Format time display
+  function formatTime(date) {
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+  const generateAvailableTimeSlots = (timeSlotConfig) => {
+    // Enhanced validation and error handling
+    if (!timeSlotConfig) {
+      console.error("No time slot configuration provided");
+      return [];
+    }
+
+    if (
+      !Array.isArray(timeSlotConfig.time_slots) ||
+      timeSlotConfig.time_slots.length === 0
+    ) {
+      console.error("No time slots array in configuration");
+      return [];
+    }
+
+    const availableSlots = [];
+
+    timeSlotConfig.time_slots.forEach((slotConfig) => {
+      // Ensure we have all required properties with proper data types
+      try {
+        // Fix and standardize date formats
+        const dateStart = ensureDateFormat(slotConfig.date_start);
+        const dateEnd = ensureDateFormat(slotConfig.date_end);
+
+        // Fix and standardize time formats
+        const timeStart = ensureTimeFormat(slotConfig.time_start || "09:00");
+        const timeEnd = ensureTimeFormat(slotConfig.time_end || "17:00");
+
+        // Ensure interval is a number
+        const intervalMinutes =
+          typeof slotConfig.interval === "string"
+            ? parseInt(slotConfig.interval, 10)
+            : slotConfig.interval || 60;
+
+        // Ensure excluded_days is an array
+        const excludedDays = Array.isArray(slotConfig.excluded_days)
+          ? slotConfig.excluded_days
+          : typeof slotConfig.excluded_days === "string"
+          ? JSON.parse(slotConfig.excluded_days)
+          : [];
+
+        // Ensure excluded_dates is an array
+        const excludedDates = Array.isArray(slotConfig.excluded_dates)
+          ? slotConfig.excluded_dates
+          : typeof slotConfig.excluded_dates === "string"
+          ? [slotConfig.excluded_dates]
+          : [];
+
+        // Parse dates
+        const startDate = new Date(dateStart);
+        const endDate = new Date(dateEnd);
+
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          console.error("Invalid date range", { dateStart, dateEnd });
+          return; // Skip invalid date ranges
+        }
+
+        // Clone the start date for iteration
+        const currentDate = new Date(startDate);
+
+        // Loop through each day in the range
+        while (currentDate <= endDate) {
+          const dayOfWeek = currentDate.getDay();
+
+          // Skip if this day is in excluded days
+          if (excludedDays.includes(dayOfWeek)) {
+            currentDate.setDate(currentDate.getDate() + 1); // Move to next day
+            continue;
+          }
+
+          // Format current date as YYYY-MM-DD
+          const dateStr = formatDateToYYYYMMDD(currentDate);
+
+          // Skip if this date is in excluded dates
+          if (excludedDates.includes(dateStr)) {
+            currentDate.setDate(currentDate.getDate() + 1); // Move to next day
+            continue;
+          }
+
+          // Parse time ranges
+          const [startHour, startMinute] = timeStart.split(":").map(Number);
+          const [endHour, endMinute] = timeEnd.split(":").map(Number);
+
+          // Set start time
+          const timeStartObj = new Date(currentDate);
+          timeStartObj.setHours(startHour, startMinute, 0, 0);
+
+          // Set end time
+          const timeEndObj = new Date(currentDate);
+          timeEndObj.setHours(endHour, endMinute, 0, 0);
+
+          // Generate time slots for this day
+          let slotTime = new Date(timeStartObj);
+          while (slotTime < timeEndObj) {
+            const slotEndTime = new Date(slotTime);
+            slotEndTime.setMinutes(slotEndTime.getMinutes() + intervalMinutes);
+
+            // Format time for display
+            const timeStr = formatTime(slotTime);
+            const endTimeStr = formatTime(slotEndTime);
+
+            // Check if this slot is in the future
+            if (slotTime > new Date()) {
+              availableSlots.push({
+                date: dateStr,
+                dayName: slotTime.toLocaleDateString([], { weekday: "long" }),
+                startTime: timeStr,
+                endTime: endTimeStr,
+                timestamp: slotTime.getTime(),
+                display: `${dateStr} (${slotTime.toLocaleDateString([], {
+                  weekday: "short",
+                })}) ${timeStr} - ${endTimeStr}`,
+                maxBookings: slotConfig.max_bookings || 1,
+              });
+            }
+
+            // Move to next slot time
+            slotTime.setMinutes(slotTime.getMinutes() + intervalMinutes);
+          }
+
+          // Move to next day
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      } catch (error) {
+        console.error("Error processing time slot configuration:", error);
+      }
+    });
+
+    // Sort by date and time
+    return availableSlots.sort((a, b) => a.timestamp - b.timestamp);
+  };
+  const handleTimeSlotSelection = (fieldName, selectedSlot) => {
+    setSelectedTimeSlots((prev) => ({
+      ...prev,
+      [fieldName]: selectedSlot,
+    }));
+
+    if (selectedSlot) {
+      setValue(fieldName, selectedSlot.display);
+    } else {
+      setValue(fieldName, "");
+    }
+  };
+  const handleOptionWithValidation = (e, fieldName, fieldType) => {
+    try {
+      let selectedOption = null;
+
+      // For both radio and dropdown options, try to parse the value as JSON
+      try {
+        selectedOption = JSON.parse(e.target.value);
+      } catch (error) {
+        console.error("Error parsing option value:", error);
+        // If parsing fails, just use the value as is
+        handleChange(e);
+        return;
+      }
+
+      // Check if this option blocks continuation
+      if (selectedOption.blocks_continuation) {
+        // Set the error state for this field
+        setBlockingErrors((prev) => ({
+          ...prev,
+          [fieldName]: {
+            error: true,
+            message:
+              selectedOption.error_message ||
+              "Cannot proceed with this selection",
+          },
+        }));
+
+        if (fieldType === "dropdown") {
+          handleDropdownWithConditional(e, fieldName);
+        } else {
+          handleSelectChange(e);
+        }
+      } else {
+        // Clear any blocking error for this field
+        setBlockingErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+
+        // Continue with normal handling
+        if (fieldType === "dropdown") {
+          handleDropdownWithConditional(e, fieldName);
+        } else {
+          handleSelectChange(e);
+        }
+      }
+    } catch (error) {
+      console.error("Error in handleOptionWithValidation:", error);
+      // If there's an error, just use the default handler
+      if (fieldType === "dropdown") {
+        handleDropdownWithConditional(e, fieldName);
+      } else {
+        handleSelectChange(e);
+      }
+    }
+  };
+
+  const handleDropdownWithConditional = (e, fieldName) => {
+    try {
+      const selectedValue = JSON.parse(e.target.value);
+
+      handleSelectChange(e);
+
+      // Check if this option has conditional options that should be shown
+      if (selectedValue && selectedValue.has_conditional_options) {
+        // Get the conditional options definitions
+        const conditionalOpts = selectedValue.conditional_options || [];
+
+        setConditionalOptions((prev) => ({
+          ...prev,
+          [fieldName]: {
+            parentOption: selectedValue.text,
+            options: conditionalOpts,
+          },
+        }));
+
+        const serviceOrder = getSavedData().find(
+          (order) => order.service_id === productData?.id
+        );
+
+        const fieldData = serviceOrder?.fields?.find(
+          (f) => f.name === fieldName
+        );
+
+        if (fieldData?.conditional_values) {
+          // Set the form values for each conditional field
+          conditionalOpts.forEach((condOption, index) => {
+            const value = fieldData.conditional_values[condOption.text];
+            if (value) {
+              setValue(`${fieldName}_conditional_${index}`, value, {
+                shouldValidate: true,
+                shouldDirty: true,
+              });
+            }
+          });
+        }
+      } else {
+        setConditionalOptions((prev) => {
+          const updated = { ...prev };
+          delete updated[fieldName];
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error("Error handling dropdown selection:", error);
+    }
+  };
+  const handleConditionalDropdownChange = (e, fieldName, condOptionIndex) => {
+    const { value } = e.target;
+
+    setValue(`${fieldName}_conditional_${condOptionIndex}`, value);
+  };
+
+  const renderConditionalDropdowns = (fieldName) => {
+    if (!conditionalOptions[fieldName]) return null;
+
+    return (
+      <div className="conditional-options mt-3 pl-4 border-l-2 border-blue-200">
+        {conditionalOptions[fieldName].options.map((condOption, condIndex) => (
+          <div key={condIndex} className="mb-3 p-2 bg-blue-50 rounded-md">
+            <label className="block text-sm mb-1">
+              {condOption.text}
+              {condOption.required && <span className="text-red-500">*</span>}
+            </label>
+
+            <select
+              className="tf-field-input tf-input custom-input form-control form-control-sm w-100"
+              id={`${fieldName}_conditional_${condIndex}`}
+              {...register(`${fieldName}_conditional_${condIndex}`, {
+                required: condOption.required,
+              })}
+              onChange={(e) =>
+                handleConditionalDropdownChange(e, fieldName, condIndex)
+              }
+            >
+              <option value="">Select an option</option>
+              {(condOption.dropdown_options || "")
+                .split(",")
+                .map((opt, idx) => (
+                  <option key={idx} value={opt.trim()}>
+                    {opt.trim()}
+                  </option>
+                ))}
+            </select>
+
+            {errors[`${fieldName}_conditional_${condIndex}`] && (
+              <p className="error mt-1 text-red-500">This field is required</p>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   useEffect(() => {
     const getPageContent = async () => {
-      const response = await axiosInstance.get("pages/view-cart");
-      setPageContent(JSON.parse(response.data?.dynamic_content));
+      try {
+        const response = await axiosInstance.get("pages/view-cart");
+        setPageContent(JSON.parse(response.data?.dynamic_content || "{}"));
+      } catch (error) {
+        console.error("Error fetching page content:", error);
+      }
     };
     getPageContent();
+    fetchCartData();
   }, []);
 
   const checkout_box_background =
@@ -37,51 +482,36 @@ export default function Cart() {
 
   const router = useRouter();
 
-  const setQuantity = (id, quantity) => {
+  const setQuantity = async (id, quantity) => {
     if (quantity >= 1) {
-      const item = cartProducts.filter((elm) => elm.id == id)[0];
-      const items = [...cartProducts];
-      const itemIndex = items.indexOf(item);
-      item.quantity = quantity;
-      items[itemIndex] = item;
-      setCartProducts(items);
-    }
-  };
-  const removeItem = (id) => {
-    setCartProducts((pre) => pre.filter((elm) => elm.id !== id));
-
-    if (typeof window !== "undefined") {
       try {
-        let existingOrderDetails = JSON.parse(
-          localStorage.getItem("order_details") || "[]"
-        );
-
-        const updatedOrderDetails = existingOrderDetails.filter(
-          (order) => order.service_id !== id
-        );
-
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(
-              "order_details",
-              JSON.stringify(updatedOrderDetails)
-            );
-          } catch (error) {
-            console.error("Error saving order details to localStorage:", error);
-          }
-        }
+        console.log(`Updating cart ${id} with quantity: ${quantity}`);
+        const response = await axiosInstance.patch(`/carts/${id}`, {
+          quantity: quantity,
+        });
+        console.log("Update response:", response.data);
+        fetchCartData(); // Refresh cart data
       } catch (error) {
-        console.error("Error updating localStorage:", error);
+        console.error("Full error details:", error.response?.data || error);
+        toast.error("Failed to update quantity", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
     }
   };
 
-  const [productData, setProductData] = useState(null);
+  let existingOrderDetails = JSON.parse(
+    localStorage.getItem("order_details") || "[]"
+  );
 
-  const handleOpenModal = async (id) => {
+  // Instead of taking a serviceId
+  const handleOpenModal = async (cartItem) => {
+    setLoadingItemId(cartItem.id);
     setIsModalOpen(true);
     setIsInitialLoad(true);
 
+    // Reset form first
     reset(
       {},
       {
@@ -92,40 +522,131 @@ export default function Cart() {
     );
 
     try {
-      const response = await axiosInstance.get(`services/${id}`);
-      setProductData(response.data);
+      // Use cart item directly without additional API call
+      setProductData({
+        ...cartItem,
+        id: cartItem.service_id,
+        cartId: cartItem.id,
+      });
 
-      const savedData =
-        typeof window !== "undefined"
-          ? JSON.parse(localStorage.getItem("order_details") || "[]")
-          : [];
-      const existingOrder = savedData.find((order) => order.service_id === id);
+      // Parse the fields JSON string from cart item
+      let parsedFields = [];
+      if (cartItem.fields) {
+        try {
+          parsedFields =
+            typeof cartItem.fields === "string"
+              ? JSON.parse(cartItem.fields)
+              : cartItem.fields;
+        } catch (error) {
+          console.error("Error parsing fields data:", error);
+          parsedFields = [];
+        }
+      }
 
-      if (existingOrder?.fields) {
+      if (parsedFields.length > 0) {
         const defaultValues = {};
         const newFiles = {};
 
-        existingOrder.fields.forEach((field) => {
+        parsedFields.forEach((field) => {
+          // Handle file fields
           if (field.type === "file" && field.value) {
             defaultValues[field.name] = field.value;
             newFiles[field.name] = {
-              name: field.value.fileName || field.fileName,
+              name: field.value.fileName || field.fileName || "uploaded-file",
               value: field.value.data || field.value,
             };
-          } else {
+
+            // Restore word count if available
+            if (field.wordCount !== undefined) {
+              setWordCounts((prev) => ({
+                ...prev,
+                [field.name]: field.wordCount,
+              }));
+            }
+          }
+          // Handle dropdown fields that have conditional options
+          else if (field.type === "dropdown" && field.value) {
+            defaultValues[field.name] = field.value;
+
+            // Try to parse value to check for conditional options
+            try {
+              const selectedValue = JSON.parse(field.value);
+              if (selectedValue && selectedValue.has_conditional_options) {
+                const conditionalOpts = selectedValue.conditional_options || [];
+
+                setConditionalOptions((prev) => ({
+                  ...prev,
+                  [field.name]: {
+                    parentOption: selectedValue.text,
+                    options: conditionalOpts,
+                  },
+                }));
+
+                // Set values for conditional fields
+                if (field.conditional_values) {
+                  conditionalOpts.forEach((condOption, index) => {
+                    const value = field.conditional_values[condOption.text];
+                    if (value) {
+                      defaultValues[`${field.name}_conditional_${index}`] =
+                        value;
+                    }
+                  });
+                }
+              }
+            } catch (err) {
+              console.error("Error parsing dropdown value:", err);
+            }
+          }
+          // Handle timeslot fields
+          else if (field.type === "timeslot" && field.value) {
+            defaultValues[field.name] = field.value;
+
+            try {
+              // Create a minimal slot object for the UI
+              const datePart = field.value.split(" ")[0];
+              setSelectedTimeSlots((prev) => ({
+                ...prev,
+                [field.name]: {
+                  display: field.value,
+                  timestamp: new Date(datePart).getTime(),
+                },
+              }));
+            } catch (error) {
+              console.error(
+                `Error processing time slot for ${field.name}:`,
+                error
+              );
+            }
+          }
+          // Handle regular form fields
+          else {
             defaultValues[field.name] = field.value;
           }
         });
 
-        setFiles(newFiles);
-        reset(defaultValues, {
-          keepDefaultValues: true,
-        });
-      } else {
-        setFiles({});
+        // Set files
+        if (Object.keys(newFiles).length > 0) {
+          setFiles(newFiles);
+        }
+
+        // Set form values with a small delay to ensure fields are rendered
+        setTimeout(() => {
+          Object.entries(defaultValues).forEach(([key, value]) => {
+            setValue(key, value, {
+              shouldValidate: true,
+              shouldDirty: true,
+            });
+          });
+        }, 100);
       }
     } catch (err) {
-      console.error("API Error:", err);
+      console.error("Error processing cart item:", err);
+      toast.error("Failed to load service details", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setLoadingItemId(null);
     }
   };
   const handleCloseModal = () => {
@@ -136,8 +657,6 @@ export default function Cart() {
     setExtraInputs([]);
     setProductData([]);
   };
-  const [extraInputs, setExtraInputs] = useState([]);
-
   const createValidationSchema = (fields) => {
     let schemaShape = {};
 
@@ -150,6 +669,10 @@ export default function Cart() {
         schemaShape[field.name] = yup
           .string()
           .required(`${field.name} is required`);
+      } else if (field.type === "timeslot") {
+        schemaShape[field.name] = yup
+          .string()
+          .required("Please select a time slot");
       } else if (field.type === "radio") {
         schemaShape[field.name] = yup
           .string()
@@ -203,9 +726,14 @@ export default function Cart() {
           : productData.additional_fields,
         productData.id
       )
+    : productData?.fields
+    ? makeFieldsUnique(
+        typeof productData.fields === "string"
+          ? JSON.parse(productData.fields)
+          : productData.fields,
+        productData.id
+      )
     : [];
-
-  const [tempCartChanges, setTempCartChanges] = useState(null);
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -213,7 +741,6 @@ export default function Cart() {
     }
   }, [isModalOpen]);
 
-  const [isInitialLoad, setIsInitialLoad] = useState(null);
   const schema = createValidationSchema(parsedFields);
 
   const {
@@ -229,329 +756,372 @@ export default function Cart() {
   });
 
   const onSubmit = async (data) => {
-    if (tempCartChanges) {
-      setCartProducts((prevProducts) =>
-        prevProducts.map((product) => {
-          if (tempCartChanges[product.id]) {
-            return {
-              ...product,
-              extraTaxFields: tempCartChanges[product.id],
-            };
+    try {
+      // Check for blocking errors
+      if (Object.keys(blockingErrors).length > 0) {
+        const firstErrorField = Object.keys(blockingErrors)[0];
+        const errorMessage = blockingErrors[firstErrorField].message;
+
+        toast.error(
+          errorMessage || "Please correct the errors before continuing",
+          {
+            position: "top-right",
+            autoClose: 5000,
           }
-          return product;
-        })
-      );
-    }
-    setTempCartChanges(null);
-    setIsModalOpen(false);
-    const serviceId = productData?.id;
-    const existingOrderDetails =
-      typeof window !== "undefined"
-        ? JSON.parse(localStorage.getItem("order_details") || "[]")
-        : [];
-    let serviceOrder = existingOrderDetails.find(
-      (order) => order.service_id === serviceId
-    );
-    const fileFields =
-      serviceOrder?.fields?.filter((field) => field.type === "file") || [];
-
-    const fileToBase64 = (file) => {
-      if (!file || !(file instanceof Blob)) {
-        return Promise.resolve(null);
+        );
+        return;
       }
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-      });
-    };
 
-    const updatedFields = await Promise.all(
-      parsedFields.map(async (field) => {
-        let value = data[field.name];
+      setTempCartChanges(null);
+      const serviceId = productData?.service_id || productData?.id;
 
-        if (field.type === "file") {
-          const existingFile = fileFields.find((f) => f.name === field.name);
-          const currentFile = files[field.name];
+      // Process all form fields
+      const updatedFields = await Promise.all(
+        parsedFields.map(async (field) => {
+          let value = data[field.name];
 
-          if (currentFile instanceof Blob) {
-            try {
-              const dataUrl = await fileToBase64(currentFile);
+          // Handle file fields
+          if (field.type === "file") {
+            const currentFile = files[field.name];
+
+            if (currentFile instanceof Blob) {
+              try {
+                const dataUrl = await fileToBase64(currentFile);
+                value = {
+                  data: dataUrl,
+                  fileName: currentFile.name,
+                  wordCount: wordCounts[field.name] || 0,
+                };
+              } catch (error) {
+                console.error(`Error processing file ${field.name}:`, error);
+                value = null;
+              }
+            } else if (currentFile && currentFile.value) {
               value = {
-                data: dataUrl,
+                data: currentFile.value,
                 fileName: currentFile.name,
                 wordCount: wordCounts[field.name] || 0,
               };
-            } catch (error) {
-              console.error(`Error processing file ${field.name}:`, error);
-              value = existingFile?.value || null;
+            } else {
+              const existingFilename = getValues(field.name);
+              if (existingFilename) {
+                value = {
+                  fileName: existingFilename,
+                  wordCount: wordCounts[field.name] || 0,
+                };
+              } else {
+                value = null;
+              }
             }
-          } else if (currentFile && currentFile.value) {
-            value = {
-              data: currentFile.value,
-              fileName: currentFile.name,
-              wordCount: wordCounts[field.name] || 0,
-            };
-          } else {
-            value = {
-              ...existingFile,
-              wordCount: existingFile?.wordCount || 0,
-            };
           }
-        }
 
-        return {
-          name: field.name,
-          type: field.type,
-          value:
-            field.type === "file"
-              ? value
-              : Array.isArray(value)
-              ? value
-              : value || "",
-          ...(field.options && { options: field.options }),
-        };
-      })
-    );
+          // Handle conditional values
+          let conditionalValues = null;
+          if (conditionalOptions[field.name]) {
+            conditionalValues = {};
+            conditionalOptions[field.name].options.forEach(
+              (condOption, index) => {
+                const condValue = data[`${field.name}_conditional_${index}`];
+                if (condValue) {
+                  conditionalValues[condOption.text] = condValue;
+                }
+              }
+            );
+          }
 
-    const filteredFields = updatedFields.filter(
-      (field) =>
-        (field.type === "file" && field.value) ||
-        (typeof field.value === "string" && field.value.trim() !== "") ||
-        (Array.isArray(field.value) && field.value.length > 0)
-    );
+          // Handle timeslot fields
+          if (field.type === "timeslot") {
+            const selectedTimeSlot = selectedTimeSlots[field.name];
+            if (selectedTimeSlot) {
+              return {
+                name: field.name,
+                type: field.type,
+                value: selectedTimeSlot.display,
+                ...(field.time_slots && { time_slots: field.time_slots }),
+                ...(conditionalValues && {
+                  conditional_values: conditionalValues,
+                }),
+              };
+            }
+          }
 
-    updatelocalStorage(serviceId, null, filteredFields);
-    reset();
-    setIsModalOpen(false);
-  };
-  const updatelocalStorage = (serviceId, fieldName, fieldValue) => {
-    const existingOrderDetails =
-      typeof window !== "undefined"
-        ? JSON.parse(localStorage.getItem("order_details") || "[]")
-        : [];
-    const calculateTotalPrice = (fields) => {
-      // Find the corresponding cart product
-      const product = cartProducts.find((p) => p.id === serviceId);
-
-      // Start with base price
-      let basePrice = product ? getProductTotal(product) : 0;
-
-      // Parse additional fields to check word count calculation
-      let additionalFields = [];
-      try {
-        additionalFields = product
-          ? JSON.parse(product.additional_fields || "[]")
-          : [];
-      } catch (error) {
-        console.error("Error parsing additional fields:", error);
-      }
-
-      // Check if word count calculation is enabled
-      const isWordCountCalculationEnabled = additionalFields.some(
-        (field) =>
-          field.name === "Calculation of the number of words" &&
-          field.calculation_fee === true
+          return {
+            name: field.name,
+            type: field.type,
+            value:
+              field.type === "file"
+                ? value
+                : Array.isArray(value)
+                ? value
+                : value || "",
+            ...(field.options && { options: field.options }),
+            ...(field.time_slots && { time_slots: field.time_slots }),
+            ...(conditionalValues && { conditional_values: conditionalValues }),
+          };
+        })
       );
 
-      // Calculate additional word count price
-      const wordCountPrice = isWordCountCalculationEnabled
-        ? fields
-            .filter((field) => field.type === "file" && field.wordCount)
-            .reduce((total, field) => {
-              // Precise calculation of word count price
-              return total + Number((field.wordCount * 0.1).toFixed(2));
-            }, 0)
-        : 0;
+      // Filter out empty fields
+      const filteredFields = updatedFields.filter(
+        (field) =>
+          (field.type === "file" && field.value) ||
+          (typeof field.value === "string" && field.value.trim() !== "") ||
+          (Array.isArray(field.value) && field.value.length > 0)
+      );
 
-      // Calculate total price (base price + word count price)
-      const totalPrice = Number((basePrice + wordCountPrice).toFixed(2));
+      // Calculate total price
+      let totalPrice = parseFloat(productData.base_price) || 0;
+      const wordCountFee = Object.values(wordCounts).reduce(
+        (sum, count) => sum + Number((count * 0.1).toFixed(2)),
+        0
+      );
+      totalPrice += wordCountFee;
 
-      // Update cart products with word count fee if applicable
-      if (isWordCountCalculationEnabled && wordCountPrice > 0) {
-        setCartProducts((prevProducts) =>
-          prevProducts.map((p) => {
-            if (p.id === serviceId) {
-              return {
-                ...p,
-                extraTaxFields: {
-                  ...p.extraTaxFields,
-                  word_count_fee: {
-                    name: "Word Count Fee",
-                    extra_tax: wordCountPrice.toFixed(2),
-                    displayName: "Word Count Pricing",
-                  },
-                },
-              };
-            }
-            return p;
-          })
+      // Add extra tax fields
+      if (tempCartChanges && tempCartChanges[serviceId]) {
+        const extraTaxes = Object.values(tempCartChanges[serviceId]).reduce(
+          (sum, field) => sum + Number(field.extra_tax || 0),
+          0
         );
+        totalPrice += extraTaxes;
       }
 
-      return totalPrice;
-    };
+      // Prepare data for API
+      const cartData = {
+        service_id: serviceId,
+        fields: filteredFields,
+        total_price: totalPrice,
+        quantity: parseInt(productData.quantity || 1, 10),
+      };
 
-    const orderIndex = existingOrderDetails.findIndex(
-      (order) => order.service_id === serviceId
-    );
-
-    if (orderIndex !== -1) {
-      if (fieldName) {
-        const fieldIndex = existingOrderDetails[orderIndex].fields.findIndex(
-          (field) => field.name === fieldName
-        );
-
-        if (fieldIndex !== -1) {
-          existingOrderDetails[orderIndex].fields[fieldIndex].value =
-            fieldValue;
-          if (typeof fieldValue === "object" && fieldValue.fileName) {
-            existingOrderDetails[orderIndex].fields[fieldIndex].fileName =
-              fieldValue.fileName;
-            existingOrderDetails[orderIndex].fields[fieldIndex].value =
-              fieldValue.data;
-
-            // Add word count for file fields
-            if (fieldValue.wordCount !== undefined) {
-              existingOrderDetails[orderIndex].fields[fieldIndex].wordCount =
-                fieldValue.wordCount;
-            }
-          }
-
-          // Explicitly recalculate and update total price
-          existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
-            existingOrderDetails[orderIndex].fields
+      try {
+        console.log("productData", productData);
+        let response;
+        if (productData.cartId) {
+          // Update existing cart item
+          response = await axiosInstance.patch(
+            `/carts/${productData.cartId}`,
+            cartData
           );
         } else {
-          existingOrderDetails[orderIndex].fields.push({
-            name: fieldName,
-            type: "file",
-            value:
-              typeof fieldValue === "object" ? fieldValue.data : fieldValue,
-            ...(typeof fieldValue === "object" && {
-              fileName: fieldValue.fileName,
-              wordCount: fieldValue.wordCount,
-            }),
+          // Create new cart item
+          response = await axiosInstance.post("/carts", cartData);
+        }
+
+        if (response.data.success) {
+          toast.success("Service details saved successfully", {
+            position: "top-right",
+            autoClose: 3000,
           });
 
-          // Recalculate total price
-          existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
-            existingOrderDetails[orderIndex].fields
-          );
+          // Close modal BEFORE fetching new data
+          setIsModalOpen(false);
+
+          // Refresh cart data
+          await fetchCartData();
+
+          // Reset form
+          reset();
+        } else {
+          throw new Error(response.data.message || "Failed to update cart");
         }
-      } else {
-        // Update fields and recalculate total price
-        existingOrderDetails[orderIndex].fields = fieldValue.map((field) => {
-          if (field.type === "file" && typeof field.value === "object") {
-            return {
-              ...field,
-              fileName: field.value.fileName,
-              value: field.value.data,
-              wordCount: field.value.wordCount,
-            };
-          }
-          return field;
-        });
-
-        // Recalculate total price
-        existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
-          existingOrderDetails[orderIndex].fields
-        );
-      }
-
-      if (existingOrderDetails[orderIndex].fields.length === 0) {
-        existingOrderDetails.splice(orderIndex, 1);
-      }
-    } else {
-      if (fieldValue.length > 0) {
-        existingOrderDetails.push({
-          service_id: serviceId,
-          fields: fieldValue.map((field) => {
-            if (field.type === "file" && typeof field.value === "object") {
-              return {
-                ...field,
-                fileName: field.value.fileName,
-                value: field.value.data,
-                wordCount: field.value.wordCount,
-              };
-            }
-            return field;
-          }),
-          total_price: calculateTotalPrice(fieldValue),
-        });
-      }
-    }
-
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(
-          "order_details",
-          JSON.stringify(existingOrderDetails)
-        );
       } catch (error) {
-        console.error("Error saving order details to localStorage:", error);
+        console.error("Error updating cart:", error);
+        toast.error(error.message || "Failed to update cart", {
+          position: "top-right",
+          autoClose: 5000,
+        });
       }
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      toast.error("An error occurred while processing your form", {
+        position: "top-right",
+        autoClose: 5000,
+      });
     }
   };
   const getCleanFieldName = (fieldName) => {
     return fieldName.split("_")[0];
   };
-
-  const savedData =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("order_details") || "[]")
-      : [];
-  const serviceOrder = savedData.find(
-    (order) => order.service_id === productData?.id
-  );
+  const fetchCartDataForService = async (serviceId) => {
+    try {
+      const response = await axiosInstance.get(`/carts/${serviceId}`);
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error(
+        `Error fetching cart data for service ${serviceId}:`,
+        error
+      );
+      return null;
+    }
+  };
+  const getSavedData = async () => {
+    try {
+      const response = await axiosInstance.get("/carts");
+      if (response.data.success) {
+        return response.data.data || [];
+      }
+      return [];
+    } catch (error) {
+      console.error("Error fetching cart data:", error);
+      return [];
+    }
+  };
 
   useEffect(() => {
-    if (serviceOrder?.fields && isInitialLoad) {
-      const fileUpdates = {};
-      const formValues = {};
-      const wordCountUpdates = {};
+    // Rest of your useEffect code for handling initial load
+    // Since we're fetching cart data from API, this will be simplified
+    if (productData?.id && isInitialLoad) {
+      const fetchCartDataForProduct = async () => {
+        try {
+          const response = await axiosInstance.get(`/carts/${productData.id}`);
+          const cartData = response.data.data;
 
-      serviceOrder.fields.forEach((field) => {
-        if (field.type === "file" && field.value) {
-          fileUpdates[field.name] = {
-            name: field.fileName || field.value.split("/").pop(),
-            value: field.value,
-          };
-          formValues[field.name] = field.value;
+          console.log(cartData);
 
-          // Restore word count if available
-          if (field.wordCount !== undefined) {
-            wordCountUpdates[field.name] = field.wordCount;
+          if (cartData && cartData.fields) {
+            const parsedFields = JSON.parse(cartData.fields);
+            const fileUpdates = {};
+            const formValues = {};
+            const wordCountUpdates = {};
+            const condOptionsUpdates = {};
+
+            parsedFields.forEach((field) => {
+              // Handle file fields
+              if (field.type === "file" && field.value) {
+                fileUpdates[field.name] = {
+                  name: field.fileName || field.value.split("/").pop(),
+                  value: field.value,
+                };
+                formValues[field.name] = field.value;
+
+                // Restore word count if available
+                if (field.wordCount !== undefined) {
+                  wordCountUpdates[field.name] = field.wordCount;
+                }
+              }
+
+              // Handle timeslot fields
+              if (field.type === "timeslot" && field.value) {
+                try {
+                  // Create a minimal slot object for the UI
+                  const datePart = field.value.split(" ")[0];
+                  setSelectedTimeSlots((prev) => ({
+                    ...prev,
+                    [field.name]: {
+                      display: field.value,
+                      timestamp: new Date(datePart).getTime(),
+                    },
+                  }));
+
+                  // Store value in form
+                  formValues[field.name] = field.value;
+                } catch (error) {
+                  console.error(
+                    `Error processing time slot for ${field.name}:`,
+                    error
+                  );
+                }
+              }
+
+              // Handle conditional values
+              if (field.conditional_values) {
+                try {
+                  // Find the parent option
+                  let parentOption = null;
+                  if (field.value && field.type === "dropdown") {
+                    try {
+                      parentOption = JSON.parse(field.value);
+                    } catch (err) {
+                      console.error("Error parsing parent option:", err);
+                    }
+                  }
+
+                  if (parentOption) {
+                    // Extract conditional options
+                    const conditionalOptionsFromValue =
+                      parentOption.conditional_options || [];
+
+                    // Update state
+                    condOptionsUpdates[field.name] = {
+                      parentOption: parentOption.text,
+                      options: conditionalOptionsFromValue,
+                    };
+
+                    // Set values for each conditional field
+                    conditionalOptionsFromValue.forEach(
+                      (condOptionDef, index) => {
+                        const optionText = condOptionDef.text;
+                        const value = field.conditional_values[optionText];
+
+                        if (value) {
+                          formValues[`${field.name}_conditional_${index}`] =
+                            value;
+                        }
+                      }
+                    );
+                  }
+                } catch (error) {
+                  console.error(
+                    `Error restoring conditional values for ${field.name}:`,
+                    error
+                  );
+                }
+              }
+
+              // Handle regular form fields
+              if (!formValues[field.name] && field.value) {
+                formValues[field.name] = field.value;
+              }
+            });
+
+            // Set form values
+            Object.entries(formValues).forEach(([key, value]) => {
+              setValue(key, value, {
+                shouldValidate: true,
+                shouldDirty: true,
+              });
+            });
+
+            // Set files
+            if (Object.keys(fileUpdates).length > 0) {
+              setFiles((prev) => ({
+                ...prev,
+                ...fileUpdates,
+              }));
+            }
+
+            // Set word counts
+            if (Object.keys(wordCountUpdates).length > 0) {
+              setWordCounts((prev) => ({
+                ...prev,
+                ...wordCountUpdates,
+              }));
+            }
+
+            // Set conditional options
+            if (Object.keys(condOptionsUpdates).length > 0) {
+              setConditionalOptions((prev) => ({
+                ...prev,
+                ...condOptionsUpdates,
+              }));
+            }
           }
+
+          setIsInitialLoad(false);
+        } catch (error) {
+          console.error("Error fetching cart data for product:", error);
+          setIsInitialLoad(false);
         }
-      });
+      };
 
-      Object.entries(formValues).forEach(([key, value]) => {
-        setValue(key, value, {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-      });
-
-      if (Object.keys(fileUpdates).length > 0) {
-        setFiles((prev) => ({
-          ...prev,
-          ...fileUpdates,
-        }));
-      }
-
-      // Restore word counts
-      if (Object.keys(wordCountUpdates).length > 0) {
-        setWordCounts((prev) => ({
-          ...prev,
-          ...wordCountUpdates,
-        }));
-      }
-
-      setIsInitialLoad(false);
+      fetchCartDataForProduct();
     }
-  }, [serviceOrder, setValue, isInitialLoad]);
+  }, [productData, setValue, isInitialLoad]);
+
   const getProductTotal = (product) => {
     const extraTaxFields =
       tempCartChanges?.[product.id] || product.extraTaxFields;
@@ -580,8 +1150,36 @@ export default function Cart() {
       typeof window !== "undefined"
         ? JSON.parse(localStorage.getItem("order_details") || "[]")
         : [];
-    if (existingOrderDetails.length === cartProducts.length) {
-      if (cartProducts.length !== 0) {
+
+    // First check if there are any blocking errors in the saved orders
+    const hasBlockingSelections = existingOrderDetails.some((order) => {
+      return order.fields?.some((field) => {
+        if (field.type === "radio" || field.type === "dropdown") {
+          try {
+            const value = JSON.parse(field.value);
+            return value.blocks_continuation;
+          } catch (e) {
+            return false;
+          }
+        }
+        return false;
+      });
+    });
+
+    if (hasBlockingSelections) {
+      toast.error(
+        "There are ineligible selections in your order. Please review your service details.",
+        {
+          position: "top-right",
+          autoClose: 5000,
+        }
+      );
+      return;
+    }
+
+    // Continue with your existing logic
+    if (existingOrderDetails.length === cartItems.length) {
+      if (cartItems.length !== 0) {
         router.push("/checkout");
       } else {
         toast.error("No services for checkout.", {
@@ -590,20 +1188,15 @@ export default function Cart() {
         });
       }
     } else {
-      toast.error("Please fill service requirments.", {
+      toast.error("Please fill service requirements.", {
         position: "top-right",
         autoClose: 3000,
       });
     }
   };
-  const checkOrderExists = (productId) => {
-    return savedData?.some((order) => order.service_id === productId);
-  };
 
   const { user } = useAuth();
 
-  const [files, setFiles] = useState({});
-  const [wordCounts, setWordCounts] = useState({});
   const countWords = (file, fieldName) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -626,9 +1219,7 @@ export default function Cart() {
           const serviceId = productData?.id;
           if (serviceId) {
             setTempCartChanges((prevChanges) => {
-              const currentProduct = cartProducts.find(
-                (p) => p.id === serviceId
-              );
+              const currentProduct = cartItems.find((p) => p.id === serviceId);
               const existingExtraTaxFields = {
                 ...(prevChanges?.[serviceId] ||
                   currentProduct?.extraTaxFields ||
@@ -700,17 +1291,6 @@ export default function Cart() {
     }
   };
 
-  const addExtraInput = (cate_extra_tax) => {
-    setExtraInputs((prev) => [...prev, ""]);
-
-    const categoryExtraTax = Number(cate_extra_tax) || 0;
-
-    setTotalExtraCategoryPrice((prev) => {
-      const currentTotal = Number(prev) || 0;
-      return currentTotal + categoryExtraTax;
-    });
-  };
-
   const [totalExtraCategoryPrice, setTotalExtraCategoryPrice] = useState(() => {
     const savedPrice =
       typeof window !== "undefined"
@@ -750,7 +1330,7 @@ export default function Cart() {
       "extra_tax" in selectedValue
     ) {
       setTempCartChanges((prevChanges) => {
-        const currentProduct = cartProducts.find((p) => p.id === serviceId);
+        const currentProduct = cartItems.find((p) => p.id === serviceId);
         const existingExtraTaxFields =
           prevChanges?.[serviceId] || currentProduct?.extraTaxFields || {};
 
@@ -772,7 +1352,7 @@ export default function Cart() {
     } else {
       setTempCartChanges((prevChanges) => {
         if (!prevChanges?.[serviceId]) {
-          const currentProduct = cartProducts.find((p) => p.id === serviceId);
+          const currentProduct = cartItems.find((p) => p.id === serviceId);
           const existingFields = { ...currentProduct?.extraTaxFields };
           delete existingFields[fieldName];
           return {
@@ -795,7 +1375,7 @@ export default function Cart() {
   const [totalPrice2, setTotalPrice2] = useState(0);
 
   useEffect(() => {
-    const subtotal = cartProducts.reduce((accumulator, elm) => {
+    const subtotal = cartItems.reduce((accumulator, elm) => {
       const serviceTotal =
         elm.base_price * elm.quantity +
         (elm.extraTaxFields
@@ -808,7 +1388,36 @@ export default function Cart() {
       return accumulator + serviceTotal;
     }, 0);
     setTotalPrice2(subtotal);
-  }, [cartProducts]);
+  }, []);
+
+  const renderFieldComment = (field) => {
+    const commentText =
+      field.comment || field.comment1 || field.comment2 || field.description;
+
+    if (!commentText) return null;
+
+    return (
+      <div className="field-comment mt-2 mb-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-md border-l-3 border-blue-300 flex items-start">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5 flex-shrink-0 mr-2 mt-0.5 text-red-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span className="leading-relaxed" style={{ paddingLeft: "7px" }}>
+          {commentText}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <section className="flat-spacing-11">
@@ -853,602 +1462,568 @@ export default function Cart() {
         <div className="tf-page-cart-wrap">
           <div className="tf-page-cart-item">
             <div>
-              <table className="tf-table-page-cart">
-                <thead>
-                  <tr>
-                    <th>Service</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Total</th>
-                    <th>Detail</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cartProducts.map((elm, i) => (
-                    <tr key={i} className="tf-cart-item file-delete">
-                      <td className="tf-cart-item_product">
-                        <Link
-                          href={`/product-detail/${elm.id}`}
-                          className="img-box"
-                        >
-                          <Image
-                            alt="img-product"
-                            src={`http://localhost:8000/storage/${elm.icon}`}
-                            width={668}
-                            height={932}
-                          />
-                        </Link>
-                        <div className="cart-info">
-                          <Link
-                            href={`/product-detail/${elm.id}`}
-                            className="cart-title link"
-                          >
-                            {elm.title}
-                          </Link>
-                          <div className="cart-meta-variant">{elm.name}</div>
-                          <span
-                            className="remove-cart link remove"
-                            onClick={() => removeItem(elm.id)}
-                          >
-                            Remove
-                          </span>
-                        </div>
-                      </td>
-                      <td
-                        className="tf-cart-item_price"
-                        cart-data-title="Price"
-                      >
-                        <div className="cart-price">${elm.base_price}</div>
-                      </td>
-                      <td
-                        className="tf-cart-item_quantity"
-                        cart-data-title="Quantity"
-                      >
-                        <div className="cart-quantity">
-                          <div className="wg-quantity">
-                            <span
-                              className="btn-quantity minus-btn"
-                              onClick={() =>
-                                setQuantity(elm.id, elm.quantity - 1)
-                              }
-                            >
-                              <svg
-                                className="d-inline-block"
-                                width={9}
-                                height={1}
-                                viewBox="0 0 9 1"
-                                fill="currentColor"
-                              >
-                                <path d="M9 1H5.14286H3.85714H0V1.50201e-05H3.85714L5.14286 0L9 1.50201e-05V1Z" />
-                              </svg>
-                            </span>
-                            <input
-                              type="text"
-                              name="number"
-                              value={elm.quantity}
-                              min={1}
-                              onChange={(e) =>
-                                setQuantity(elm.id, e.target.value / 1)
-                              }
-                            />
-                            <span
-                              className="btn-quantity plus-btn"
-                              onClick={() =>
-                                setQuantity(elm.id, elm.quantity + 1)
-                              }
-                            >
-                              <svg
-                                className="d-inline-block"
-                                width={9}
-                                height={9}
-                                viewBox="0 0 9 9"
-                                fill="currentColor"
-                              >
-                                <path d="M9 5.14286H5.14286V9H3.85714V5.14286H0V3.85714H3.85714V0H5.14286V3.85714H9V5.14286Z" />
-                              </svg>
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td
-                        className="tf-cart-item_total"
-                        cart-data-title="Total"
-                      >
-                        <div
-                          className="cart-total"
-                          style={{ minWidth: "60px" }}
-                        >
-                          <div className="mb-2 fs-6">
-                            ${(elm.base_price * elm.quantity).toFixed(2)}
-                          </div>
-                          {((tempCartChanges && tempCartChanges[elm.id]) ||
-                            elm.extraTaxFields) &&
-                            Object.entries(
-                              tempCartChanges?.[elm.id] || elm.extraTaxFields
-                            )
-                              .filter(
-                                ([fieldName]) => fieldName !== "word_count_fee"
-                              ) // Exclude word count fee
-                              .map(([fieldName, field]) => (
-                                <div
-                                  key={field?.name}
-                                  className="extra-tax-item small d-flex justify-content-between align-items-center border-top border-secondary-subtle pt-1 mb-1"
-                                >
-                                  <span className="text-secondary">
-                                    {getCleanFieldName(fieldName)}(
-                                    {field?.value}) :
-                                  </span>
-                                  <span className="text-success">
-                                    +${Number(field.extra_tax).toFixed(2)}
-                                  </span>
-                                </div>
-                              ))}
+              {cartItems.length !== 0 && (
+                <CartTable
+                  cartItems={cartItems}
+                  removeItem={removeItem}
+                  setQuantity={setQuantity}
+                  handleOpenModal={handleOpenModal}
+                  loadingItemId={loadingItemId}
+                  tempCartChanges={tempCartChanges}
+                  savedData={fetchCartDataForService}
+                  getCleanFieldName={getCleanFieldName}
+                  getProductTotal={getProductTotal}
+                />
+              )}
 
-                          {(tempCartChanges?.[elm.id]?.word_count_fee ||
-                            savedData
-                              .find((order) => order.service_id === elm.id)
-                              ?.fields?.some(
-                                (field) =>
-                                  field.type === "file" && field.wordCount
-                              )) && (
-                            <div
-                              key="word-count-fee"
-                              className="word-count-item small d-flex justify-content-between align-items-center border-top border-secondary-subtle pt-1 mb-1"
-                            >
-                              <span className="text-secondary">
-                                {tempCartChanges?.[elm.id]?.word_count_fee
-                                  ? `${
-                                      tempCartChanges[elm.id].word_count_fee
-                                        .value
-                                    }`
-                                  : "Document words count fee"}
-                                :
-                              </span>
-                              <span className="text-success">
-                                +$
-                                {Number(
-                                  tempCartChanges?.[elm.id]?.word_count_fee
-                                    ?.extra_tax ||
-                                    savedData
-                                      .find(
-                                        (order) => order.service_id === elm.id
-                                      )
-                                      ?.fields?.filter(
-                                        (field) =>
-                                          field.type === "file" &&
-                                          field.wordCount
-                                      )
-                                      .reduce(
-                                        (total, field) =>
-                                          total + field.wordCount * 0.1,
-                                        0
-                                      )
-                                      .toFixed(2) ||
-                                    0
-                                ).toFixed(2)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="fw-bold d-flex justify-content-between align-items-center border-top pt-2 mt-2 total_price">
-                            <span>Total:</span>
-                            <span>
-                              $
-                              {(() => {
-                                const orderDetail = savedData.find(
-                                  (order) => order.service_id === elm.id
-                                );
-
-                                if (orderDetail && orderDetail.total_price) {
-                                  return Number(
-                                    orderDetail.total_price
-                                  ).toFixed(2);
-                                }
-
-                                const baseTotal = getProductTotal(elm);
-                                const wordCountTotal =
-                                  savedData
-                                    .find(
-                                      (order) => order.service_id === elm.id
-                                    )
-                                    ?.fields?.filter(
-                                      (field) =>
-                                        field.type === "file" && field.wordCount
-                                    )
-                                    .reduce(
-                                      (total, field) =>
-                                        total + field.wordCount * 0.1,
-                                      0
-                                    ) || 0;
-
-                                return (baseTotal + wordCountTotal).toFixed(2);
-                              })()}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <div
-                        className="cart-total"
-                        style={{ minWidth: "100px" }}
-                      ></div>
-                      <td>
-                        <div>
-                          <button
-                            className="tf-cart-item_total"
-                            cart-data-title="order"
-                            onClick={() => handleOpenModal(elm.id)}
-                          >
-                            <div
-                              className={`tf-btn w-100 animate-hover-btn radius-3 ${
-                                checkOrderExists(elm.id) ? "filled_bg" : ""
-                              }`}
-                            >
-                              {checkOrderExists(elm.id)
-                                ? "Filled service"
-                                : "Fill service details"}
-                            </div>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
               <form
-                className={`modal fade ${isModalOpen ? "show" : ""}`}
+                className={`modal fade ${
+                  isModalOpen && !loadingItemId ? "show" : ""
+                }`}
                 tabIndex="-1"
                 role="dialog"
-                style={{ display: isModalOpen ? "block" : "none" }}
+                style={{
+                  display: isModalOpen ? "block" : "none",
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                }}
                 onSubmit={handleSubmit(onSubmit)}
               >
                 <div className="modal-dialog modal-dialog-centered">
-                  <div className="modal-content">
-                    <div className="modal-header">
-                      <h6 className="modal-title">
-                        Fill service requirements <p>{productData?.name}</p>
-                      </h6>
+                  <div className="modal-content border-0 shadow-lg rounded-lg overflow-hidden">
+                    <div
+                      className="modal-header border-0 py-3 text-white"
+                      style={{
+                        background: `linear-gradient(to right, #5ca595, #6db8a8)`,
+                      }}
+                    >
+                      <div>
+                        <h5 className="modal-title font-bold mb-0">
+                          Fill Service Requirements
+                        </h5>
+                        <p className="font-bold text-black text-sm mb-0 mt-1 opacity-90">
+                          {productData?.name}
+                        </p>
+                      </div>
                       <button
                         onClick={handleCloseModal}
                         type="button"
-                        className="btn-close"
+                        className="btn-close btn-close-white"
                         aria-label="Close"
                       ></button>
                     </div>
-                    <div className="modal-body">
+                    {/* Modal Body */}
+                    <div className="modal-body p-4">
                       <form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="tf-field style-1 mb_30">
-                          {parsedFields?.map((field, index) => {
-                            const displayName = getCleanFieldName(field.name);
+                        {parsedFields?.map((field, index) => {
+                          const displayName = getCleanFieldName(field.name);
+                          return (
+                            <div
+                              key={`${field.name}-${index}`}
+                              className="mb-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                              <h5 className="text-gray-700 font-medium mb-2 border-b pb-2">
+                                {field?.title}
+                              </h5>
 
-                            return (
-                              <div
-                                key={`${field.name}-${index}`}
-                                className="tf-field style-1 mb_30"
-                              >
-                                <h5>{field?.title}</h5>
-                                <>
-                                  {field.type === "text" && (
-                                    <div
-                                      key={`textfield_${field.name}}`}
-                                      className="form-group"
-                                    >
-                                      <label
-                                        className="fw-4 text_black-2"
-                                        htmlFor={`${field.name}}`}
-                                      >
-                                        {displayName} *
-                                      </label>
-                                      <input
-                                        className="tf-field-input tf-input custom-input"
-                                        placeholder=""
-                                        type="text"
-                                        id={`${field.name}}`}
-                                        {...register(field.name)}
-                                      />
-                                    </div>
-                                  )}
-                                  {field.type === "dropdown" && (
-                                    <div className="select-input">
-                                      <label className=" fw-4 text_black-2">
-                                        {displayName} *
-                                      </label>
-                                      <select
-                                        className="tf-field-input tf-input custom-input form-control form-control-sm w-50"
-                                        id={field.name}
-                                        {...register(field.name)}
-                                        onChange={handleSelectChange}
-                                      >
-                                        <option value="">
-                                          Select an option
-                                        </option>
-                                        {Object.entries(field.options)?.map(
-                                          ([key, option], idx) => (
-                                            <option
-                                              key={idx}
-                                              value={JSON.stringify(option)}
-                                            >
-                                              {option.text}
-                                              {option.extra_tax
-                                                ? `(Extra Tax: $${option.extra_tax})`
-                                                : ""}
-                                            </option>
-                                          )
-                                        )}
-                                      </select>
-                                    </div>
-                                  )}
-                                  {field.type === "radio" && (
-                                    <div className="mb-2 d-flex flex-column radio-group">
-                                      <label className="fw-4 text_black-2">
-                                        {displayName} *
-                                      </label>
-                                      <div className="d-flex flex-column">
-                                        {Object.entries(field.options)?.map(
-                                          ([key, option], idx) => (
-                                            <div
-                                              key={idx}
-                                              className="d-flex align-items-center mb-2 radio-option"
-                                            >
-                                              {option.extra_tax && (
-                                                <div className="d-flex flex-column gap-2 additional-charge">
-                                                  <span className="fw-bold">
-                                                    Consultation fee:
-                                                    {field.extra_tax}$
-                                                  </span>
-                                                  <span className="fw-bold">
-                                                    Fee for extra category(s):
-                                                    {totalExtraCategoryPrice}$
-                                                  </span>
-                                                  <span className="fw-bold">
-                                                    Total price:
-                                                    {Number(field.extra_tax) +
-                                                      totalExtraCategoryPrice}
-                                                    $
-                                                  </span>
-                                                </div>
-                                              )}
-                                              <input
-                                                type="radio"
-                                                id={`${field.name}_${idx}`}
-                                                className="form-check-input me-2"
-                                                name={field.name}
-                                                value={JSON.stringify(option)}
-                                                {...register(field.name)}
-                                                onChange={handleSelectChange}
-                                              />
-                                              <label
-                                                htmlFor={`${field.name}_${idx}`}
-                                                className="form-check-label custom-radio"
+                              {/* Text field */}
+                              {field.type === "text" && (
+                                <div className="form-group">
+                                  <label
+                                    className="text-sm font-medium text-gray-700 mb-1 block"
+                                    htmlFor={`${field.name}}`}
+                                  >
+                                    {displayName}{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  {renderFieldComment(field)}
+                                  <input
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    placeholder=""
+                                    type="text"
+                                    id={`${field.name}}`}
+                                    {...register(field.name)}
+                                  />
+                                </div>
+                              )}
+
+                              {field.type === "timeslot" && (
+                                <div className="timeslot-selector mb-4">
+                                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                    {displayName}{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  {renderFieldComment(field)}
+
+                                  {(() => {
+                                    // Use the improved function
+                                    const availableSlots =
+                                      generateAvailableTimeSlots(field);
+
+                                    if (availableSlots.length === 0) {
+                                      return (
+                                        <div className="bg-yellow-50 text-yellow-800 px-4 py-3 rounded-md mt-2 text-sm">
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5 inline mr-2"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                          No available time slots found. Please
+                                          contact support.
+                                        </div>
+                                      );
+                                    }
+
+                                    // Group slots by date for better UI
+                                    const slotsByDate = {};
+                                    availableSlots.forEach((slot) => {
+                                      if (!slotsByDate[slot.date]) {
+                                        slotsByDate[slot.date] = [];
+                                      }
+                                      slotsByDate[slot.date].push(slot);
+                                    });
+
+                                    return (
+                                      <div className="timeslot-container mt-2">
+                                        {/* Date selector */}
+                                        <select
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3 bg-white"
+                                          onChange={(e) => {
+                                            const dateValue = e.target.value;
+                                            if (dateValue) {
+                                              document
+                                                .getElementById(
+                                                  `time-slots-${field.name}`
+                                                )
+                                                ?.scrollIntoView({
+                                                  behavior: "smooth",
+                                                });
+                                            }
+                                          }}
+                                        >
+                                          <option value="">
+                                            Select a date
+                                          </option>
+                                          {Object.keys(slotsByDate).map(
+                                            (date) => (
+                                              <option key={date} value={date}>
+                                                {new Date(
+                                                  date
+                                                ).toLocaleDateString([], {
+                                                  weekday: "long",
+                                                  year: "numeric",
+                                                  month: "long",
+                                                  day: "numeric",
+                                                })}
+                                              </option>
+                                            )
+                                          )}
+                                        </select>
+
+                                        {/* Time slots grid */}
+                                        <div
+                                          id={`time-slots-${field.name}`}
+                                          className="time-slots-grid"
+                                        >
+                                          {Object.entries(slotsByDate).map(
+                                            ([date, slots]) => (
+                                              <div
+                                                key={date}
+                                                className="date-slots mb-3"
                                               >
-                                                {option.text}
-                                              </label>
+                                                <h6 className="mb-2 text-gray-600 font-medium">
+                                                  {new Date(
+                                                    date
+                                                  ).toLocaleDateString([], {
+                                                    weekday: "long",
+                                                    year: "numeric",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                  })}
+                                                </h6>
+                                                <div className="slots-grid flex flex-wrap gap-2">
+                                                  {slots.map((slot, idx) => {
+                                                    const isSelected =
+                                                      selectedTimeSlots[
+                                                        field.name
+                                                      ]?.timestamp ===
+                                                      slot.timestamp;
+                                                    return (
+                                                      <button
+                                                        key={idx}
+                                                        type="button"
+                                                        onClick={() =>
+                                                          handleTimeSlotSelection(
+                                                            field.name,
+                                                            slot
+                                                          )
+                                                        }
+                                                        className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                                                          isSelected
+                                                            ? "bg-blue-500 text-white"
+                                                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                                                        }`}
+                                                      >
+                                                        {slot.startTime} -{" "}
+                                                        {slot.endTime}
+                                                      </button>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
+                                            )
+                                          )}
+                                        </div>
+
+                                        {selectedTimeSlots[field.name] && (
+                                          <div className="selected-slot bg-blue-50 border border-blue-200 rounded-md p-3 mt-3">
+                                            <div className="font-medium text-blue-700">
+                                              Selected time slot:
                                             </div>
-                                          )
-                                        )}
-                                      </div>
-                                      {field.extra_category_tax && (
-                                        <div className="extra-tax-section mt-3 flex-column">
-                                          <div className="d-flex flex-column align-items-start mb-2">
+                                            <div className="mt-1 text-blue-800">
+                                              {
+                                                selectedTimeSlots[field.name]
+                                                  .display
+                                              }
+                                            </div>
                                             <button
+                                              className="mt-2 text-sm text-red-600 hover:text-red-800 underline focus:outline-none"
                                               type="button"
-                                              className="btn btn-sm  mt-2 add-category-button"
                                               onClick={() =>
-                                                addExtraInput(
-                                                  field.extra_category_tax
+                                                handleTimeSlotSelection(
+                                                  field.name,
+                                                  null
                                                 )
                                               }
                                             >
-                                              Add category
+                                              Clear selection
                                             </button>
                                           </div>
-                                          {extraInputs.map((_, idx) => (
-                                            <div
-                                              key={idx}
-                                              className="mb-2 d-flex align-items-center"
-                                            >
-                                              <input
-                                                type="text"
-                                                className="form-control form-control-sm w-50"
-                                                {...register(
-                                                  `${field.name}_extra_${idx}`
-                                                )}
-                                                placeholder={`Category ${
-                                                  idx + 1
-                                                }`}
-                                              />
-                                              <button
-                                                type="button"
-                                                className="btn btn-sm btn-danger ms-2 delete-category-button"
-                                                onClick={() => {
-                                                  setExtraInputs((prev) =>
-                                                    prev.filter(
-                                                      (_, i) => i !== idx
-                                                    )
-                                                  );
-                                                  setTotalExtraCategoryPrice(
-                                                    (prev) => {
-                                                      if (
-                                                        idx === 0 &&
-                                                        extraInputs.length === 1
-                                                      ) {
-                                                        return 0;
-                                                      } else {
-                                                        return (
-                                                          prev -
-                                                          field.extra_category_tax
-                                                        );
-                                                      }
-                                                    }
-                                                  );
-                                                  const newTotal =
-                                                    idx === 0
-                                                      ? totalExtraCategoryPrice -
-                                                        field.extra_tax
-                                                      : totalExtraCategoryPrice -
-                                                        field.extra_category_tax;
-                                                  if (
-                                                    typeof window !==
-                                                    "undefined"
-                                                  ) {
-                                                    try {
-                                                      localStorage.setItem(
-                                                        "total_extra_category_price",
-                                                        newTotal.toString()
-                                                      );
-                                                    } catch (error) {
-                                                      console.error(
-                                                        "Error saving total extra category price to localStorage:",
-                                                        error
-                                                      );
-                                                    }
-                                                  }
-                                                }}
-                                              >
-                                                -
-                                              </button>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                      {field.comment && (
-                                        <p className="comment-text">
-                                          <span>*</span> {field?.comment}
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
-                                  {field.type === "checkbox" && (
-                                    <div className="checkbox-group">
-                                      <label>{displayName} *</label>
-                                      <div>
-                                        {field.options?.map((option, idx) => {
-                                          const optionName =
-                                            option.name || option;
-                                          const optionValue =
-                                            option.value || option;
-                                          return (
-                                            <div
-                                              key={idx}
-                                              className="checkbox-option"
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                id={`${field.name}-${optionValue}`}
-                                                name={field.name}
-                                                value={optionValue}
-                                                {...register(field.name)}
-                                                defaultChecked={field.value?.includes(
-                                                  optionValue
-                                                )}
-                                              />
-                                              <label
-                                                htmlFor={`${field.name}-${optionValue}`}
-                                                className="custom-checkbox"
-                                              >
-                                                {optionName}
-                                              </label>
-                                            </div>
-                                          );
-                                        })}
+                                        )}
                                       </div>
-                                    </div>
-                                  )}
-                                  {errors.file && (
-                                    <p className="text-red-500">
-                                      {errors.file.message}
+                                    );
+                                  })()}
+
+                                  {errors[field.name] && (
+                                    <p className="text-red-500 text-sm mt-1">
+                                      Please select a time slot
                                     </p>
                                   )}
-                                  {field.type === "file" && (
-                                    <div className="file-upload button-wrap">
-                                      <input
-                                        type="file"
-                                        id={field.name}
-                                        {...register(field.name)}
-                                        onChange={(e) =>
-                                          handleFileChange(e, field.name, field)
-                                        }
-                                        className="file-upload-input"
-                                      />
-                                      <label
-                                        htmlFor={field.name}
-                                        className="new-button"
-                                      >
-                                        {displayName} *
-                                      </label>
-                                      {files[field.name]?.name && (
-                                        <p className="file-upload-file-name">
-                                          File: {files[field.name]?.name}
+                                </div>
+                              )}
+                              {/* Dropdown field */}
+                              {field.type === "dropdown" && (
+                                <div className="select-input">
+                                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                    {displayName}{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  {renderFieldComment(field)}
+                                  <select
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                                      blockingErrors[field.name]
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                    }`}
+                                    id={field.name}
+                                    {...register(field.name)}
+                                    onChange={(e) =>
+                                      handleOptionWithValidation(
+                                        e,
+                                        field.name,
+                                        "dropdown"
+                                      )
+                                    }
+                                  >
+                                    <option value="">Select an option</option>
+                                    {Object.entries(field.options)?.map(
+                                      ([key, option], idx) => (
+                                        <option
+                                          key={idx}
+                                          value={JSON.stringify(option)}
+                                          className={
+                                            option.blocks_continuation
+                                              ? "text-red-500"
+                                              : ""
+                                          }
+                                        >
+                                          {option.text}
+                                          {option.blocks_continuation
+                                            ? " (Not Eligible)"
+                                            : ""}
+                                          {option.extra_tax
+                                            ? ` (Extra Tax: $${option.extra_tax})`
+                                            : ""}
+                                        </option>
+                                      )
+                                    )}
+                                  </select>
+
+                                  {blockingErrors[field.name] && (
+                                    <div className="mt-2 text-sm p-2 bg-red-50 text-red-600 rounded-md">
+                                      {blockingErrors[field.name].message}
+                                    </div>
+                                  )}
+
+                                  {renderConditionalDropdowns(field.name)}
+                                </div>
+                              )}
+
+                              {/* Radio field */}
+                              {field.type === "radio" && (
+                                <div className="mb-2 radio-group">
+                                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    {displayName}{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  {renderFieldComment(field)}
+                                  <div className="space-y-2">
+                                    {Object.entries(field.options)?.map(
+                                      ([key, option], idx) => (
+                                        <div
+                                          key={idx}
+                                          className={`flex items-center p-2 rounded-md ${
+                                            option.blocks_continuation
+                                              ? "bg-red-50"
+                                              : "hover:bg-gray-100"
+                                          }`}
+                                        >
+                                          <input
+                                            type="radio"
+                                            id={`${field.name}_${idx}`}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                            name={field.name}
+                                            value={JSON.stringify(option)}
+                                            {...register(field.name)}
+                                            onChange={(e) =>
+                                              handleOptionWithValidation(
+                                                e,
+                                                field.name,
+                                                "radio"
+                                              )
+                                            }
+                                          />
+                                          <label
+                                            htmlFor={`${field.name}_${idx}`}
+                                            className={`ml-2 block text-sm ${
+                                              option.blocks_continuation
+                                                ? "text-red-700"
+                                                : "text-gray-700"
+                                            }`}
+                                          >
+                                            {option.text}
+                                            {option.blocks_continuation && (
+                                              <span className="ml-1 text-red-600 font-medium">
+                                                (Not Eligible)
+                                              </span>
+                                            )}
+                                            {option.extra_tax && (
+                                              <span className="ml-1 text-green-600">
+                                                (Extra Tax: ${option.extra_tax})
+                                              </span>
+                                            )}
+                                          </label>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+
+                                  {blockingErrors[field.name] && (
+                                    <div className="mt-2 text-sm p-2 bg-red-50 text-red-600 rounded-md">
+                                      {blockingErrors[field.name].message}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {field.type === "checkbox" && (
+                                <div className="checkbox-group">
+                                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    {displayName}{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  {renderFieldComment(field)}
+                                  <div className="space-y-2">
+                                    {field.options?.map((option, idx) => {
+                                      const optionName = option.name || option;
+                                      const optionValue =
+                                        option.value || option;
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className="flex items-center p-2 rounded-md hover:bg-gray-100"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            id={`${field.name}-${optionValue}`}
+                                            name={field.name}
+                                            value={optionValue}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            {...register(field.name)}
+                                            defaultChecked={field.value?.includes(
+                                              optionValue
+                                            )}
+                                          />
+                                          <p
+                                            htmlFor={`${field.name}-${optionValue}`}
+                                            className="block text-sm text-gray-700"
+                                            style={{ paddingLeft: "10px" }}
+                                          >
+                                            {optionName}
+                                          </p>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* File field */}
+                              {field.type === "file" && (
+                                <div className="file-upload">
+                                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    {displayName}{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
+                                  {renderFieldComment(field)}
+                                  <div className="mt-1 border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-blue-400 transition-colors">
+                                    {!files[field.name]?.name ? (
+                                      <>
+                                        <svg
+                                          className="mx-auto h-12 w-12 text-gray-400"
+                                          stroke="currentColor"
+                                          fill="none"
+                                          viewBox="0 0 48 48"
+                                        >
+                                          <path
+                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                        <div className="mt-1 flex justify-center">
+                                          <label
+                                            htmlFor={field.name}
+                                            className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"
+                                          >
+                                            <span>Upload a file</span>
+                                            <input
+                                              type="file"
+                                              id={field.name}
+                                              className="sr-only"
+                                              {...register(field.name)}
+                                              onChange={(e) =>
+                                                handleFileChange(
+                                                  e,
+                                                  field.name,
+                                                  field
+                                                )
+                                              }
+                                            />
+                                          </label>
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                          PDF, DOC, DOCX, TXT up to 10MB
                                         </p>
-                                      )}
-                                      {files[field.name]?.name &&
-                                        field?.calculation_fee && (
-                                          <div className="file-upload-info">
-                                            <p className="file-upload-word-count">
-                                              Word Count:
-                                              {` ${
-                                                wordCounts[field.name] || 0
-                                              }`}
+                                      </>
+                                    ) : (
+                                      <div className="text-left">
+                                        <div className="flex items-center text-sm">
+                                          <svg
+                                            className="flex-shrink-0 mr-2 h-5 w-5 text-green-500"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                          <span className="text-gray-900 font-medium truncate">
+                                            {files[field.name]?.name}
+                                          </span>
+                                        </div>
+
+                                        {field?.calculation_fee && (
+                                          <div className="mt-3 bg-blue-50 p-2 rounded-md">
+                                            <p className="text-sm text-blue-700">
+                                              Word Count:{" "}
+                                              {wordCounts[field.name] || 0}
                                             </p>
+                                            {wordCounts[field.name] > 0 && (
+                                              <p className="text-sm font-medium text-blue-800 mt-1">
+                                                Estimated fee: $
+                                                {(
+                                                  wordCounts[field.name] * 0.1
+                                                ).toFixed(2)}
+                                              </p>
+                                            )}
                                           </div>
                                         )}
-                                    </div>
-                                  )}
-                                  <p className="file-upload-word-count ">
-                                    {field.comment2}
-                                  </p>
-                                  {wordCounts[field.name] && (
-                                    <div>
-                                      {wordCounts[field.name] ? (
-                                        <p className="file-upload-word-count">
-                                          Total price =
-                                          {` ${wordCounts[field.name] * 0.1}`} $
-                                        </p>
-                                      ) : (
-                                        ""
-                                      )}
-                                    </div>
-                                  )}
-                                </>
-                                {errors[field.name] && (
-                                  <p className="error">
-                                    This field is required
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
+
+                                        <button
+                                          onClick={() => {
+                                            const fileInput =
+                                              document.getElementById(
+                                                field.name
+                                              );
+                                            if (fileInput) fileInput.value = "";
+                                            const newFiles = { ...files };
+                                            delete newFiles[field.name];
+                                            setFiles(newFiles);
+                                            const newWordCounts = {
+                                              ...wordCounts,
+                                            };
+                                            delete newWordCounts[field.name];
+                                            setWordCounts(newWordCounts);
+                                          }}
+                                          type="button"
+                                          className="mt-3 text-sm text-red-600 hover:text-red-800"
+                                        >
+                                          Remove file
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {errors[field.name] && (
+                                <p className="text-red-500 text-sm mt-1">
+                                  This field is required
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
                       </form>
                     </div>
-                    <div className="modal-footer">
-                      <div>
-                        <button
-                          className="tf-cart-item_total"
-                          cart-data-title="order"
-                          type="submit"
-                          onClick={handleCloseModal}
-                        >
-                          <div
-                            className={`tf-btn w-100 animate-hover-btn radius-3 `}
-                            style={{ minWidth: "60px" }}
-                          >
-                            Cancel
-                          </div>
-                        </button>
-                      </div>
-                      <div>
-                        <button
-                          className="tf-cart-item_total"
-                          cart-data-title="order"
-                          type="submit"
-                        >
-                          <div
-                            className={`tf-btn w-100 animate-hover-btn radius-3 `}
-                            style={{ minWidth: "60px" }}
-                          >
-                            Confirm
-                          </div>
-                        </button>
-                      </div>
+                    <div className="modal-footer bg-gray-50 border-t border-gray-200 p-4 flex justify-end space-x-3">
+                      <button
+                        onClick={handleCloseModal}
+                        type="button"
+                        className="px-4 py-2 bg-white border border-gray-300 rounded shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        style={{
+                          background: `linear-gradient(to right, #5ca595, #6db8a8)`,
+                        }}
+                        className="px-4 py-2 bg-blue-600 border border-transparent rounded shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        Confirm
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1459,7 +2034,7 @@ export default function Cart() {
                   onClick={handleCloseModal}
                 ></div>
               )}
-              {!cartProducts.length && (
+              {!cartItems.length && (
                 <>
                   <div className="row align-items-center mb-5">
                     <div className="col-6 fs-18">Your shop cart is empty</div>

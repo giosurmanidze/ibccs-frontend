@@ -108,7 +108,7 @@ export default function RecentOrders() {
       <div className="w-full overflow-x-auto">
         {/* Mobile View - Card Layout */}
         <div className="block sm:hidden">
-          {orders.map((order) => (
+          {orders?.map((order) => (
             <div
               key={order.id}
               className="mb-4 p-4 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700"
@@ -145,7 +145,7 @@ export default function RecentOrders() {
                     key={item.id}
                     className="text-xs text-gray-500 dark:text-gray-400"
                   >
-                    {item.service.name}
+                    {item.service?.name}
                   </p>
                 ))}
               </div>
@@ -207,7 +207,7 @@ export default function RecentOrders() {
 
           {/* Table Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {orders.map((order) => (
+            {orders?.map((order) => (
               <TableRow key={order.id} className="">
                 <TableCell className="py-3 text-gray-500 text-xs sm:text-theme-sm dark:text-gray-400">
                   #{order.id}
@@ -223,9 +223,9 @@ export default function RecentOrders() {
                   </div>
                 </TableCell>
                 <TableCell className="py-3 text-gray-500 text-xs sm:text-theme-sm dark:text-gray-400">
-                  {order.order_items.map((item) => (
+                  {order.order_items?.map((item) => (
                     <div key={item.id} className="text-xs sm:text-theme-sm">
-                      {item.service.name}
+                      {item.service?.name}
                     </div>
                   ))}
                 </TableCell>

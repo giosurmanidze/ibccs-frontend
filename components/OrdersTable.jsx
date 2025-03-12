@@ -125,6 +125,7 @@ const OrdersTable = () => {
     try {
       const response = await axiosInstance.get(`orders?page=${page}`);
       setOrders(response.data.data);
+      console.log(response.data.data);
       setLoading(false);
       setCurrentPage(response.data.meta.current_page || page);
       setLastPage(response.data.meta.last_page || 1);

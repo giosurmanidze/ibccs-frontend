@@ -425,7 +425,7 @@ export default function Checkout() {
                       <figure className="img-product">
                         <Image
                           alt="product"
-                          src={`http://localhost:8000/storage/${elm.icon}`}
+                          src={`${elm.icon}`}
                           width={720}
                           height={1005}
                         />

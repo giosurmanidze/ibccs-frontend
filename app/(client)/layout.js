@@ -141,16 +141,21 @@ export default function RootLayout({ children }) {
   const queryClient = new QueryClient();
 
   const [pageContent, setPageContent] = useState({});
+  const [sidebar, setSidebar] = useState({});
 
   useEffect(() => {
     const getPageContent = async () => {
       const response = await axiosInstance.get("pages/header");
       setPageContent(JSON.parse(response.data?.dynamic_content));
     };
+    const getSidebar = async () => {
+      const response = await axiosInstance.get("pages/sidebar");
+      console.log(response);
+      setSidebar(JSON.parse(response.data?.dynamic_content));
+    };
+    getSidebar();
     getPageContent();
   }, []);
-
-  console.log(pageContent);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -167,7 +172,7 @@ export default function RootLayout({ children }) {
               <div id="wrapper">{children}</div>
               <RtlToggle />
               <ProductSidebar />
-              <ShopCart pageContent={pageContent?.sidebar_buttons} />
+              <ShopCart pageContent={sidebar?.sidebar_buttons} />
               <AskQuestion />
               <DeliveryReturn />
               <FindSize />

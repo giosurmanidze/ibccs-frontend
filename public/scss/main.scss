@@ -26,3 +26,66 @@
     height: 75vh !important;
   }
 }
+.radio-option-blocks {
+  position: relative;
+}
+
+.radio-option-blocks label {
+  color: #dc3545;
+}
+
+.error-message {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+.time-slots-grid {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selected-slot {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 4px;
+}
+.service_header {
+  padding-left: 20px !important;
+}
+.table_tr {
+  padding-left: 15px !important;
+}
+.default_cart_btn {
+  background: transparent;
+  color: #000000 !important;
+  border: 1px solid #000000;
+  transition: background 0.3s ease, color 0.3s ease;
+  border-radius: 5px;
+}
+.default_cart_btn:hover {
+  background: #3e7f71;
+  color: white !important;
+}
+.service_name {
+  margin-left: 10px;
+}
+.filled_item_button {
+  background: #3e7f71;
+  border: 1px solid #000000;
+  transition: background 0.3s ease, color 0.3s ease;
+  color: white !important;
+  border-radius: 5px;
+}
+
+.tf-page-cart-footer {
+  margin-top: 40px !important;
+}
+.remove_button {
+  margin-left: 5px !important ;
+}

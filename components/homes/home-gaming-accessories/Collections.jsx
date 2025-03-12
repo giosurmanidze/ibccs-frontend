@@ -2,12 +2,24 @@
 import { useGetCategories } from "@/hooks/useGetCategories";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
-import { Navigation, Pagination } from "swiper/modules";
+import React, { useEffect, useRef } from "react";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import "swiper/css/autoplay";
 
 export default function Collections() {
   const { data: categories } = useGetCategories();
+  const swiperRef = useRef(null);
+
+  useEffect(() => {
+    if (swiperRef.current && swiperRef.current.swiper) {
+      const swiperInstance = swiperRef.current.swiper;
+      swiperInstance.autoplay.start();
+    }
+  }, [categories]);
 
   return (
     <section className="flat-spacing-10 flat-testimonial">
@@ -19,19 +31,28 @@ export default function Collections() {
           >
             Categories
           </span>
+          <div className="title-underline bg-gray-200 h-1 w-20 mx-auto md:mx-0">
+            <div
+              className="title-indicator h-1 w-10"
+              style={{
+                backgroundColor: "#5ca595",
+              }}
+            ></div>
+          </div>
         </div>
         <div className="hover-sw-nav padding-content radius-10">
           <Swiper
+            ref={swiperRef}
             dir="ltr"
             className="swiper tf-sw-testimonial"
             spaceBetween={20}
             breakpoints={{
-              1024: { slidesPerView: 4 }, 
+              1024: { slidesPerView: 4 },
               768: { slidesPerView: 3 },
-              480: { slidesPerView: 2 }, 
+              480: { slidesPerView: 2 },
               0: { slidesPerView: 1 },
             }}
-            modules={[Pagination, Navigation]}
+            modules={[Pagination, Navigation, Autoplay]}
             pagination={{
               clickable: true,
               el: ".spdcoll1",
@@ -40,28 +61,37 @@ export default function Collections() {
               prevEl: ".snbpcoll1",
               nextEl: ".snbncoll1",
             }}
+            autoplay={{
+              delay: 3000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: false,
+            }}
+            speed={800}
+            loop={true}
+            loopAdditionalSlides={4}
+            slidesPerGroup={1}
           >
             {categories?.map((item, index) => (
               <SwiperSlide key={index}>
                 <Link
                   href={`/shop-default?categoryId=${item.id}`}
-                  className="card p-3 "
+                  className="card p-3 border-0 shadow-none transition-colors"
+                  style={{ transform: "none !important" }}
                 >
                   <div className="icon-name">
-                    <div>
-                      {" "}
+                    <div className="flex flex-col items-center text-center">
                       <Image
                         className="lazyload"
                         data-src={item.imgSrc}
                         alt="collection-img"
-                        src={`http://localhost:8000/storage/${item.icon}`}
+                        src={`${item.icon}`}
                         width={60}
                         height={60}
                       />
-                      <h3 class="card__title">{item.name}</h3>
+                      <h3 className="card__title">{item.name}</h3>
                     </div>
 
-                    <div class="card__arrow">
+                    <div className="card__arrow">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"

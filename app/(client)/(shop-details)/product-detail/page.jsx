@@ -1,21 +1,20 @@
 "use client";
-import Products from "@/components/shopDetails/Products";
-import React from "react";
+
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import DetailsOuterZoom from "@/components/shopDetails/DetailsOuterZoom";
-import { useParams, useSearchParams } from "next/navigation";
+import Products from "@/components/shopDetails/Products";
 import { useGetService } from "@/hooks/useGetService";
 import { useGetCategory } from "@/hooks/useCategory";
 
-export default function Page() {
-  const { id } = useParams();
+function ProductDetailContent() {
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");
+  const serviceId = searchParams.get("serviceId");
 
-  const { data: product } = useGetService(id);
+  const { data: product } = useGetService(serviceId);
   const { data: category } = useGetCategory(categoryId);
-
-  console.log(product);
 
   return (
     <>
@@ -35,5 +34,13 @@ export default function Page() {
       <DetailsOuterZoom product={product} />
       <Products />
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading product details...</div>}>
+      <ProductDetailContent />
+    </Suspense>
   );
 }

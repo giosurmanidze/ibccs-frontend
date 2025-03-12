@@ -30,7 +30,7 @@ export default function UserDropdown() {
           <Image
             width={44}
             height={44}
-            src={`http://localhost:8000/storage/${user?.photo}`}
+            src={`${user?.photo}`}
             alt="User"
             className="w-full h-full object-cover"
           />

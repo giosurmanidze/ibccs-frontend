@@ -10,7 +10,7 @@ const nextConfig = {
     });
     return config;
   },
-  output: "standalone",
+  output: "export",
 };
 
 export default nextConfig;

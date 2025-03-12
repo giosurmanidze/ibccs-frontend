@@ -2,7 +2,10 @@ import axios from "axios";
 
 const createAxiosInstance = () => {
   const baseConfig = {
-    baseURL: "http://localhost:8000/api/",
+    baseURL: "http://api.ibccsonline.ge/api",
+
+    // http://localhost:8000/api/
+    // http://api.ibccsonline.ge/api
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

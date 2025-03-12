@@ -12,6 +12,7 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
     description: "",
     base_price: "",
     category_id: "",
+    delivery_time: "",
     discount: "",
     additional_fields: [],
     icon: null,
@@ -26,11 +27,269 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
     { value: "checkbox", label: "Checkbox" },
     { value: "radio", label: "Radio Buttons" },
     { value: "file", label: "File Upload" },
-    { value: "calculation_of_number", label: "Word Count Calculation" },
-    { value: "physical_person", label: "Physical Person Section" },
-    { value: "legal_person", label: "Legal Person Section" },
-    { value: "director", label: "Director Section" },
+    { value: "timeslot", label: "Time Slot Selector" },
   ]);
+
+  const renderTimeSlotOptions = (field, fieldIndex) => {
+    // Get the time slots from the field or initialize an empty array
+    const timeSlots = field.time_slots || [];
+
+    return (
+      <div className="mt-3 border-t border-gray-200 pt-3 dark:border-gray-700">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Available Time Slots
+          </h3>
+          <button
+            type="button"
+            onClick={() => addTimeSlot(fieldIndex)}
+            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            + Add Time Slot
+          </button>
+        </div>
+
+        {timeSlots.length === 0 && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+            No time slots added yet. Click Add Time Slot to begin.
+          </p>
+        )}
+
+        {timeSlots.map((slot, slotIndex) => (
+          <div
+            key={slotIndex}
+            className="flex flex-col gap-2 p-2 mb-2 bg-gray-50 rounded-md dark:bg-gray-700"
+          >
+            <div className="flex justify-between">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Time Slot {slotIndex + 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeTimeSlot(fieldIndex, slotIndex)}
+                className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+              >
+                Remove
+              </button>
+            </div>
+
+            {/* Date Range Fields */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-gray-700 dark:text-gray-300">
+                  Date Range Start
+                </label>
+                <input
+                  type="date"
+                  value={slot.date_start || ""}
+                  onChange={(e) =>
+                    updateTimeSlot(fieldIndex, slotIndex, {
+                      date_start: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-700 dark:text-gray-300">
+                  Date Range End
+                </label>
+                <input
+                  type="date"
+                  value={slot.date_end || ""}
+                  onChange={(e) =>
+                    updateTimeSlot(fieldIndex, slotIndex, {
+                      date_end: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                />
+              </div>
+            </div>
+
+            {/* Time Range Fields */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-gray-700 dark:text-gray-300">
+                  Time Range Start
+                </label>
+                <input
+                  type="time"
+                  value={slot.time_start || ""}
+                  onChange={(e) =>
+                    updateTimeSlot(fieldIndex, slotIndex, {
+                      time_start: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-700 dark:text-gray-300">
+                  Time Range End
+                </label>
+                <input
+                  type="time"
+                  value={slot.time_end || ""}
+                  onChange={(e) =>
+                    updateTimeSlot(fieldIndex, slotIndex, {
+                      time_end: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                />
+              </div>
+            </div>
+
+            {/* Interval Settings */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-gray-700 dark:text-gray-300">
+                  Interval (minutes)
+                </label>
+                <input
+                  type="number"
+                  value={slot.interval || 60}
+                  onChange={(e) =>
+                    updateTimeSlot(fieldIndex, slotIndex, {
+                      interval: e.target.value,
+                    })
+                  }
+                  min="5"
+                  step="5"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-700 dark:text-gray-300">
+                  Max Bookings per Slot
+                </label>
+                <input
+                  type="number"
+                  value={slot.max_bookings || 1}
+                  onChange={(e) =>
+                    updateTimeSlot(fieldIndex, slotIndex, {
+                      max_bookings: e.target.value,
+                    })
+                  }
+                  min="1"
+                  step="1"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                />
+              </div>
+            </div>
+
+            {/* Excluded Days */}
+            <div>
+              <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1">
+                Excluded Days
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Sunday",
+                  "Monday",
+                  "Tuesday",
+                  "Wednesday",
+                  "Thursday",
+                  "Friday",
+                  "Saturday",
+                ].map((day, i) => (
+                  <div key={i} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`excluded-day-${fieldIndex}-${slotIndex}-${i}`}
+                      checked={(slot.excluded_days || []).includes(i)}
+                      onChange={(e) => {
+                        const excludedDays = [...(slot.excluded_days || [])];
+                        if (e.target.checked) {
+                          if (!excludedDays.includes(i)) {
+                            excludedDays.push(i);
+                          }
+                        } else {
+                          const index = excludedDays.indexOf(i);
+                          if (index !== -1) {
+                            excludedDays.splice(index, 1);
+                          }
+                        }
+                        updateTimeSlot(fieldIndex, slotIndex, {
+                          excluded_days: excludedDays,
+                        });
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600"
+                    />
+                    <label
+                      htmlFor={`excluded-day-${fieldIndex}-${slotIndex}-${i}`}
+                      className="ml-1 mr-2 text-xs text-gray-700 dark:text-gray-300"
+                    >
+                      {day.slice(0, 3)}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Specific Excluded Dates */}
+            <div>
+              <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1">
+                Excluded Dates (comma separated, YYYY-MM-DD)
+              </label>
+              <input
+                type="text"
+                value={(slot.excluded_dates || []).join(", ")}
+                onChange={(e) => {
+                  const datesStr = e.target.value.trim();
+                  const dates = datesStr
+                    ? datesStr.split(",").map((d) => d.trim())
+                    : [];
+                  updateTimeSlot(fieldIndex, slotIndex, {
+                    excluded_dates: dates,
+                  });
+                }}
+                placeholder="2025-01-01, 2025-12-25"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+  const addTimeSlot = (fieldIndex) => {
+    const field = formData.additional_fields[fieldIndex];
+    const newTimeSlot = {
+      date_start: "",
+      date_end: "",
+      time_start: "09:00",
+      time_end: "17:00",
+      interval: 60,
+      max_bookings: 1,
+      excluded_days: [],
+      excluded_dates: [],
+    };
+
+    const updatedTimeSlots = [...(field.time_slots || []), newTimeSlot];
+
+    updateField(fieldIndex, { time_slots: updatedTimeSlots });
+  };
+
+  const removeTimeSlot = (fieldIndex, slotIndex) => {
+    const field = formData.additional_fields[fieldIndex];
+    const updatedTimeSlots = [...field.time_slots];
+    updatedTimeSlots.splice(slotIndex, 1);
+
+    updateField(fieldIndex, { time_slots: updatedTimeSlots });
+  };
+
+  const updateTimeSlot = (fieldIndex, slotIndex, slotData) => {
+    const field = formData.additional_fields[fieldIndex];
+    const updatedTimeSlots = [...field.time_slots];
+    updatedTimeSlots[slotIndex] = {
+      ...updatedTimeSlots[slotIndex],
+      ...slotData,
+    };
+
+    updateField(fieldIndex, { time_slots: updatedTimeSlots });
+  };
 
   useEffect(() => {
     if (service) {
@@ -39,6 +298,7 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
         description: service.description || "",
         base_price: service.base_price || "",
         category_id: service.category_id || "",
+        delivery_time: service.delivery_time || "",
         discount: service.discount || "",
         status: service.status || "active",
         additional_fields: parseAdditionalFields(
@@ -155,6 +415,12 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
 
   const updateField = (index, fieldData) => {
     const updatedFields = [...formData.additional_fields];
+
+    // If changing to timeslot type, initialize time_slots if needed
+    if (fieldData.type === "timeslot" && !updatedFields[index].time_slots) {
+      fieldData.time_slots = [];
+    }
+
     updatedFields[index] = {
       ...updatedFields[index],
       ...fieldData,
@@ -214,7 +480,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
 
     updateField(fieldIndex, { options: updatedOptions });
   };
-
   const updateOption = (fieldIndex, optionIndex, optionData) => {
     const field = formData.additional_fields[fieldIndex];
     let updatedOptions;
@@ -241,7 +506,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
 
     updateField(fieldIndex, { options: updatedOptions });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -251,6 +515,7 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
       formDataPayload.append("name", formData.name);
       formDataPayload.append("description", formData.description || "");
       formDataPayload.append("base_price", formData.base_price);
+      formDataPayload.append("delivery_time", formData.delivery_time);
       formDataPayload.append("category_id", formData.category_id);
       formDataPayload.append("discount", formData.discount || "0");
       formDataPayload.append("status", formData.status || "active");
@@ -333,9 +598,89 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
       });
     };
   }, [uploadedFiles]);
+  const addConditionalOption = (fieldIndex, optionIndex) => {
+    const field = formData.additional_fields[fieldIndex];
+    const key = Object.keys(field.options)[optionIndex];
 
+    if (!field.options[key].conditional_options) {
+      field.options[key].conditional_options = [];
+    }
+
+    const newConditionalOption = {
+      text: `Conditional Option ${
+        field.options[key].conditional_options.length + 1
+      }`,
+      required: false,
+      dropdown_options: "Option 1, Option 2, Option 3", // Default dropdown options
+      type: "dropdown", // Explicitly specify this is a dropdown type
+    };
+
+    const updatedConditionalOptions = [
+      ...field.options[key].conditional_options,
+      newConditionalOption,
+    ];
+
+    const updatedOptions = { ...field.options };
+    updatedOptions[key] = {
+      ...updatedOptions[key],
+      conditional_options: updatedConditionalOptions,
+    };
+
+    updateField(fieldIndex, { options: updatedOptions });
+  };
+  // Remove a conditional option from a dropdown/radio option
+  const removeConditionalOption = (fieldIndex, optionIndex, condOptIndex) => {
+    const field = formData.additional_fields[fieldIndex];
+    const key = Object.keys(field.options)[optionIndex];
+
+    if (!field.options[key].conditional_options) return;
+
+    const updatedConditionalOptions = [
+      ...field.options[key].conditional_options,
+    ];
+    updatedConditionalOptions.splice(condOptIndex, 1);
+
+    const updatedOptions = { ...field.options };
+    updatedOptions[key] = {
+      ...updatedOptions[key],
+      conditional_options: updatedConditionalOptions,
+    };
+
+    updateField(fieldIndex, { options: updatedOptions });
+  };
+
+  // Update a conditional option's properties
+  const updateConditionalOption = (
+    fieldIndex,
+    optionIndex,
+    condOptIndex,
+    condOptData
+  ) => {
+    const field = formData.additional_fields[fieldIndex];
+    const key = Object.keys(field.options)[optionIndex];
+
+    if (!field.options[key].conditional_options) return;
+
+    const updatedConditionalOptions = [
+      ...field.options[key].conditional_options,
+    ];
+    updatedConditionalOptions[condOptIndex] = {
+      ...updatedConditionalOptions[condOptIndex],
+      ...condOptData,
+    };
+
+    const updatedOptions = { ...field.options };
+    updatedOptions[key] = {
+      ...updatedOptions[key],
+      conditional_options: updatedConditionalOptions,
+    };
+
+    updateField(fieldIndex, { options: updatedOptions });
+  };
   const renderFieldOptions = (field, fieldIndex) => {
     switch (field.type) {
+      case "timeslot":
+        return renderTimeSlotOptions(field, fieldIndex);
       case "dropdown":
       case "radio":
         return (
@@ -386,7 +731,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
                       />
                     </div>
-
                     <div className="flex items-center mt-2">
                       <input
                         id={`has-extra-tax-${fieldIndex}-${optionIndex}`}
@@ -416,7 +760,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                         Has Extra Tax Fee
                       </label>
                     </div>
-
                     {field.options[key]?.extra_tax !== undefined && (
                       <div className="mt-1">
                         <label className="block text-xs text-gray-700 dark:text-gray-300">
@@ -436,14 +779,209 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                         />
                       </div>
                     )}
+                    <div className="flex items-center mt-2">
+                      <input
+                        id={`blocks-continuation-${fieldIndex}-${optionIndex}`}
+                        type="checkbox"
+                        checked={
+                          field.options[key]?.blocks_continuation || false
+                        }
+                        onChange={(e) => {
+                          updateOption(fieldIndex, optionIndex, {
+                            blocks_continuation: e.target.checked,
+                            error_message: e.target.checked
+                              ? field.options[key]?.error_message ||
+                                "This option prevents continuing with the request."
+                              : undefined,
+                          });
+                        }}
+                        className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded dark:border-gray-600"
+                      />
+                      <label
+                        htmlFor={`blocks-continuation-${fieldIndex}-${optionIndex}`}
+                        className="ml-2 block text-xs text-gray-700 dark:text-gray-300"
+                      >
+                        Blocks continuation
+                      </label>
+                    </div>
+                    {field.options[key]?.blocks_continuation && (
+                      <div className="mt-1">
+                        <label className="block text-xs text-gray-700 dark:text-gray-300">
+                          Error Message
+                        </label>
+                        <textarea
+                          value={field.options[key]?.error_message || ""}
+                          onChange={(e) =>
+                            updateOption(fieldIndex, optionIndex, {
+                              error_message: e.target.value,
+                            })
+                          }
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                          rows="2"
+                        />
+                      </div>
+                    )}
+                    {/* New conditional rendering section */}
+                    <div className="flex items-center mt-2">
+                      <input
+                        id={`has-conditional-options-${fieldIndex}-${optionIndex}`}
+                        type="checkbox"
+                        checked={
+                          field.options[key]?.has_conditional_options || false
+                        }
+                        onChange={(e) => {
+                          updateOption(fieldIndex, optionIndex, {
+                            has_conditional_options: e.target.checked,
+                            conditional_options: e.target.checked
+                              ? field.options[key]?.conditional_options || []
+                              : undefined,
+                          });
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600"
+                      />
+                      <label
+                        htmlFor={`has-conditional-options-${fieldIndex}-${optionIndex}`}
+                        className="ml-2 block text-xs text-gray-700 dark:text-gray-300"
+                      >
+                        Show additional options when selected
+                      </label>
+                    </div>
+                    {field.options[key]?.has_conditional_options && (
+                      <div className="mt-3 pl-4 border-l-2 border-blue-200 dark:border-blue-800">
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                            Conditional Options (Dropdown Selection)
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              addConditionalOption(fieldIndex, optionIndex)
+                            }
+                            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            + Add Option
+                          </button>
+                        </div>
+
+                        {Array.isArray(
+                          field.options[key]?.conditional_options
+                        ) &&
+                          field.options[key].conditional_options.map(
+                            (condOption, condIndex) => (
+                              <div
+                                key={condIndex}
+                                className="p-2 mb-2 bg-blue-50 rounded-md dark:bg-blue-900/20"
+                              >
+                                <div className="flex justify-between">
+                                  <span className="text-xs text-blue-600 dark:text-blue-400">
+                                    Option {condIndex + 1}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      removeConditionalOption(
+                                        fieldIndex,
+                                        optionIndex,
+                                        condIndex
+                                      )
+                                    }
+                                    className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+
+                                <div className="mt-1">
+                                  <label className="block text-xs text-gray-700 dark:text-gray-300">
+                                    Label
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={condOption.text || ""}
+                                    onChange={(e) =>
+                                      updateConditionalOption(
+                                        fieldIndex,
+                                        optionIndex,
+                                        condIndex,
+                                        {
+                                          text: e.target.value,
+                                        }
+                                      )
+                                    }
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                                  />
+                                </div>
+
+                                {/* Set dropdown options */}
+                                <div className="mt-2">
+                                  <label className="block text-xs text-gray-700 dark:text-gray-300">
+                                    Dropdown Options (comma separated)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder="Option 1, Option 2, Option 3"
+                                    value={condOption.dropdown_options || ""}
+                                    onChange={(e) =>
+                                      updateConditionalOption(
+                                        fieldIndex,
+                                        optionIndex,
+                                        condIndex,
+                                        {
+                                          dropdown_options: e.target.value,
+                                        }
+                                      )
+                                    }
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-600"
+                                  />
+                                </div>
+
+                                <div className="flex items-center mt-2">
+                                  <input
+                                    id={`required-conditional-${fieldIndex}-${optionIndex}-${condIndex}`}
+                                    type="checkbox"
+                                    checked={condOption.required || false}
+                                    onChange={(e) =>
+                                      updateConditionalOption(
+                                        fieldIndex,
+                                        optionIndex,
+                                        condIndex,
+                                        {
+                                          required: e.target.checked,
+                                        }
+                                      )
+                                    }
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600"
+                                  />
+                                  <label
+                                    htmlFor={`required-conditional-${fieldIndex}-${optionIndex}-${condIndex}`}
+                                    className="ml-2 block text-xs text-gray-700 dark:text-gray-300"
+                                  >
+                                    Required option
+                                  </label>
+                                </div>
+                              </div>
+                            )
+                          )}
+
+                        {(!field.options[key]?.conditional_options ||
+                          field.options[key].conditional_options.length ===
+                            0) && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                            No conditional options added yet
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
           </div>
         );
 
+      // Other cases remain the same
       case "checkbox":
         return (
+          // Existing checkbox rendering code remains the same
           <div className="mt-3 border-t border-gray-200 pt-3 dark:border-gray-700">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -547,7 +1085,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
         return null;
     }
   };
-
   const formatFileSize = (bytes) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -597,7 +1134,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Category
@@ -617,7 +1153,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                 ))}
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Base Price
@@ -633,7 +1168,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Discount
@@ -663,6 +1197,19 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                 <option value="featured">Featured</option>
                 <option value="draft">Draft</option>
               </select>
+            </div>{" "}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Delivery time
+              </label>
+              <input
+                type="text"
+                name="delivery_time"
+                value={formData.delivery_time}
+                onChange={handleInputChange}
+                className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                required
+              />
             </div>
           </div>
 
@@ -1033,20 +1580,6 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
                       ))}
                     </select>
                   </div>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Default Value
-                  </label>
-                  <input
-                    type="text"
-                    value={field.value || ""}
-                    onChange={(e) =>
-                      updateField(index, { value: e.target.value })
-                    }
-                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
                 </div>
 
                 <div className="mb-4">

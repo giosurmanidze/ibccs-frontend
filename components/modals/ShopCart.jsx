@@ -6,8 +6,6 @@ import { useEffect, useState } from "react";
 export default function ShopCart({ pageContent }) {
   const { cartProducts, setCartProducts } = useContextElement();
 
-  console.log(pageContent);
-
   const setQuantity = (id, quantity) => {
     if (quantity >= 1) {
       const item = cartProducts.filter((elm) => elm.id == id)[0];
@@ -23,15 +21,12 @@ export default function ShopCart({ pageContent }) {
     setCartProducts((pre) => pre.filter((elm) => elm.id !== id));
 
     let existingOrderDetails =
-      JSON.parse(sessionStorage.getItem("order_details")) || [];
+      JSON.parse(localStorage.getItem("order_details")) || [];
     existingOrderDetails = existingOrderDetails.filter(
       (order) => order.service_id !== id
     );
 
-    sessionStorage.setItem(
-      "order_details",
-      JSON.stringify(existingOrderDetails)
-    );
+    localStorage.setItem("order_details", JSON.stringify(existingOrderDetails));
   };
 
   const [totalPrice2, setTotalPrice2] = useState(0);
@@ -72,11 +67,11 @@ export default function ShopCart({ pageContent }) {
                       <div key={i} className="tf-mini-cart-item">
                         <div className="tf-mini-cart-image">
                           <Link
-                            href={`/product-detail/${elm.id}?categoryId=${elm.category_id}`}
+                            href={`/product-detail?serviceId=${elm.id}&categoryId=${elm.category_id}`}
                           >
                             <Image
                               alt="image"
-                              src={`http://localhost:8000/storage/${elm.icon}`}
+                              src={`${elm.icon}`}
                               width={50}
                               height={70}
                             />
@@ -85,7 +80,7 @@ export default function ShopCart({ pageContent }) {
                         <div className="tf-mini-cart-info">
                           <Link
                             className="title link"
-                            href={`/product-detail/${elm.id}?categoryId=${elm.category_id}`}
+                            href={`/product-detail?serviceId=${elm.id}&categoryId=${elm.category_id}`}
                           >
                             {elm.name}
                           </Link>
@@ -179,13 +174,14 @@ export default function ShopCart({ pageContent }) {
                   </div>
                   <div className="tf-mini-cart-line" />
                   <div className="tf-mini-cart-view-checkout">
+                    {console.log("pageContent", pageContent)}
                     {Array.isArray(pageContent) && pageContent[1] && (
                       <Link
                         href={pageContent[0].url}
                         className="tf-btn w-full mb-2"
                         style={{
-                          backgroundColor: pageContent[0].background_color,
-                          color: pageContent[0].text_color,
+                          backgroundColor: "#000000",
+                          color: "#ffffff",
                         }}
                       >
                         {pageContent[0].text}

@@ -65,7 +65,6 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
     }).format(amount || 0);
   };
 
-  // Format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString("en-US", {
       year: "numeric",
@@ -76,7 +75,6 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
     });
   };
 
-  // Get status color scheme
   const getStatusColors = (status) => {
     switch (status?.toLowerCase()) {
       case "completed":
@@ -219,10 +217,8 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Body with animation */}
         <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Customer Information Card */}
             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300">
               <div className="flex items-center mb-4">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full mr-3">
@@ -343,8 +339,6 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
               </div>
             </div>
           </div>
-
-          {/* Order Items Card */}
           <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
             <div className="flex items-center px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full mr-3">

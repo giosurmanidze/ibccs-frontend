@@ -28,7 +28,12 @@ export default function Products2() {
             Services
           </span>
           <div className="title-underline bg-gray-200 h-1 w-20 mx-auto md:mx-0">
-            <div className="title-indicator bg-blue-600 h-1 w-10"></div>
+            <div
+              className="title-indicator h-1 w-10"
+              style={{
+                backgroundColor: "#5ca595",
+              }}
+            ></div>
           </div>
         </div>
 
@@ -77,8 +82,8 @@ export default function Products2() {
               loop={products.length > 4}
             >
               {products.map((product, index) => (
-                <SwiperSlide key={index} className="h-auto">
-                  <div className="px-1 py-2 h-full">
+                <SwiperSlide key={index} className="h-auto w-[300px]">
+                  <div className="px-1 py-2 h-full w-full">
                     <Shopcard28 product={product} />
                   </div>
                 </SwiperSlide>

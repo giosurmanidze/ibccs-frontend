@@ -15,8 +15,6 @@ export default function Context({ children }) {
   const { data: services } = useGetServices();
   const [isMounted, setIsMounted] = useState(false);
   const [cartProducts, setCartProducts] = useState([]);
-  const [quickViewItem, setQuickViewItem] = useState(allProducts[0]);
-  const [quickAddItem, setQuickAddItem] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
 
   // Initialize the component and check for client-side rendering
@@ -48,7 +46,6 @@ export default function Context({ children }) {
   }, [cartProducts, isMounted]);
 
   const addProductToCart = (id, qty) => {
-    console.log(services);
     if (!cartProducts.filter((elm) => elm.id == id)[0]) {
       const item = {
         ...services.filter((elm) => elm.id == id)[0],
@@ -88,10 +85,6 @@ export default function Context({ children }) {
     totalPrice,
     addProductToCart,
     isAddedToCartProducts,
-    quickViewItem,
-    setQuickViewItem,
-    quickAddItem,
-    setQuickAddItem,
     updateQuantity,
   };
 

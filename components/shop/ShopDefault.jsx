@@ -16,6 +16,7 @@ function ShopDefaultContent() {
 
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");
+  const categoryName = searchParams.get("categoryName");
 
   const { data: category } = useGetCategory(categoryId, {
     enabled: !!categoryId,
@@ -37,6 +38,29 @@ function ShopDefaultContent() {
     <>
       <section className="flat-spacing-2">
         <div className="container">
+          {(categoryName || category?.name) && (
+            <div className="category-header mb-4">
+              <div className="row">
+                <div className="col-12">
+                  <div className="d-flex align-items-center">
+                    <h2 className="category-title fs-3 fw-bold mb-0">
+                      {categoryName || category?.name}
+                    </h2>
+                    <span className="badge bg-secondary ms-3 rounded-pill">
+                      {servicesLength || 0} services
+                    </span>
+                  </div>
+                  {category?.description && (
+                    <p className="category-description text-muted mt-2">
+                      {category.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <hr className="my-3" />
+            </div>
+          )}
+
           <div className="tf-shop-control grid-2 align-items-center">
             <div className="tf-control-filter">
               <a

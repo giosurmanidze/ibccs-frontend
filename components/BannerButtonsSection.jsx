@@ -71,7 +71,7 @@ const BannerButtonsSection = ({
         </div>
       ) : (
         <div className="text-center text-gray-500 py-4">
-          No banner buttons. Click "Add New Button" to create one.
+          No banner buttons. Click Add New Button to create one.
         </div>
       )}
     </div>

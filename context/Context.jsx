@@ -13,45 +13,70 @@ export const useContextElement = () => {
 };
 
 export default function Context({ children }) {
-  const { data: services } = useGetServices();
-  const [isMounted, setIsMounted] = useState(false);
   const [cartProducts, setCartProducts] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
   const [isLoadingCart, setIsLoadingCart] = useState(false);
 
-  // Initialize the component and fetch cart data from API
   useEffect(() => {
-    setIsMounted(true);
-
-    // Fetch cart data from API when component mounts
     fetchCartData();
   }, []);
 
-  // Calculate total price whenever cart changes
   useEffect(() => {
-    const subtotal = cartProducts.reduce((accumulator, product) => {
-      const productTotal =
-        product.quantity * product.base_price +
-        (product.extraTaxFields
-          ? Object.values(product.extraTaxFields).reduce(
-              (sum, field) => sum + (Number(field.extra_tax) || 0),
-              0
-            )
-          : 0);
-      return accumulator + productTotal;
-    }, 0);
+    const subtotal = cartProducts
+      .map((product) => {
+        const productTotal =
+          product.quantity * product.base_price +
+          (product.extraTaxFields
+            ? Object.values(product.extraTaxFields).reduce(
+                (sum, field) => sum + (Number(field.extra_tax) || 0),
+                0
+              )
+            : 0);
+        return productTotal;
+      })
+      .reduce((accumulator, productTotal) => accumulator + productTotal, 0);
 
     setTotalPrice(subtotal);
   }, [cartProducts]);
 
-  // Fetch cart data from API
+  const getProductTotal = (product) => {
+    // Ensure quantity is always at least 1
+    const qty = Math.max(1, quantity);
+
+    // Calculate base price
+    const basePrice = product?.base_price * qty;
+
+    // Get extra tax fields, prioritizing temporary changes
+    const extraTaxFields =
+      tempCartChanges?.[product.id] || product?.extraTaxFields || {};
+
+    // Calculate extra tax total
+    const extraTaxTotal = Object.values(extraTaxFields).reduce(
+      (sum, field) => sum + (Number(field.extra_tax) || 0),
+      0
+    );
+
+    // Total price is base price plus extra taxes for the entire quantity
+    const totalPrice = basePrice + extraTaxTotal * qty;
+
+    return Number(totalPrice.toFixed(2));
+  };
+
   const fetchCartData = async () => {
     setIsLoadingCart(true);
     try {
       const response = await axiosInstance.get("/carts");
 
       // Process cart items to handle nested service data
+      // In fetchCartData function
       let cartItems = Array.isArray(response.data) ? response.data : [];
+      const subTotal = cartItems.reduce(
+        (sum, item) => sum + (item.total_price || 0),
+        0
+      );
+
+      setSubtotal(subTotal); // Add this line to update the subtotal state
 
       // If the response has a data property and it's an array, use that instead
       if (
@@ -64,21 +89,45 @@ export default function Context({ children }) {
 
       // Process and normalize the cart data
       const processedCartItems = cartItems.map((item) => {
-        // Get service data from the nested service object
         const serviceData = item.service || {};
+
+        // Calculate total price including extra taxes
+        const basePrice = parseFloat(serviceData.base_price || 0);
+        const quantity = parseInt(item.quantity || 1, 10);
+
+        // Calculate extra tax total
+        const extraTaxTotal = item.extra_tax_fields
+          ? item.extra_tax_fields.reduce((sum, field) => {
+              return sum + (Number(field.extra_tax) || 0);
+            }, 0)
+          : item.extraTaxFields
+          ? Object.values(item.extraTaxFields).reduce(
+              (sum, field) => sum + (Number(field.extra_tax) || 0),
+              0
+            )
+          : 0;
+
+        // Calculate total price (base price * quantity + extra taxes * quantity)
+        // const totalPrice = basePrice * quantity + extraTaxTotal * quantity;
 
         return {
           ...item,
           id: item.id,
           service_id: item.service_id,
-          quantity: parseInt(item.quantity || 1, 10),
-          total_price: parseFloat(item.total_price || 0),
+          quantity: quantity,
+          total_price: item.total_price,
+          extraTaxFields: item.extra_tax_fields
+            ? item.extra_tax_fields.reduce((acc, field) => {
+                acc[field.name] = field;
+                return acc;
+              }, {})
+            : item.extraTaxFields || {},
 
           // Add service details for easy access
           name: serviceData.name || "Unknown Service",
           title: serviceData.title || serviceData.name || "Unknown Service",
           description: serviceData.description || "",
-          base_price: parseFloat(serviceData.base_price || 0),
+          base_price: basePrice,
           icon: serviceData.icon || "/placeholder-image.jpg",
           category_id: serviceData.category_id || null,
 
@@ -86,7 +135,6 @@ export default function Context({ children }) {
           service: serviceData,
         };
       });
-
       setCartProducts(processedCartItems);
     } catch (error) {
       console.error("Error fetching cart data:", error);
@@ -100,16 +148,7 @@ export default function Context({ children }) {
   };
 
   // Add product to cart using API
-  const addProductToCart = async (id, qty = 1) => {
-    // Prepare the cart item data
-    const cartData = {
-      service_id: id,
-      quantity: qty,
-      total_price: serviceToAdd.base_price * qty,
-      fields: [], // Initialize with empty fields
-    };
-
-    // Add to cart via API
+  const addProductToCart = async (cartData) => {
     const response = await axiosInstance.post("/carts", cartData);
 
     if (response.data.success) {
@@ -124,42 +163,39 @@ export default function Context({ children }) {
     }
   };
 
-  // Update cart item quantity using API
-  const updateQuantity = async (id, qty) => {
-    const cartItem = cartProducts.find((item) => item.id == id);
+  const updateQuantity = async (id, condition, basePrice) => {
+    try {
+      const cartItem = cartProducts.find((item) => item.id == id);
 
-    if (cartItem) {
-      try {
-        const quantity = parseInt(qty, 10);
-
-        if (isNaN(quantity) || quantity < 1) {
-          toast.error("Invalid quantity", {
-            position: "top-right",
-            autoClose: 3000,
-          });
-          return;
-        }
-
-        // Update the cart item via API
-        const response = await axiosInstance.patch(`/carts/${id}`, {
-          quantity: quantity,
-        });
-
-        if (response.data.success || response.status === 200) {
-          // Refresh cart data from server
-          await fetchCartData();
-          openCartModal();
-        }
-      } catch (error) {
-        console.error("Error updating cart quantity:", error);
-        toast.error("Failed to update quantity", {
+      if (!cartItem) {
+        toast.error("Item not found in cart", {
           position: "top-right",
           autoClose: 3000,
         });
+        return Promise.reject(new Error("Item not found in cart"));
       }
-    } else {
-      // Item not in cart, add it
-      addProductToCart(id, qty);
+
+      // Make sure we have a valid base price
+      if (!basePrice) {
+        basePrice = cartItem.base_price;
+      }
+
+      // Update the cart item via API
+      const response = await axiosInstance.patch(`cart/${id}/update-quantity`, {
+        condition: condition,
+        base_price: basePrice,
+      });
+
+      // Return the response so we can await it
+      return response;
+    } catch (error) {
+      console.error("Error updating cart quantity:", error);
+      toast.error("Failed to update quantity", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      // Re-throw the error so we can catch it in the calling function
+      return Promise.reject(error);
     }
   };
 
@@ -200,6 +236,7 @@ export default function Context({ children }) {
     isAddedToCartProducts,
     updateQuantity,
     removeItemFromCart,
+    subtotal,
     fetchCartData,
   };
 

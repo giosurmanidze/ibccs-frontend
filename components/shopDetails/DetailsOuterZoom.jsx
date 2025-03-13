@@ -14,6 +14,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function DetailsOuterZoom({ product }) {
   const [quantity, setQuantity] = useState(1);
+  const [resetQuantityTrigger, setResetQuantityTrigger] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productData, setProductData] = useState(null);
   const [isInitialLoad, setIsInitialLoad] = useState(null);
@@ -32,19 +33,15 @@ export default function DetailsOuterZoom({ product }) {
     try {
       let selectedOption = null;
 
-      // For both radio and dropdown options, try to parse the value as JSON
       try {
         selectedOption = JSON.parse(e.target.value);
       } catch (error) {
         console.error("Error parsing option value:", error);
-        // If parsing fails, just use the value as is
         handleChange(e);
         return;
       }
 
-      // Check if this option blocks continuation
       if (selectedOption.blocks_continuation) {
-        // Set the error state for this field
         setBlockingErrors((prev) => ({
           ...prev,
           [fieldName]: {
@@ -61,14 +58,12 @@ export default function DetailsOuterZoom({ product }) {
           handleSelectChange(e);
         }
       } else {
-        // Clear any blocking error for this field
         setBlockingErrors((prev) => {
           const newErrors = { ...prev };
           delete newErrors[fieldName];
           return newErrors;
         });
 
-        // Continue with normal handling
         if (fieldType === "dropdown") {
           handleDropdownWithConditional(e, fieldName);
         } else {
@@ -77,7 +72,6 @@ export default function DetailsOuterZoom({ product }) {
       }
     } catch (error) {
       console.error("Error in handleOptionWithValidation:", error);
-      // If there's an error, just use the default handler
       if (fieldType === "dropdown") {
         handleDropdownWithConditional(e, fieldName);
       } else {
@@ -92,9 +86,7 @@ export default function DetailsOuterZoom({ product }) {
 
       handleSelectChange(e);
 
-      // Check if this option has conditional options that should be shown
       if (selectedValue && selectedValue.has_conditional_options) {
-        // Get the conditional options definitions
         const conditionalOpts = selectedValue.conditional_options || [];
 
         setConditionalOptions((prev) => ({
@@ -105,7 +97,6 @@ export default function DetailsOuterZoom({ product }) {
           },
         }));
 
-        // If there are saved conditional values, restore them
         const savedData =
           typeof window !== "undefined"
             ? JSON.parse(localStorage.getItem("order_details") || "[]")
@@ -120,7 +111,6 @@ export default function DetailsOuterZoom({ product }) {
         );
 
         if (fieldData?.conditional_values) {
-          // Set the form values for each conditional field
           conditionalOpts.forEach((condOption, index) => {
             const value = fieldData.conditional_values[condOption.text];
             if (value) {
@@ -345,7 +335,6 @@ export default function DetailsOuterZoom({ product }) {
   } = useForm({
     resolver: yupResolver(schema),
   });
-
   const onSubmit = async (data) => {
     try {
       // Handle validation errors
@@ -363,73 +352,49 @@ export default function DetailsOuterZoom({ product }) {
         return;
       }
 
-      // Handle temp cart changes
-      if (tempCartChanges) {
-        setCartProducts((prevProducts) =>
-          prevProducts.map((product) => {
-            if (tempCartChanges[product.id]) {
-              return {
-                ...product,
-                extraTaxFields: tempCartChanges[product.id],
-              };
-            }
-            return product;
-          })
-        );
-      }
-      setTempCartChanges(null);
-      setIsModalOpen(false);
-
       const serviceId = productData?.id;
-
-      // Handle file conversions
-      const fileToBase64 = (file) => {
-        if (!file || !(file instanceof Blob)) {
-          return Promise.resolve(null);
-        }
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = () => resolve(null);
-        });
-      };
+      setTempCartChanges(null);
 
       // Process all fields
       const updatedFields = await Promise.all(
         parsedFields.map(async (field) => {
           let value = data[field.name];
+          let extraTaxInfo = null;
 
-          if (field.type === "file") {
-            const currentFile = files[field.name];
+          // For dropdown and radio fields, store both the selected value and all options
+          if ((field.type === "dropdown" || field.type === "radio") && value) {
+            try {
+              const selectedOption = JSON.parse(value);
 
-            if (currentFile instanceof Blob) {
-              try {
-                const dataUrl = await fileToBase64(currentFile);
-                value = {
-                  data: dataUrl,
-                  fileName: currentFile.name,
-                  wordCount: wordCounts[field.name] || 0,
+              // Check if the selected option has extra tax
+              if (selectedOption.extra_tax) {
+                extraTaxInfo = {
+                  name: field.name,
+                  value: selectedOption.text,
+                  extra_tax: selectedOption.extra_tax,
                 };
-              } catch (error) {
-                console.error(`Error processing file ${field.name}:`, error);
-                value = null;
               }
-            } else if (currentFile && currentFile.value) {
-              value = {
-                data: currentFile.value,
-                fileName: currentFile.name,
-                wordCount: wordCounts[field.name] || 0,
-              };
-            } else {
-              value = null;
+
+              // Store the complete options array/object with the field
+              if (field.options) {
+                return {
+                  name: field.name,
+                  type: field.type,
+                  value: value,
+                  options: field.options, // Store all options
+                  ...(extraTaxInfo && { extra_tax: extraTaxInfo }),
+                  ...(field.title && { title: field.title }),
+                };
+              }
+            } catch (error) {
+              console.error("Error parsing option:", error);
             }
           }
 
-          // Handle conditional values
-          let conditionalValues = null;
-          if (conditionalOptions[field.name]) {
-            conditionalValues = {};
+          // For conditional dropdowns, store conditional values
+          if (field.type === "dropdown" && conditionalOptions[field.name]) {
+            const conditionalValues = {};
+
             conditionalOptions[field.name].options.forEach(
               (condOption, index) => {
                 const condValue = data[`${field.name}_conditional_${index}`];
@@ -438,77 +403,89 @@ export default function DetailsOuterZoom({ product }) {
                 }
               }
             );
-          }
 
-          // Handle timeslot
-          if (field.type === "timeslot") {
-            const selectedTimeSlot = selectedTimeSlots[field.name];
-            if (selectedTimeSlot) {
+            if (Object.keys(conditionalValues).length > 0) {
               return {
                 name: field.name,
                 type: field.type,
-                value: selectedTimeSlot.display,
-                ...(field.time_slots && { time_slots: field.time_slots }),
-                ...(conditionalValues && {
-                  conditional_values: conditionalValues,
-                }),
+                value: value,
+                options: field.options, // Store all options
+                conditional_values: conditionalValues,
+                ...(extraTaxInfo && { extra_tax: extraTaxInfo }),
+                ...(field.title && { title: field.title }),
               };
             }
           }
 
+          // For timeslot fields, store the time_slots configuration
+          if (field.type === "timeslot" && field.time_slots) {
+            return {
+              name: field.name,
+              type: field.type,
+              value: value || "",
+              time_slots: field.time_slots,
+              ...(field.title && { title: field.title }),
+            };
+          }
+
+          // For file fields, store any special attributes like calculation_fee
+          if (field.type === "file") {
+            const fileData = files[field.name];
+            if (fileData) {
+              return {
+                name: field.name,
+                type: field.type,
+                value: {
+                  fileName: fileData.name,
+                  data:
+                    fileData instanceof Blob
+                      ? await fileToBase64(fileData)
+                      : fileData.value,
+                  wordCount: wordCounts[field.name] || 0,
+                },
+                ...(field.calculation_fee && {
+                  calculation_fee: field.calculation_fee,
+                }),
+                ...(field.title && { title: field.title }),
+              };
+            }
+          }
+
+          // Default handling for other field types
           return {
             name: field.name,
             type: field.type,
-            value:
-              field.type === "file"
-                ? value
-                : Array.isArray(value)
-                ? value
-                : value || "",
+            value: value || "",
             ...(field.options && { options: field.options }),
-            ...(field.time_slots && { time_slots: field.time_slots }),
-            ...(conditionalValues && { conditional_values: conditionalValues }),
+            ...(extraTaxInfo && { extra_tax: extraTaxInfo }),
+            ...(field.title && { title: field.title }),
           };
         })
       );
 
-      // Filter out empty fields
       const filteredFields = updatedFields.filter(
         (field) =>
-          (field.type === "file" && field.value) ||
           (typeof field.value === "string" && field.value.trim() !== "") ||
-          (Array.isArray(field.value) && field.value.length > 0)
+          (Array.isArray(field.value) && field.value.length > 0) ||
+          (field.type === "file" && field.value)
       );
 
-      // Calculate total price (assuming you have this value somewhere)
-      // const totalPrice = calculateTotalPrice(); // Replace with your actual price calculation logic
-
-      // Prepare data for API request
       const cartData = {
         service_id: serviceId,
         fields: filteredFields,
-        total_price: totalPrice || 0,
+        total_price: getProductTotal(product),
         quantity: quantity,
+        extra_tax_fields: filteredFields
+          .filter((field) => field.extra_tax)
+          .map((field) => field.extra_tax),
       };
 
-      const response = await axiosInstance.post("/carts", cartData);
+      addProductToCart(cartData);
+      setTempCartChanges(null);
+      fetchCartData();
 
-      console.log(response.data);
-
-      if (response.data.success) {
-        toast.success("Item added to cart successfully", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-
-        addProductToCart(quantity);
-        fetchCartData();
-
-        reset();
-        setQuantity(1);
-      } else {
-        throw new Error(response.data.message || "Failed to add item to cart");
-      }
+      reset();
+      setResetQuantityTrigger((prev) => prev + 1);
     } catch (error) {
       console.error("Error adding item to cart:", error);
       toast.error(error.message || "Failed to add item to cart", {
@@ -516,6 +493,16 @@ export default function DetailsOuterZoom({ product }) {
         autoClose: 5000,
       });
     }
+  };
+
+  // Helper function to convert File to base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   const savedData =
@@ -736,19 +723,26 @@ export default function DetailsOuterZoom({ product }) {
   };
 
   const getProductTotal = (product) => {
-    const extraTaxFields =
-      tempCartChanges?.[product.id] || product.extraTaxFields;
+    // Ensure quantity is always at least 1
+    const qty = Math.max(1, quantity);
 
-    return (
-      product.base_price * quantity +
-      (extraTaxFields
-        ? Object.values(extraTaxFields).reduce(
-            (sum, field) => sum + (Number(field.extra_tax) || 0),
-            0
-          )
-        : 0)
+    // Calculate base price
+    const basePrice = product?.base_price * qty;
+
+    // Get extra tax fields, prioritizing temporary changes
+    const extraTaxFields =
+      tempCartChanges?.[product.id] || product?.extraTaxFields || {};
+
+    const extraTaxTotal = Object.values(extraTaxFields).reduce(
+      (sum, field) => sum + (Number(field.extra_tax) || 0),
+      0
     );
+
+    const totalPrice = basePrice + extraTaxTotal * qty;
+
+    return Number(totalPrice.toFixed(2));
   };
+
   function ensureDateFormat(dateStr) {
     if (!dateStr) return null;
 
@@ -793,20 +787,16 @@ export default function DetailsOuterZoom({ product }) {
   function ensureTimeFormat(timeStr) {
     if (!timeStr) return "00:00";
 
-    // If already in HH:MM format
     if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
-      // Ensure hours have leading zero
       const [hours, minutes] = timeStr.split(":");
       return `${hours.padStart(2, "0")}:${minutes}`;
     }
 
-    // Handle 12-hour format with AM/PM
     const twelveHourFormat = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(timeStr);
     if (twelveHourFormat) {
       let [_, hours, minutes, period] = twelveHourFormat;
       hours = parseInt(hours);
 
-      // Convert to 24-hour
       if (period.toUpperCase() === "PM" && hours < 12) {
         hours += 12;
       } else if (period.toUpperCase() === "AM" && hours === 12) {
@@ -816,9 +806,7 @@ export default function DetailsOuterZoom({ product }) {
       return `${hours.toString().padStart(2, "0")}:${minutes}`;
     }
 
-    // Try to use Date object to parse
     try {
-      // Create a date with the time string
       const today = new Date();
       const dateWithTime = new Date(
         `${formatDateToYYYYMMDD(today)} ${timeStr}`
@@ -839,222 +827,6 @@ export default function DetailsOuterZoom({ product }) {
 
     return timeStr;
   }
-  // const updatelocalStorage = (serviceId, fieldName, fieldValue) => {
-  //   const existingOrderDetails =
-  //     typeof window !== "undefined"
-  //       ? JSON.parse(localStorage.getItem("order_details") || "[]")
-  //       : [];
-  //   const calculateTotalPrice = (fields) => {
-  //     // Find the corresponding cart product
-  //     const product = cartProducts.find((p) => p.id === serviceId);
-
-  //     // Start with base price
-  //     let basePrice = product ? product.base_price : 0;
-
-  //     // Apply quantity
-  //     basePrice = basePrice * quantity;
-
-  //     // Get extra tax fields
-  //     const extraTaxFields =
-  //       product?.extraTaxFields || tempCartChanges?.[serviceId] || {};
-
-  //     // Add extra tax values
-  //     const extraTaxTotal = Object.values(extraTaxFields).reduce(
-  //       (sum, field) => sum + (Number(field.extra_tax) || 0),
-  //       0
-  //     );
-
-  //     // Parse additional fields to check word count calculation
-  //     let additionalFields = [];
-  //     try {
-  //       additionalFields = product
-  //         ? JSON.parse(product.additional_fields || "[]")
-  //         : [];
-  //     } catch (error) {
-  //       console.error("Error parsing additional fields:", error);
-  //     }
-
-  //     // Check if word count calculation is enabled
-  //     const isWordCountCalculationEnabled = additionalFields.some(
-  //       (field) =>
-  //         field.name === "Calculation of the number of words" &&
-  //         field.calculation_fee === true
-  //     );
-
-  //     // Calculate additional word count price
-  //     const wordCountPrice = isWordCountCalculationEnabled
-  //       ? fields
-  //           .filter((field) => field.type === "file" && field.wordCount)
-  //           .reduce((total, field) => {
-  //             // Precise calculation of word count price
-  //             return total + Number((field.wordCount * 0.1).toFixed(2));
-  //           }, 0)
-  //       : 0;
-
-  //     // Calculate total price (base price + extra tax + word count price)
-  //     const totalPrice = Number(
-  //       (basePrice + extraTaxTotal + wordCountPrice).toFixed(2)
-  //     );
-
-  //     // Update cart products with word count fee if applicable
-  //     if (isWordCountCalculationEnabled && wordCountPrice > 0) {
-  //       setCartProducts((prevProducts) =>
-  //         prevProducts.map((p) => {
-  //           if (p.id === serviceId) {
-  //             return {
-  //               ...p,
-  //               extraTaxFields: {
-  //                 ...p.extraTaxFields,
-  //                 word_count_fee: {
-  //                   name: "Word Count Fee",
-  //                   extra_tax: wordCountPrice.toFixed(2),
-  //                   displayName: "Word Count Pricing",
-  //                 },
-  //               },
-  //             };
-  //           }
-  //           return p;
-  //         })
-  //       );
-  //     }
-
-  //     console.log("Calculated total price:", totalPrice);
-  //     return totalPrice;
-  //   };
-
-  //   if (fieldName) {
-  //     // Generate a unique ID
-  //     const uniqueId = `${serviceId}_${Date.now()}`;
-
-  //     // This handles individual field updates
-  //     const orderIndex = existingOrderDetails.findIndex(
-  //       (order) => order.service_id === serviceId
-  //     );
-
-  //     if (orderIndex !== -1) {
-  //       // If the entry doesn't already have a unique_id, add one
-  //       if (!existingOrderDetails[orderIndex].unique_id) {
-  //         existingOrderDetails[orderIndex].unique_id = uniqueId;
-  //       }
-
-  //       const fieldIndex = existingOrderDetails[orderIndex].fields.findIndex(
-  //         (field) => field.name === fieldName
-  //       );
-
-  //       if (fieldIndex !== -1) {
-  //         existingOrderDetails[orderIndex].fields[fieldIndex].value =
-  //           fieldValue;
-  //         if (typeof fieldValue === "object" && fieldValue.fileName) {
-  //           existingOrderDetails[orderIndex].fields[fieldIndex].fileName =
-  //             fieldValue.fileName;
-  //           existingOrderDetails[orderIndex].fields[fieldIndex].value =
-  //             fieldValue.data;
-
-  //           // Add word count for file fields
-  //           if (fieldValue.wordCount !== undefined) {
-  //             existingOrderDetails[orderIndex].fields[fieldIndex].wordCount =
-  //               fieldValue.wordCount;
-  //           }
-  //         }
-
-  //         // Explicitly recalculate and update total price
-  //         existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
-  //           existingOrderDetails[orderIndex].fields
-  //         );
-  //       } else {
-  //         existingOrderDetails[orderIndex].fields.push({
-  //           name: fieldName,
-  //           type: "file",
-  //           value:
-  //             typeof fieldValue === "object" ? fieldValue.data : fieldValue,
-  //           ...(typeof fieldValue === "object" && {
-  //             fileName: fieldValue.fileName,
-  //             wordCount: fieldValue.wordCount,
-  //           }),
-  //         });
-
-  //         // Recalculate total price
-  //         existingOrderDetails[orderIndex].total_price = calculateTotalPrice(
-  //           existingOrderDetails[orderIndex].fields
-  //         );
-  //       }
-  //     } else {
-  //       // Always add a new entry when service_id doesn't exist
-  //       existingOrderDetails.push({
-  //         service_id: serviceId,
-  //         unique_id: uniqueId,
-  //         fields: [
-  //           {
-  //             name: fieldName,
-  //             type: "file",
-  //             value:
-  //               typeof fieldValue === "object" ? fieldValue.data : fieldValue,
-  //             ...(typeof fieldValue === "object" && {
-  //               fileName: fieldValue.fileName,
-  //               wordCount: fieldValue.wordCount,
-  //             }),
-  //           },
-  //         ],
-  //         total_price: calculateTotalPrice([
-  //           {
-  //             name: fieldName,
-  //             type: "file",
-  //             value: fieldValue,
-  //             ...(typeof fieldValue === "object" && {
-  //               wordCount: fieldValue.wordCount,
-  //             }),
-  //           },
-  //         ]),
-  //       });
-  //     }
-  //   } else {
-  //     const uniqueId = `${serviceId}_${Date.now()}`;
-
-  //     const calculatedTotalPrice = calculateTotalPrice(fieldValue);
-
-  //     existingOrderDetails.push({
-  //       service_id: serviceId,
-  //       unique_id: uniqueId,
-  //       fields: fieldValue.map((field) => {
-  //         if (field.type === "file" && typeof field.value === "object") {
-  //           return {
-  //             ...field,
-  //             fileName: field.value.fileName,
-  //             value: field.value.data,
-  //             wordCount: field.value.wordCount,
-  //           };
-  //         }
-  //         return field;
-  //       }),
-  //       total_price: calculatedTotalPrice,
-  //       added_at: new Date().toISOString(),
-  //     });
-  //   }
-
-  //   // Remove empty entries
-  //   const filteredOrderDetails = existingOrderDetails.filter(
-  //     (order) => order.fields && order.fields.length > 0
-  //   );
-
-  //   if (typeof window !== "undefined") {
-  //     try {
-  //       localStorage.setItem(
-  //         "order_details",
-  //         JSON.stringify(filteredOrderDetails)
-  //       );
-  //       console.log(
-  //         "Updated order_details in localStorage:",
-  //         filteredOrderDetails
-  //       );
-  //     } catch (error) {
-  //       console.error("Error saving order details to localStorage:", error);
-  //     }
-  //   }
-  // };
-  // const handleCloseModal = () => {
-  //   setIsModalOpen(false);
-  //   setTempCartChanges(null);
-  // };
 
   const searchParams = useSearchParams();
   const serviceId = searchParams.get("serviceId");
@@ -1064,8 +836,6 @@ export default function DetailsOuterZoom({ product }) {
       try {
         const response = await axiosInstance.get(`services/${serviceId}`);
         setProductData(response.data);
-
-        console.log("response.data", response.data);
 
         const savedData =
           typeof window !== "undefined"
@@ -1282,6 +1052,8 @@ export default function DetailsOuterZoom({ product }) {
     return fieldName.split("_")[0];
   };
 
+  console.log("parsedFields", parsedFields);
+
   const renderFieldComment = (field) => {
     const commentText =
       field.comment || field.comment1 || field.comment2 || field.description;
@@ -1376,7 +1148,11 @@ export default function DetailsOuterZoom({ product }) {
                   )}
                   <div className="tf-product-info-quantity">
                     <div className="quantity-title fw-6">Quantity</div>
-                    <Quantity setQuantity={setQuantity} button2={button2} />
+                    <Quantity
+                      setQuantity={setQuantity}
+                      button2={button2}
+                      resetTrigger={resetQuantityTrigger}
+                    />
                   </div>
                   <form
                     tabIndex="-1"
@@ -1916,15 +1692,13 @@ export default function DetailsOuterZoom({ product }) {
                               className="tf-qty-price"
                               style={{ marginLeft: "10px" }}
                             >
-                              ({(product?.base_price * quantity).toFixed(2)}{" "}
-                              euro)
+                              {getProductTotal(product).toFixed(2)} euro)
                             </span>
                           </button>
                         </div>
                       </div>
                     </div>
                   </form>
-                  {console.log("errors", errors)}
                   {product?.files && product.files.length > 0 && (
                     <div className="files-section mt-4 mb-4">
                       <h5 className="text-lg font-semibold mb-2 text-gray-800">

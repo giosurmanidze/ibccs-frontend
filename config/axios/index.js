@@ -2,7 +2,7 @@ import axios from "axios";
 
 const createAxiosInstance = () => {
   const baseConfig = {
-    baseURL: "http://api.ibccsonline.ge/api",
+    baseURL: "http://localhost:8000/api",
 
     // http://localhost:8000/api/
     // http://api.ibccsonline.ge/api

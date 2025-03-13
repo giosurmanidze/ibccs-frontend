@@ -1,7 +1,6 @@
 import { Trash2, Loader2, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 const CartTable = ({
   cartItems,
@@ -12,34 +11,27 @@ const CartTable = ({
   tempCartChanges,
   savedData,
   getCleanFieldName,
-  getProductTotal,
+  fetchCartData2,
+  updateQuantity,
+  fetchCartData,
 }) => {
-  const [expandedItem, setExpandedItem] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Set initial state
-      setIsMobile(window.innerWidth < 768);
-
-      // Add resize event listener
-      const handleResize = () => {
-        setIsMobile(window.innerWidth < 768);
-      };
-
-      window.addEventListener("resize", handleResize);
-
-      // Cleanup
-      return () => window.removeEventListener("resize", handleResize);
+  const handleQuantityChange = async (id, condition, basePrice) => {
+    if (!basePrice) {
+      const cartItem = cartItems.find((item) => item.id == id);
+      if (cartItem) {
+        basePrice = cartItem.base_price;
+      }
     }
-  }, []);
 
-  const toggleExpandItem = (id) => {
-    setExpandedItem(expandedItem === id ? null : id);
+    try {
+      await updateQuantity(id, condition, basePrice);
+
+      await fetchCartData();
+      await fetchCartData2();
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
   };
-
-  console.log(cartItems);
-
   if (!cartItems || cartItems.length === 0) {
     return (
       <div className="w-full p-8 text-center">
@@ -122,7 +114,11 @@ const CartTable = ({
                         <span
                           className="btn-quantity minus-btn w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm cursor-pointer hover:bg-gray-50"
                           onClick={() =>
-                            setQuantity(elm.id, parseInt(elm.quantity - 1))
+                            handleQuantityChange(
+                              elm.id,
+                              "decrement",
+                              elm.base_price
+                            )
                           }
                           aria-label="Decrease quantity"
                         >
@@ -139,17 +135,17 @@ const CartTable = ({
                           type="text"
                           name="number"
                           value={elm.quantity}
-                          min={1}
-                          className="w-10 text-center border-0 bg-transparent"
-                          onChange={(e) =>
-                            setQuantity(elm.id, parseInt(e.target.value / 1))
-                          }
+                          className="w-10 text-center border-0 bg-transparent pointer-events-none"
                           aria-label="Quantity"
                         />
                         <span
                           className="btn-quantity plus-btn w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm cursor-pointer hover:bg-gray-50"
                           onClick={() =>
-                            setQuantity(elm.id, parseInt(elm.quantity + 1))
+                            handleQuantityChange(
+                              elm.id,
+                              "increment",
+                              elm.base_price
+                            )
                           }
                           aria-label="Increase quantity"
                         >
@@ -240,31 +236,7 @@ const CartTable = ({
                     <div className="font-bold flex justify-between items-center border-t border-gray-300 pt-2 mt-auto text-sm w-full">
                       <span className="whitespace-nowrap">Total:</span>
                       <span className="text-blue-700 whitespace-nowrap overflow-hidden text-ellipsis">
-                        {(() => {
-                          // First try to use the total_price directly if available
-                          if (elm.total_price && elm.total_price > 0) {
-                            return Number(elm.total_price).toFixed(2);
-                          }
-
-                          // Calculate based on base price and quantity
-                          const itemTotal = basePrice * elm.quantity;
-
-                          // Add any extra taxes
-                          const extraTaxes =
-                            (tempCartChanges && tempCartChanges[elm.id]) ||
-                            elm.extraTaxFields
-                              ? Object.values(
-                                  tempCartChanges?.[elm.id] ||
-                                    elm.extraTaxFields
-                                ).reduce(
-                                  (sum, field) =>
-                                    sum + Number(field.extra_tax || 0),
-                                  0
-                                )
-                              : 0;
-
-                          return (itemTotal + extraTaxes).toFixed(2);
-                        })()}{" "}
+                        {elm.total_price}
                         euro
                       </span>
                     </div>
@@ -354,10 +326,11 @@ const CartTable = ({
                     <span
                       className="btn-quantity minus-btn w-8 h-8 flex items-center justify-center bg-gray-100 rounded-md cursor-pointer"
                       onClick={() =>
-                        setQuantity(elm.id, parseInt(elm.quantity) - 1)
+                        handleQuantityChange(elm.id, elm.quantity - 1)
                       }
                       disabled={parseInt(elm.quantity) <= 1}
                     >
+                      {console.log("elm", elm)}
                       <svg
                         width={9}
                         height={1}

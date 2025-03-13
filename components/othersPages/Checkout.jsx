@@ -11,7 +11,7 @@ import { toast, ToastContainer } from "react-toastify";
 import * as yup from "yup";
 
 export default function Checkout() {
-  const { cartProducts } = useContextElement();
+  const { cartProducts, subtotal } = useContextElement();
 
   const validationSchema = useMemo(
     () =>
@@ -48,25 +48,41 @@ export default function Checkout() {
 
   const { user } = useAuth();
 
+  const [order_details, setOrder_details] = useState([]);
+
+  useEffect(() => {
+    const fetchCartData = async () => {
+      try {
+        const response = await axiosInstance.get("/carts");
+        setOrder_details(response.data || []);
+      } catch (error) {
+        console.error("Error fetching cart data:", error);
+        toast.error("Failed to load cart items", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    };
+    fetchCartData();
+  }, []);
+
   const onSubmit = async (data) => {
     if (!user && data["store_user"]) {
       localStorage.setItem("store_user_data", JSON.stringify(data));
     }
-
-    const order_details = JSON.parse(localStorage.getItem("order_details"));
-
+  
     const getIPDetails = async () => {
       const apis = [
         "https://ipapi.co/json/",
         "https://ipinfo.io/json",
         "https://json.geoiplookup.io/",
       ];
-
+  
       for (const api of apis) {
         try {
           const response = await fetch(api);
           const data = await response.json();
-
+  
           return {
             ip: data.ip || data.query || data.clientIP,
             countryCode: data.country_code || data.country || data.countryCode,
@@ -76,30 +92,46 @@ export default function Checkout() {
           continue;
         }
       }
-
+  
       return {
         ip: "unknown",
         countryCode: "",
       };
     };
-
+  
     const cleanFieldNames = (fields) => {
-      return fields.map((field) => ({
+      // Parse the fields if it's a string
+      const parsedFields =
+        typeof fields === "string" ? JSON.parse(fields) : fields;
+  
+      return parsedFields.map((field) => ({
         ...field,
         name: field.name.replace(/_\d+$/, ""),
       }));
     };
+  
     let { ip: clientIP, countryCode } = await getIPDetails();
-
-    const order_items = order_details?.map(({ type, ...item }) => ({
-      service_id: item.service_id,
-      total_price: item.total_price,
-      service_details: {
-        ...item,
-        fields: cleanFieldNames(item.fields),
-      },
-    }));
-
+  
+    console.log("order_items", order_details);
+  
+    const order_items = order_details?.map((cartItem) => {
+      const parsedFields =
+        typeof cartItem.fields === "string"
+          ? JSON.parse(cartItem.fields)
+          : cartItem.fields;
+  
+      return {
+        service_id: cartItem.service_id,
+        total_price: cartItem.total_price || cartItem.service.base_price,
+        service_details: {
+          ...cartItem,
+          total_price: cartItem.total_price || cartItem.service.base_price,
+          quantity: cartItem.quantity || 1, // Ensure quantity is included
+          fields: parsedFields,
+        },
+      };
+    });
+  
     const validatedData = {
       firstname: data["firstname"],
       lastname: data["lastname"],
@@ -112,10 +144,14 @@ export default function Checkout() {
       order_items: order_items,
       ip_address: clientIP,
       country_code: countryCode,
+      subtotal: subtotal,
     };
-
+  
+    console.log("validatedData", validatedData);
+  
     const formData = new FormData();
-
+  
+    // Append personal details
     formData.append("firstname", validatedData.firstname);
     formData.append("lastname", validatedData.lastname);
     formData.append("phone_number", validatedData.phone_number);
@@ -126,19 +162,32 @@ export default function Checkout() {
     formData.append("delivery_option", validatedData.delivery_option);
     formData.append("ip_address", validatedData.ip_address);
     formData.append("country_code", validatedData.country_code);
-
+    formData.append("subtotal", validatedData.subtotal);
+  
+    // Append order items
     validatedData.order_items?.forEach((item, index) => {
-      console.log(item);
+      // Append basic item details
       formData.append(`order_items[${index}][service_id]`, item.service_id);
-
       formData.append(`order_items[${index}][total_price]`, item.total_price);
-
+      
+      // Add quantity to the root level
+      formData.append(`order_items[${index}][quantity]`, item.service_details.quantity || 1);
+  
+      // Append service details
       formData.append(
         `order_items[${index}][service_details][total_price]`,
         item.service_details.total_price
       );
-
+      
+      // Add quantity to service_details
+      formData.append(
+        `order_items[${index}][service_details][quantity]`,
+        item.service_details.quantity || 1
+      );
+  
+      // Append fields
       item.service_details.fields.forEach((field, fieldIndex) => {
+        // Append field details
         formData.append(
           `order_items[${index}][service_details][fields][${fieldIndex}][name]`,
           field.name
@@ -147,19 +196,17 @@ export default function Checkout() {
           `order_items[${index}][service_details][fields][${fieldIndex}][type]`,
           field.type
         );
-
-        if (field.type === "file" && field.value) {
-          formData.append(
-            `order_items[${index}][service_details][fields][${fieldIndex}][value]`,
-            field.value
-          );
-        } else {
-          formData.append(
-            `order_items[${index}][service_details][fields][${fieldIndex}][value]`,
-            field.value
-          );
-        }
-
+  
+        // Handle field value
+        const fieldValue = field.value;
+        formData.append(
+          `order_items[${index}][service_details][fields][${fieldIndex}][value]`,
+          typeof fieldValue === "object"
+            ? JSON.stringify(fieldValue)
+            : fieldValue
+        );
+  
+        // Handle options for dropdown
         if (field.type === "dropdown" && field.options) {
           formData.append(
             `order_items[${index}][service_details][fields][${fieldIndex}][options]`,
@@ -168,31 +215,33 @@ export default function Checkout() {
         }
       });
     });
-
+  
     try {
       const response = await axiosInstance.post("/orders", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
+  
+      console.log(response);
+  
       toast.success("Order is completed.", {
         position: "top-right",
         autoClose: 2000,
       });
-      // localStorage.removeItem("order_details");
-      // setCartProducts([]);
-
-      // router.push("/order-confirmation");
+      // Additional success handling can be added here
     } catch (error) {
-      console.error("Order submission error:", error);
-      toast.error(
-        "There was an error processing your order. Please try again.",
-        {
-          position: "top-right",
-          autoClose: 3000,
-        }
-      );
+      console.error("Order submission error:", error.response || error);
+  
+      // More detailed error handling
+      const errorMessage =
+        error.response?.data?.message ||
+        "There was an error processing your order. Please try again.";
+  
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
   useEffect(() => {
@@ -204,23 +253,23 @@ export default function Checkout() {
     }
   }, [user, setValue]);
 
-  const [totalPrice2, setTotalPrice2] = useState(0);
-  useEffect(() => {
-    const subtotal = cartProducts.reduce((accumulator, elm) => {
-      const serviceTotal =
-        elm.base_price * elm.quantity +
-        (elm.extraTaxFields
-          ? Object.values(elm.extraTaxFields).reduce(
-              (sum, field) => sum + (Number(field.extra_tax) || 0),
-              0
-            )
-          : 0);
+  // const [totalPrice2, setTotalPrice2] = useState(0);
+  // useEffect(() => {
+  //   const subtotal = cartProducts.reduce((accumulator, elm) => {
+  //     const serviceTotal =
+  //       elm.base_price * elm.quantity +
+  //       (elm.extraTaxFields
+  //         ? Object.values(elm.extraTaxFields).reduce(
+  //             (sum, field) => sum + (Number(field.extra_tax) || 0),
+  //             0
+  //           )
+  //         : 0);
 
-      return accumulator + serviceTotal;
-    }, 0);
+  //     return accumulator + serviceTotal;
+  //   }, 0);
 
-    setTotalPrice2(subtotal);
-  }, [cartProducts]);
+  //   setTotalPrice2(subtotal);
+  // }, [cartProducts]);
 
   return (
     <section className="flat-spacing-11">
@@ -435,19 +484,7 @@ export default function Checkout() {
                         <div className="info">
                           <p className="name">{elm.name}</p>
                         </div>
-                        <span className="price">
-                          {(
-                            elm.base_price * elm.quantity +
-                            (elm.extraTaxFields
-                              ? Object.values(elm.extraTaxFields).reduce(
-                                  (sum, field) =>
-                                    sum + (Number(field.extra_tax) || 0),
-                                  0
-                                )
-                              : 0)
-                          ).toFixed(2)}
-                          $
-                        </span>
+                        <span className="price">{elm.total_price}</span>
                       </div>
                     </li>
                   ))}
@@ -472,7 +509,7 @@ export default function Checkout() {
                 )}
                 <div className="d-flex justify-content-between line pb_20">
                   <h6 className="fw-5">Total</h6>
-                  <h6 className="total fw-5">{totalPrice2}$</h6>
+                  <h6 className="total fw-5"> €{subtotal.toFixed(2)}</h6>
                 </div>
                 <div className="wd-check-payment">
                   <div className="fieldset-radio mb_20">

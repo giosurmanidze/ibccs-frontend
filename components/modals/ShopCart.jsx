@@ -2,55 +2,16 @@
 import { useContextElement } from "@/context/Context";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 export default function ShopCart({ pageContent }) {
-  const {
-    cartProducts,
-    isLoadingCart,
-    updateQuantity,
-    removeItemFromCart,
-    fetchCartData,
-  } = useContextElement();
+  const { cartProducts, isLoadingCart, fetchCartData, subtotal } =
+    useContextElement();
 
-  const [totalPrice, setTotalPrice] = useState(0);
-
-  // Calculate total price whenever cart changes
-  useEffect(() => {
-    const subtotal = cartProducts.reduce((accumulator, elm) => {
-      const serviceTotal =
-        elm.base_price * elm.quantity +
-        (elm.extraTaxFields
-          ? Object.values(elm.extraTaxFields).reduce(
-              (sum, field) => sum + (Number(field.extra_tax) || 0),
-              0
-            )
-          : 0);
-
-      return accumulator + serviceTotal;
-    }, 0);
-
-    setTotalPrice(subtotal);
-  }, [cartProducts]);
-
-  // Fetch cart data on component mount
   useEffect(() => {
     fetchCartData();
   }, []);
-
-  // Handle quantity update with API
-  const handleQuantityChange = (id, quantity) => {
-    if (quantity >= 1) {
-      updateQuantity(id, quantity);
-    }
-  };
-
-  // Handle remove item with API
-  const handleRemoveItem = (id) => {
-    removeItemFromCart(id);
-  };
-
   return (
     <div className="modal fullRight fade modal-shopping-cart" id="shoppingCart">
       <div className="modal-dialog">
@@ -76,7 +37,6 @@ export default function ShopCart({ pageContent }) {
                       </div>
                     ) : cartProducts.length > 0 ? (
                       cartProducts.map((elm, i) => {
-                        // Get service data either from nested service object or direct properties
                         const serviceData = elm.service || elm;
                         const serviceId = elm.service_id || elm.id;
                         const categoryId = serviceData.category_id || null;
@@ -89,7 +49,10 @@ export default function ShopCart({ pageContent }) {
                         );
 
                         return (
-                          <div key={i} className="tf-mini-cart-item">
+                          <div
+                            key={i}
+                            className="tf-mini-cart-item flex items-center"
+                          >
                             <div className="tf-mini-cart-image">
                               <Link
                                 href={`/product-detail?serviceId=${serviceId}&categoryId=${categoryId}`}
@@ -110,62 +73,7 @@ export default function ShopCart({ pageContent }) {
                                 {serviceName}
                               </Link>
                               <div className="price fw-6">
-                                ${" "}
-                                {(
-                                  basePrice * elm.quantity +
-                                  (elm.extraTaxFields
-                                    ? Object.values(elm.extraTaxFields).reduce(
-                                        (sum, field) =>
-                                          sum + (Number(field.extra_tax) || 0),
-                                        0
-                                      )
-                                    : 0)
-                                ).toFixed(2)}
-                              </div>
-                              <div className="tf-mini-cart-btns">
-                                <div className="wg-quantity small">
-                                  <span
-                                    className="btn-quantity minus-btn"
-                                    onClick={() =>
-                                      handleQuantityChange(
-                                        elm.id,
-                                        elm.quantity - 1
-                                      )
-                                    }
-                                  >
-                                    -
-                                  </span>
-                                  <input
-                                    type="text"
-                                    name="number"
-                                    value={elm.quantity}
-                                    min={1}
-                                    onChange={(e) =>
-                                      handleQuantityChange(
-                                        elm.id,
-                                        parseInt(e.target.value) || 1
-                                      )
-                                    }
-                                  />
-                                  <span
-                                    className="btn-quantity plus-btn"
-                                    onClick={() =>
-                                      handleQuantityChange(
-                                        elm.id,
-                                        elm.quantity + 1
-                                      )
-                                    }
-                                  >
-                                    +
-                                  </span>
-                                </div>
-                                <div
-                                  className="tf-mini-cart-remove"
-                                  style={{ cursor: "pointer" }}
-                                  onClick={() => handleRemoveItem(elm.id)}
-                                >
-                                  Remove
-                                </div>
+                                ${elm.total_price.toFixed(2)}
                               </div>
                             </div>
                           </div>
@@ -203,7 +111,7 @@ export default function ShopCart({ pageContent }) {
                   <div className="tf-cart-totals-discounts">
                     <div className="tf-cart-total">Subtotal</div>
                     <div className="tf-totals-total-value fw-6">
-                      €{totalPrice.toFixed(2)}
+                      €{subtotal.toFixed(2)}
                     </div>
                   </div>
                   <div className="tf-mini-cart-line" />

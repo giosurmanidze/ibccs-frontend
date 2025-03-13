@@ -8,8 +8,6 @@ const CategoriesDropdown = ({ categories, backgroundColor, textColor }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  console.log("categories", categories);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {

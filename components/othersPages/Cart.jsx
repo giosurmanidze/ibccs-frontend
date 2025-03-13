@@ -1,7 +1,7 @@
 "use client";
 import { useContextElement } from "@/context/Context";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -28,6 +28,7 @@ export default function Cart() {
   const [isInitialLoad, setIsInitialLoad] = useState(null);
   const [tempCartChanges, setTempCartChanges] = useState(null);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [extraTax, setExtraTax] = useState("");
 
   const calculateTotalPrice = (items) => {
     const subtotal = items.reduce((total, item) => {
@@ -37,7 +38,11 @@ export default function Cart() {
     setTotalPrice(subtotal);
   };
 
-  const { removeItemFromCart } = useContextElement();
+  const {
+    removeItemFromCart,
+    updateQuantity,
+    fetchCartData: fetchCartData2,
+  } = useContextElement();
 
   const fetchCartData = async () => {
     setIsLoading(true);
@@ -306,7 +311,6 @@ export default function Cart() {
       }
     });
 
-    // Sort by date and time
     return availableSlots.sort((a, b) => a.timestamp - b.timestamp);
   };
   const handleTimeSlotSelection = (fieldName, selectedSlot) => {
@@ -325,12 +329,12 @@ export default function Cart() {
     try {
       let selectedOption = null;
 
-      // For both radio and dropdown options, try to parse the value as JSON
+      console.log("fieldName", e.target.value);
+
       try {
         selectedOption = JSON.parse(e.target.value);
       } catch (error) {
         console.error("Error parsing option value:", error);
-        // If parsing fails, just use the value as is
         handleChange(e);
         return;
       }
@@ -384,6 +388,8 @@ export default function Cart() {
       const selectedValue = JSON.parse(e.target.value);
 
       handleSelectChange(e);
+
+      setExtraTax(e.target.value);
 
       // Check if this option has conditional options that should be shown
       if (selectedValue && selectedValue.has_conditional_options) {
@@ -519,7 +525,6 @@ export default function Cart() {
     }
   };
 
-  // Instead of taking a serviceId
   const handleOpenModal = async (cartItem) => {
     setLoadingItemId(cartItem.id);
     setIsModalOpen(true);
@@ -543,6 +548,8 @@ export default function Cart() {
         cartId: cartItem.id,
       });
 
+      console.log("cartItem", cartItem);
+
       // Parse the fields JSON string from cart item
       let parsedFields = [];
       if (cartItem.fields) {
@@ -558,6 +565,9 @@ export default function Cart() {
       }
 
       if (parsedFields.length > 0) {
+        // No need to fetch service options since they should already be stored with each field
+        console.log("Parsed fields with options:", parsedFields);
+
         const defaultValues = {};
         const newFiles = {};
 
@@ -571,18 +581,15 @@ export default function Cart() {
             };
 
             // Restore word count if available
-            if (field.wordCount !== undefined) {
+            if (field.value.wordCount !== undefined) {
               setWordCounts((prev) => ({
                 ...prev,
-                [field.name]: field.wordCount,
+                [field.name]: field.value.wordCount,
               }));
             }
-          }
-          // Handle dropdown fields that have conditional options
-          else if (field.type === "dropdown" && field.value) {
+          } else if (field.type === "dropdown" && field.value) {
             defaultValues[field.name] = field.value;
 
-            // Try to parse value to check for conditional options
             try {
               const selectedValue = JSON.parse(field.value);
               if (selectedValue && selectedValue.has_conditional_options) {
@@ -598,13 +605,12 @@ export default function Cart() {
 
                 // Set values for conditional fields
                 if (field.conditional_values) {
-                  conditionalOpts.forEach((condOption, index) => {
-                    const value = field.conditional_values[condOption.text];
-                    if (value) {
+                  Object.entries(field.conditional_values).forEach(
+                    ([optionText, value], index) => {
                       defaultValues[`${field.name}_conditional_${index}`] =
                         value;
                     }
-                  });
+                  );
                 }
               }
             } catch (err) {
@@ -663,6 +669,7 @@ export default function Cart() {
       setLoadingItemId(null);
     }
   };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     reset();
@@ -733,21 +740,30 @@ export default function Cart() {
     });
   };
 
-  const parsedFields = productData?.additional_fields
-    ? makeFieldsUnique(
-        typeof productData.additional_fields === "string"
-          ? JSON.parse(productData.additional_fields)
-          : productData.additional_fields,
-        productData.id
-      )
-    : productData?.fields
-    ? makeFieldsUnique(
+  const parsedFields = useMemo(() => {
+    let fields = [];
+
+    if (productData?.fields) {
+      // If we have fields from a cart item, they should already have options
+      // No need to transform them as much
+      fields = makeFieldsUnique(
         typeof productData.fields === "string"
           ? JSON.parse(productData.fields)
           : productData.fields,
         productData.id
-      )
-    : [];
+      );
+    } else if (productData?.additional_fields) {
+      // If we have fields from the service definition
+      fields = makeFieldsUnique(
+        typeof productData.additional_fields === "string"
+          ? JSON.parse(productData.additional_fields)
+          : productData.additional_fields,
+        productData.id
+      );
+    }
+
+    return fields;
+  }, [productData]);
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -768,7 +784,126 @@ export default function Cart() {
   } = useForm({
     resolver: yupResolver(schema),
   });
+  // Function to calculate total price including extra taxes from form data
+  const calculateTotalWithExtraTax = (
+    formData,
+    basePrice,
+    quantity,
+    previousExtraTaxFields = []
+  ) => {
+    let totalExtraTax = 0;
+    let foundExtraTaxFields = [];
 
+    // Go through each field in the form data
+    Object.entries(formData).forEach(([fieldName, value]) => {
+      // Check if this might be a dropdown value with extra tax
+      if (typeof value === "string" && value.includes('"extra_tax"')) {
+        try {
+          // Try to parse the JSON string
+          const parsedValue = JSON.parse(value);
+
+          // If it has extra_tax, add it to our total
+          if (parsedValue && parsedValue.extra_tax) {
+            totalExtraTax += parseFloat(parsedValue.extra_tax);
+            foundExtraTaxFields.push({
+              name: fieldName,
+              value: parsedValue.text,
+              extra_tax: parsedValue.extra_tax,
+            });
+          }
+        } catch (error) {
+          // If parsing fails, just continue
+          console.error("Error parsing dropdown value:", error);
+        }
+      }
+    });
+
+    // Calculate base total (always includes the base price)
+    const baseTotal = parseFloat(basePrice) * quantity;
+
+    // Add extra tax only if there are any
+    const total = baseTotal + totalExtraTax * quantity;
+
+    return {
+      totalPrice: total.toFixed(2),
+      extraTaxTotal: totalExtraTax.toFixed(2),
+      extraTaxFields: foundExtraTaxFields,
+    };
+  };
+  const handleDropdownChange = (e, fieldName) => {
+    try {
+      const selectedValue = JSON.parse(e.target.value);
+      const serviceId = productData?.id;
+
+      // Update form value first
+      setValue(fieldName, e.target.value);
+
+      // Get current cart item
+      const currentItem = cartItems.find((item) => item.id === serviceId);
+
+      // Initialize or get existing extra tax fields
+      const currentExtraTaxFields =
+        tempCartChanges?.[serviceId] || currentItem?.extraTaxFields || {};
+
+      // Check if this field already had an extra tax
+      const hadExtraTax = currentExtraTaxFields[fieldName] !== undefined;
+      const oldExtraTaxAmount = hadExtraTax
+        ? parseFloat(currentExtraTaxFields[fieldName].extra_tax) || 0
+        : 0;
+
+      // Check if new selection has extra tax
+      const hasExtraTax =
+        selectedValue &&
+        typeof selectedValue === "object" &&
+        "extra_tax" in selectedValue;
+
+      // Update tempCartChanges based on whether new selection has extra tax
+      if (hasExtraTax) {
+        // Add or update extra tax for this field
+        setTempCartChanges((prev) => {
+          const updatedExtraTaxFields = {
+            ...(prev?.[serviceId] || {}),
+            [fieldName]: {
+              name: fieldName,
+              value: selectedValue.text,
+              extra_tax: selectedValue.extra_tax,
+              displayName: getCleanFieldName(fieldName),
+            },
+          };
+
+          return {
+            ...prev,
+            [serviceId]: updatedExtraTaxFields,
+          };
+        });
+
+        console.log(
+          `Added extra tax for ${fieldName}: ${selectedValue.extra_tax}`
+        );
+      } else if (hadExtraTax) {
+        // Remove extra tax for this field if it previously had one
+        setTempCartChanges((prev) => {
+          if (!prev?.[serviceId]) return prev;
+
+          const updatedFields = { ...prev[serviceId] };
+          delete updatedFields[fieldName];
+
+          return {
+            ...prev,
+            [serviceId]: updatedFields,
+          };
+        });
+
+        console.log(
+          `Removed extra tax for ${fieldName} (was: ${oldExtraTaxAmount})`
+        );
+      }
+    } catch (error) {
+      console.error("Error in handleDropdownChange:", error);
+      // Just update the form value if parsing fails
+      setValue(fieldName, e.target.value);
+    }
+  };
   const onSubmit = async (data) => {
     try {
       // Check for blocking errors
@@ -786,11 +921,15 @@ export default function Cart() {
         return;
       }
 
-      setTempCartChanges(null);
+      // Get the service ID and base info
       const serviceId = productData?.service_id || productData?.id;
+      const basePrice = parseFloat(productData.service.base_price) || 0;
+      const quantity = parseInt(productData.quantity || 1, 10);
+
+      console.log("productData", productData);
 
       // Process all form fields
-      const updatedFields = await Promise.all(
+      const formFields = await Promise.all(
         parsedFields.map(async (field) => {
           let value = data[field.name];
 
@@ -876,40 +1015,84 @@ export default function Cart() {
       );
 
       // Filter out empty fields
-      const filteredFields = updatedFields.filter(
+      const filteredFields = formFields.filter(
         (field) =>
           (field.type === "file" && field.value) ||
           (typeof field.value === "string" && field.value.trim() !== "") ||
           (Array.isArray(field.value) && field.value.length > 0)
       );
 
-      // Calculate total price
-      let totalPrice = parseFloat(productData.base_price) || 0;
-      const wordCountFee = Object.values(wordCounts).reduce(
-        (sum, count) => sum + Number((count * 0.1).toFixed(2)),
-        0
-      );
-      totalPrice += wordCountFee;
+      // Extract extra tax fields
+      const extraTaxFields = [];
 
-      // Add extra tax fields
-      if (tempCartChanges && tempCartChanges[serviceId]) {
-        const extraTaxes = Object.values(tempCartChanges[serviceId]).reduce(
-          (sum, field) => sum + Number(field.extra_tax || 0),
+      // Examine all form fields for extra tax
+      Object.entries(data).forEach(([fieldName, value]) => {
+        // Check if this is a dropdown with extra tax
+        if (typeof value === "string" && value.includes('"extra_tax"')) {
+          try {
+            const parsedValue = JSON.parse(value);
+            if (parsedValue && parsedValue.extra_tax) {
+              extraTaxFields.push({
+                name: fieldName,
+                value: parsedValue.text,
+                extra_tax: parsedValue.extra_tax,
+              });
+            }
+          } catch (error) {
+            console.error(
+              `Error parsing field ${fieldName} for extra tax:`,
+              error
+            );
+          }
+        }
+      });
+
+      // Calculate total price
+      // IMPORTANT: Always include the base price
+      let totalPrice = basePrice * quantity;
+
+      // Add extra taxes if any
+      if (extraTaxFields.length > 0) {
+        const extraTaxTotal = extraTaxFields.reduce(
+          (sum, field) => sum + parseFloat(field.extra_tax || 0),
           0
         );
-        totalPrice += extraTaxes;
+        totalPrice += extraTaxTotal * quantity;
+      }
+
+      // Add word count fee if applicable
+      let wordCountFee = 0;
+      if (Object.keys(wordCounts).length > 0) {
+        wordCountFee = Object.values(wordCounts).reduce(
+          (sum, count) => sum + Number((count * 0.1).toFixed(2)),
+          0
+        );
+
+        // Add to extra tax fields
+        if (wordCountFee > 0) {
+          extraTaxFields.push({
+            name: "word_count_fee",
+            value: "Word Count Fee",
+            extra_tax: wordCountFee.toString(),
+          });
+
+          // Add to total price
+          totalPrice += wordCountFee * quantity;
+        }
       }
 
       // Prepare data for API
       const cartData = {
         service_id: serviceId,
         fields: filteredFields,
+        extra_tax_fields: extraTaxFields,
         total_price: totalPrice,
-        quantity: parseInt(productData.quantity || 1, 10),
+        quantity: quantity,
       };
 
+      console.log("Submitting cart data:", cartData);
+
       try {
-        console.log("productData", productData);
         let response;
         if (productData.cartId) {
           // Update existing cart item
@@ -918,7 +1101,6 @@ export default function Cart() {
             cartData
           );
         } else {
-          // Create new cart item
           response = await axiosInstance.post("/carts", cartData);
         }
 
@@ -928,13 +1110,11 @@ export default function Cart() {
             autoClose: 3000,
           });
 
-          // Close modal BEFORE fetching new data
           setIsModalOpen(false);
 
-          // Refresh cart data
           await fetchCartData();
+          await fetchCartData2();
 
-          // Reset form
           reset();
         } else {
           throw new Error(response.data.message || "Failed to update cart");
@@ -985,157 +1165,6 @@ export default function Cart() {
     }
   };
 
-  useEffect(() => {
-    // Rest of your useEffect code for handling initial load
-    // Since we're fetching cart data from API, this will be simplified
-    if (productData?.id && isInitialLoad) {
-      const fetchCartDataForProduct = async () => {
-        try {
-          const response = await axiosInstance.get(`/carts/${productData.id}`);
-          const cartData = response.data.data;
-
-          console.log(cartData);
-
-          if (cartData && cartData.fields) {
-            const parsedFields = JSON.parse(cartData.fields);
-            const fileUpdates = {};
-            const formValues = {};
-            const wordCountUpdates = {};
-            const condOptionsUpdates = {};
-
-            parsedFields.forEach((field) => {
-              // Handle file fields
-              if (field.type === "file" && field.value) {
-                fileUpdates[field.name] = {
-                  name: field.fileName || field.value.split("/").pop(),
-                  value: field.value,
-                };
-                formValues[field.name] = field.value;
-
-                // Restore word count if available
-                if (field.wordCount !== undefined) {
-                  wordCountUpdates[field.name] = field.wordCount;
-                }
-              }
-
-              // Handle timeslot fields
-              if (field.type === "timeslot" && field.value) {
-                try {
-                  // Create a minimal slot object for the UI
-                  const datePart = field.value.split(" ")[0];
-                  setSelectedTimeSlots((prev) => ({
-                    ...prev,
-                    [field.name]: {
-                      display: field.value,
-                      timestamp: new Date(datePart).getTime(),
-                    },
-                  }));
-
-                  // Store value in form
-                  formValues[field.name] = field.value;
-                } catch (error) {
-                  console.error(
-                    `Error processing time slot for ${field.name}:`,
-                    error
-                  );
-                }
-              }
-
-              // Handle conditional values
-              if (field.conditional_values) {
-                try {
-                  // Find the parent option
-                  let parentOption = null;
-                  if (field.value && field.type === "dropdown") {
-                    try {
-                      parentOption = JSON.parse(field.value);
-                    } catch (err) {
-                      console.error("Error parsing parent option:", err);
-                    }
-                  }
-
-                  if (parentOption) {
-                    // Extract conditional options
-                    const conditionalOptionsFromValue =
-                      parentOption.conditional_options || [];
-
-                    // Update state
-                    condOptionsUpdates[field.name] = {
-                      parentOption: parentOption.text,
-                      options: conditionalOptionsFromValue,
-                    };
-
-                    // Set values for each conditional field
-                    conditionalOptionsFromValue.forEach(
-                      (condOptionDef, index) => {
-                        const optionText = condOptionDef.text;
-                        const value = field.conditional_values[optionText];
-
-                        if (value) {
-                          formValues[`${field.name}_conditional_${index}`] =
-                            value;
-                        }
-                      }
-                    );
-                  }
-                } catch (error) {
-                  console.error(
-                    `Error restoring conditional values for ${field.name}:`,
-                    error
-                  );
-                }
-              }
-
-              // Handle regular form fields
-              if (!formValues[field.name] && field.value) {
-                formValues[field.name] = field.value;
-              }
-            });
-
-            // Set form values
-            Object.entries(formValues).forEach(([key, value]) => {
-              setValue(key, value, {
-                shouldValidate: true,
-                shouldDirty: true,
-              });
-            });
-
-            // Set files
-            if (Object.keys(fileUpdates).length > 0) {
-              setFiles((prev) => ({
-                ...prev,
-                ...fileUpdates,
-              }));
-            }
-
-            // Set word counts
-            if (Object.keys(wordCountUpdates).length > 0) {
-              setWordCounts((prev) => ({
-                ...prev,
-                ...wordCountUpdates,
-              }));
-            }
-
-            // Set conditional options
-            if (Object.keys(condOptionsUpdates).length > 0) {
-              setConditionalOptions((prev) => ({
-                ...prev,
-                ...condOptionsUpdates,
-              }));
-            }
-          }
-
-          setIsInitialLoad(false);
-        } catch (error) {
-          console.error("Error fetching cart data for product:", error);
-          setIsInitialLoad(false);
-        }
-      };
-
-      fetchCartDataForProduct();
-    }
-  }, [productData, setValue, isInitialLoad]);
-
   const getProductTotal = (product) => {
     const extraTaxFields =
       tempCartChanges?.[product.id] || product.extraTaxFields;
@@ -1159,56 +1188,6 @@ export default function Cart() {
       setValue(name, value);
     }
   };
-  const handleCheckOrder = () => {
-    const existingOrderDetails =
-      typeof window !== "undefined"
-        ? JSON.parse(localStorage.getItem("order_details") || "[]")
-        : [];
-
-    // First check if there are any blocking errors in the saved orders
-    const hasBlockingSelections = existingOrderDetails.some((order) => {
-      return order.fields?.some((field) => {
-        if (field.type === "radio" || field.type === "dropdown") {
-          try {
-            const value = JSON.parse(field.value);
-            return value.blocks_continuation;
-          } catch (e) {
-            return false;
-          }
-        }
-        return false;
-      });
-    });
-
-    if (hasBlockingSelections) {
-      toast.error(
-        "There are ineligible selections in your order. Please review your service details.",
-        {
-          position: "top-right",
-          autoClose: 5000,
-        }
-      );
-      return;
-    }
-
-    // Continue with your existing logic
-    if (existingOrderDetails.length === cartItems.length) {
-      if (cartItems.length !== 0) {
-        router.push("/checkout");
-      } else {
-        toast.error("No services for checkout.", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      }
-    } else {
-      toast.error("Please fill service requirements.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-    }
-  };
-
   const { user } = useAuth();
 
   const countWords = (file, fieldName) => {
@@ -1487,6 +1466,9 @@ export default function Cart() {
                   savedData={fetchCartDataForService}
                   getCleanFieldName={getCleanFieldName}
                   getProductTotal={getProductTotal}
+                  updateQuantity={updateQuantity}
+                  fetchCartData={fetchCartData}
+                  fetchCartData2={fetchCartData2}
                 />
               )}
 
@@ -1530,6 +1512,7 @@ export default function Cart() {
                       <form onSubmit={handleSubmit(onSubmit)}>
                         {parsedFields?.map((field, index) => {
                           const displayName = getCleanFieldName(field.name);
+                          console.log("parsedFields", parsedFields);
                           return (
                             <div
                               key={`${field.name}-${index}`}
@@ -1731,7 +1714,6 @@ export default function Cart() {
                                   )}
                                 </div>
                               )}
-                              {/* Dropdown field */}
                               {field.type === "dropdown" && (
                                 <div className="select-input">
                                   <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -1756,26 +1738,34 @@ export default function Cart() {
                                     }
                                   >
                                     <option value="">Select an option</option>
-                                    {Object.entries(field.options)?.map(
-                                      ([key, option], idx) => (
-                                        <option
-                                          key={idx}
-                                          value={JSON.stringify(option)}
-                                          className={
-                                            option.blocks_continuation
-                                              ? "text-red-500"
-                                              : ""
-                                          }
-                                        >
-                                          {option.text}
-                                          {option.blocks_continuation
-                                            ? " (Not Eligible)"
-                                            : ""}
-                                          {option.extra_tax
-                                            ? ` (Extra Tax: $${option.extra_tax})`
-                                            : ""}
-                                        </option>
+                                    {field.options &&
+                                    typeof field.options === "object" &&
+                                    Object.keys(field.options).length > 0 ? (
+                                      Object.entries(field.options).map(
+                                        ([key, option], idx) => (
+                                          <option
+                                            key={idx}
+                                            value={JSON.stringify(option)}
+                                            className={
+                                              option.blocks_continuation
+                                                ? "text-red-500"
+                                                : ""
+                                            }
+                                          >
+                                            {option.text}
+                                            {option.blocks_continuation
+                                              ? " (Not Eligible)"
+                                              : ""}
+                                            {option.extra_tax
+                                              ? ` (Extra Tax: $${option.extra_tax})`
+                                              : ""}
+                                          </option>
+                                        )
                                       )
+                                    ) : (
+                                      <option value="">
+                                        No options available
+                                      </option>
                                     )}
                                   </select>
 
@@ -1788,8 +1778,6 @@ export default function Cart() {
                                   {renderConditionalDropdowns(field.name)}
                                 </div>
                               )}
-
-                              {/* Radio field */}
                               {field.type === "radio" && (
                                 <div className="mb-2 radio-group">
                                   <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -2081,7 +2069,9 @@ export default function Cart() {
               >
                 <div className="tf-cart-totals-discounts">
                   <h3>Subtotal</h3>
-                  <span className="total-value">${totalPrice2} USD</span>
+                  <span className="total-value">
+                    ${totalPrice.toFixed(2)} USD
+                  </span>
                 </div>
                 <p className="tf-cart-tax">
                   Taxes and
@@ -2101,8 +2091,8 @@ export default function Cart() {
                 </div>
                 <div className="cart-checkout-btn">
                   {pageContent.buttons && (
-                    <button
-                      onClick={handleCheckOrder}
+                    <Link
+                      href={"checkout"}
                       className="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center"
                       style={{
                         width: "fit-content",
@@ -2112,7 +2102,7 @@ export default function Cart() {
                       }}
                     >
                       {pageContent.buttons[1].text}
-                    </button>
+                    </Link>
                   )}
                 </div>
                 <div className="tf-page-cart_imgtrust">

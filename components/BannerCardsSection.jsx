@@ -105,7 +105,7 @@ const BannerCardsSection = ({ pageContent, register, watch, setValue }) => {
         </div>
       ) : (
         <div className="text-center text-gray-500 py-4">
-          No banner cards. Click "Add New Card" to create one.
+          No banner cards. Click Add New Card to create one.
         </div>
       )}
     </div>

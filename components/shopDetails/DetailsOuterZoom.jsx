@@ -71,6 +71,7 @@ export default function DetailsOuterZoom({ product }) {
         }
       }
     } catch (error) {
+      console.log("tax");
       console.error("Error in handleOptionWithValidation:", error);
       if (fieldType === "dropdown") {
         handleDropdownWithConditional(e, fieldName);
@@ -360,6 +361,9 @@ export default function DetailsOuterZoom({ product }) {
         parsedFields.map(async (field) => {
           let value = data[field.name];
           let extraTaxInfo = null;
+          let conditionalValues = {};
+
+          console.log("field", field);
 
           // For dropdown and radio fields, store both the selected value and all options
           if ((field.type === "dropdown" || field.type === "radio") && value) {
@@ -375,45 +379,31 @@ export default function DetailsOuterZoom({ product }) {
                 };
               }
 
+              // Capture conditional values for this field
+              if (conditionalOptions[field.name]) {
+                const conditionalFieldOptions = conditionalOptions[field.name].options;
+                conditionalFieldOptions.forEach((condOption, index) => {
+                  const conditionalFieldName = `${field.name}_conditional_${index}`;
+                  const conditionalValue = data[conditionalFieldName];
+                  
+                  if (conditionalValue) {
+                    conditionalValues[condOption.text] = conditionalValue;
+                  }
+                });
+              }
+
               // Store the complete options array/object with the field
-              if (field.options) {
-                return {
-                  name: field.name,
-                  type: field.type,
-                  value: value,
-                  options: field.options, // Store all options
-                  ...(extraTaxInfo && { extra_tax: extraTaxInfo }),
-                  ...(field.title && { title: field.title }),
-                };
-              }
-            } catch (error) {
-              console.error("Error parsing option:", error);
-            }
-          }
-
-          // For conditional dropdowns, store conditional values
-          if (field.type === "dropdown" && conditionalOptions[field.name]) {
-            const conditionalValues = {};
-
-            conditionalOptions[field.name].options.forEach(
-              (condOption, index) => {
-                const condValue = data[`${field.name}_conditional_${index}`];
-                if (condValue) {
-                  conditionalValues[condOption.text] = condValue;
-                }
-              }
-            );
-
-            if (Object.keys(conditionalValues).length > 0) {
               return {
                 name: field.name,
                 type: field.type,
                 value: value,
                 options: field.options, // Store all options
-                conditional_values: conditionalValues,
+                ...(Object.keys(conditionalValues).length > 0 && { conditional_values: conditionalValues }),
                 ...(extraTaxInfo && { extra_tax: extraTaxInfo }),
                 ...(field.title && { title: field.title }),
               };
+            } catch (error) {
+              console.error("Error parsing option:", error);
             }
           }
 
@@ -479,6 +469,8 @@ export default function DetailsOuterZoom({ product }) {
           .filter((field) => field.extra_tax)
           .map((field) => field.extra_tax),
       };
+
+      console.log("cartData", cartData);
 
       addProductToCart(cartData);
       setTempCartChanges(null);
@@ -1052,7 +1044,7 @@ export default function DetailsOuterZoom({ product }) {
     return fieldName.split("_")[0];
   };
 
-  console.log("parsedFields", parsedFields);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const renderFieldComment = (field) => {
     const commentText =
@@ -1101,8 +1093,39 @@ export default function DetailsOuterZoom({ product }) {
               <div className="tf-product-info-wrap position-relative">
                 <div className="tf-zoom-main" />
                 <div className="tf-product-info-list other-image-zoom">
-                  <div className="tf-product-info-title">
-                    <h6>{product?.name}</h6>
+                  <div className="tf-product-info-title flex items-center gap-2">
+                    <h6>{product?.name}</h6>{" "}
+                    <div
+                      className="relative"
+                      onMouseEnter={() => setShowTooltip(true)}
+                      onMouseLeave={() => setShowTooltip(false)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowTooltip(!showTooltip);
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#000000"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-5 h-5 cursor-pointer"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+
+                      {showTooltip && (
+                        <div className="absolute right-0 w-64 p-3 mt-2 text-sm bg-white rounded-lg shadow-lg text-gray-700 z-50">
+                          {product.description ||
+                            "No description available for this product."}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="tf-product-info-price">
                     <div className="price-on-sale">
@@ -1137,7 +1160,7 @@ export default function DetailsOuterZoom({ product }) {
                         </svg>
                         <div>
                           <span className="!ml-1 font-medium text-orange-600">
-                            Delivery Time:
+                            Possible in:
                           </span>
                           <span className="!ml-2 text-orange-600">
                             {product.delivery_time}

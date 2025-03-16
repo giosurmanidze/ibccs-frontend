@@ -89,3 +89,33 @@
 .remove_button {
   margin-left: 5px !important ;
 }
+
+.slick-dots {
+  bottom: -55px !important;
+}
+.padding-content {
+  padding-top: 10px !important;
+} /* Remove asterisk for optional fields */
+label.optional::after,
+label[data-optional="true"]::after {
+  content: none !important;
+}
+.card .card__arrow {
+  position: absolute;
+  background: #5ca595;
+  padding: 0.4rem;
+  border-top-left-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+  bottom: 0;
+  right: 0;
+  transition: 0.2s;
+  display: flex;
+  justify-content: center;
+  width: 40px !important;
+  align-items: center;
+}
+.card:hover {
+  .card__arrow {
+    width: 60px !important;
+  }
+}

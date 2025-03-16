@@ -53,7 +53,7 @@ export default function ShopCart({ pageContent }) {
                             key={i}
                             className="tf-mini-cart-item flex items-center"
                           >
-                            <div className="tf-mini-cart-image">
+                            <div>
                               <Link
                                 href={`/product-detail?serviceId=${serviceId}&categoryId=${categoryId}`}
                               >

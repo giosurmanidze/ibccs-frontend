@@ -99,20 +99,19 @@ export default function Login() {
               <div>
                 <form onSubmit={handleEmailSubmit(ResetSubmit)}>
                   <div className="tf-field style-1 mb_15">
+                    <label
+                      className="tf-field-label-top fw-4 text_black-2"
+                      htmlFor="property3"
+                    >
+                      Email *
+                    </label>
                     <input
-                      className="tf-field-input tf-input"
-                      placeholder=" "
+                      className="tf-field-input "
                       type="email"
                       id="property5"
                       name="email"
                       {...registerEmail("email")}
                     />
-                    <label
-                      className="tf-field-label fw-4 text_black-2"
-                      htmlFor="property3"
-                    >
-                      Email *
-                    </label>
                   </div>
                   <div className="mb_20">
                     <a href="#login" className="tf-btn btn-line">
@@ -139,42 +138,40 @@ export default function Login() {
               <div>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="tf-field style-1 mb_15">
+                    <label
+                      className="tf-field-label-top fw-4 text_black-2"
+                      htmlFor="email"
+                    >
+                      Email *
+                    </label>
                     <input
-                      className="tf-field-input tf-input"
-                      placeholder=" "
+                      className="tf-field-input "
                       type="email"
                       autoComplete="abc@xyz.com"
                       id="property3"
                       name="email"
                       {...register("email")}
                     />
-                    <label
-                      className="tf-field-label fw-4 text_black-2"
-                      htmlFor="email"
-                    >
-                      Email *
-                    </label>
                     {errors.email && (
                       <p className="error">{errors.email.message}</p>
                     )}
                   </div>
 
                   <div className="tf-field style-1 mb_30">
+                    <label
+                      className="tf-field-label-top fw-4 text_black-2"
+                      htmlFor="password"
+                    >
+                      Password *
+                    </label>
                     <input
-                      className="tf-field-input tf-input"
-                      placeholder=" "
+                      className="tf-field-input "
                       type="password"
                       id="property4"
                       name="password"
                       autoComplete="current-password"
                       {...register("password")}
                     />
-                    <label
-                      className="tf-field-label fw-4 text_black-2"
-                      htmlFor="password"
-                    >
-                      Password *
-                    </label>
                     {errors.password && (
                       <p className="error">{errors.password.message}</p>
                     )}

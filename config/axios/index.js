@@ -1,28 +1,28 @@
 import axios from "axios";
 
-const createAxiosInstance = () => {
-  const baseConfig = {
-    baseURL: "http://localhost:8000/api",
+const axiosInstance = axios.create({
+  baseURL: "http://localhost:8000/api/",
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest",
+  },
+  withCredentials: true,
+});
 
-    // http://localhost:8000/api/
-    // http://api.ibccsonline.ge/api
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  };
-
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("jwt_token");
-    if (token) {
-      baseConfig.headers.Authorization = `Bearer ${token}`;
+axiosInstance.interceptors.request.use(
+  (config) => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("jwt_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-
-  return axios.create(baseConfig);
-};
-
-const axiosInstance = createAxiosInstance();
+);
 
 export default axiosInstance;

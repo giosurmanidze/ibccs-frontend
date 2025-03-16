@@ -910,7 +910,7 @@ export default function Cart() {
       if (Object.keys(blockingErrors).length > 0) {
         const firstErrorField = Object.keys(blockingErrors)[0];
         const errorMessage = blockingErrors[firstErrorField].message;
-
+  
         toast.error(
           errorMessage || "Please correct the errors before continuing",
           {
@@ -920,23 +920,23 @@ export default function Cart() {
         );
         return;
       }
-
+  
       // Get the service ID and base info
       const serviceId = productData?.service_id || productData?.id;
-      const basePrice = parseFloat(productData.service.base_price) || 0;
+      const basePrice = parseFloat(productData.service?.base_price || 0);
       const quantity = parseInt(productData.quantity || 1, 10);
-
+  
       console.log("productData", productData);
-
+  
       // Process all form fields
       const formFields = await Promise.all(
         parsedFields.map(async (field) => {
           let value = data[field.name];
-
+  
           // Handle file fields
           if (field.type === "file") {
             const currentFile = files[field.name];
-
+  
             if (currentFile instanceof Blob) {
               try {
                 const dataUrl = await fileToBase64(currentFile);
@@ -967,7 +967,7 @@ export default function Cart() {
               }
             }
           }
-
+  
           // Handle conditional values
           let conditionalValues = null;
           if (conditionalOptions[field.name]) {
@@ -981,7 +981,7 @@ export default function Cart() {
               }
             );
           }
-
+  
           // Handle timeslot fields
           if (field.type === "timeslot") {
             const selectedTimeSlot = selectedTimeSlots[field.name];
@@ -997,7 +997,7 @@ export default function Cart() {
               };
             }
           }
-
+  
           return {
             name: field.name,
             type: field.type,
@@ -1013,7 +1013,7 @@ export default function Cart() {
           };
         })
       );
-
+  
       // Filter out empty fields
       const filteredFields = formFields.filter(
         (field) =>
@@ -1021,13 +1021,13 @@ export default function Cart() {
           (typeof field.value === "string" && field.value.trim() !== "") ||
           (Array.isArray(field.value) && field.value.length > 0)
       );
-
-      // Extract extra tax fields
+  
+      // Extract extra tax fields - enhanced to handle more cases
       const extraTaxFields = [];
-
+  
       // Examine all form fields for extra tax
       Object.entries(data).forEach(([fieldName, value]) => {
-        // Check if this is a dropdown with extra tax
+        // Check if this is a field with extra tax in its value
         if (typeof value === "string" && value.includes('"extra_tax"')) {
           try {
             const parsedValue = JSON.parse(value);
@@ -1036,7 +1036,11 @@ export default function Cart() {
                 name: fieldName,
                 value: parsedValue.text,
                 extra_tax: parsedValue.extra_tax,
+                // Add displayName for better UI presentation
+                displayName: getCleanFieldName ? getCleanFieldName(fieldName) : fieldName,
               });
+              
+              console.log(`Found extra tax in ${fieldName}: ${parsedValue.extra_tax}`);
             }
           } catch (error) {
             console.error(
@@ -1046,11 +1050,32 @@ export default function Cart() {
           }
         }
       });
-
+  
+      // Add extra tax fields from tempCartChanges if any
+      if (tempCartChanges && tempCartChanges[productData.id || productData.cartId]) {
+        Object.entries(tempCartChanges[productData.id || productData.cartId])
+          .filter(([key]) => key !== 'word_count_fee')
+          .forEach(([key, field]) => {
+            // Check if this field is already in extraTaxFields
+            const exists = extraTaxFields.some(item => item.name === key);
+            
+            if (!exists && field.extra_tax) {
+              extraTaxFields.push({
+                name: key,
+                value: field.value || field.text,
+                extra_tax: field.extra_tax,
+                displayName: field.displayName || getCleanFieldName(key),
+              });
+              
+              console.log(`Added extra tax from tempCartChanges for ${key}: ${field.extra_tax}`);
+            }
+          });
+      }
+  
       // Calculate total price
       // IMPORTANT: Always include the base price
       let totalPrice = basePrice * quantity;
-
+  
       // Add extra taxes if any
       if (extraTaxFields.length > 0) {
         const extraTaxTotal = extraTaxFields.reduce(
@@ -1058,8 +1083,10 @@ export default function Cart() {
           0
         );
         totalPrice += extraTaxTotal * quantity;
+        
+        console.log(`Adding extra taxes: ${extraTaxTotal} per unit, total: ${extraTaxTotal * quantity}`);
       }
-
+  
       // Add word count fee if applicable
       let wordCountFee = 0;
       if (Object.keys(wordCounts).length > 0) {
@@ -1067,31 +1094,36 @@ export default function Cart() {
           (sum, count) => sum + Number((count * 0.1).toFixed(2)),
           0
         );
-
+  
         // Add to extra tax fields
         if (wordCountFee > 0) {
           extraTaxFields.push({
             name: "word_count_fee",
             value: "Word Count Fee",
             extra_tax: wordCountFee.toString(),
+            displayName: "Document Fee"
           });
-
+  
           // Add to total price
           totalPrice += wordCountFee * quantity;
+          
+          console.log(`Adding word count fee: ${wordCountFee} per unit, total: ${wordCountFee * quantity}`);
         }
       }
-
+  
+      console.log(`Total price calculation: ${basePrice} (base) × ${quantity} (quantity) + extra taxes = ${totalPrice}`);
+  
       // Prepare data for API
       const cartData = {
         service_id: serviceId,
         fields: filteredFields,
         extra_tax_fields: extraTaxFields,
-        total_price: totalPrice,
+        total_price: totalPrice.toFixed(2),
         quantity: quantity,
       };
-
+  
       console.log("Submitting cart data:", cartData);
-
+  
       try {
         let response;
         if (productData.cartId) {
@@ -1103,18 +1135,22 @@ export default function Cart() {
         } else {
           response = await axiosInstance.post("/carts", cartData);
         }
-
+  
         if (response.data.success) {
           toast.success("Service details saved successfully", {
             position: "top-right",
             autoClose: 3000,
           });
-
+  
           setIsModalOpen(false);
-
+  
+          // Clear any temporary cart changes
+          setTempCartChanges(null);
+          
+          // Fetch updated cart data
           await fetchCartData();
           await fetchCartData2();
-
+  
           reset();
         } else {
           throw new Error(response.data.message || "Failed to update cart");
@@ -1512,7 +1548,7 @@ export default function Cart() {
                       <form onSubmit={handleSubmit(onSubmit)}>
                         {parsedFields?.map((field, index) => {
                           const displayName = getCleanFieldName(field.name);
-                          console.log("parsedFields", parsedFields);
+                          
                           return (
                             <div
                               key={`${field.name}-${index}`}

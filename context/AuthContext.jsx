@@ -1,6 +1,7 @@
 "use client";
 import axiosInstance from "@/config/axios";
 import { createContext, useState, useContext, useEffect } from "react";
+import { useContextElement } from "./Context";
 
 const AuthContext = createContext();
 
@@ -9,18 +10,16 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
-  // Set mounted state when component mounts on client
+  const { fetchCartData } = useContextElement();
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const fetchUserData = async () => {
-    // Skip if not mounted (server-side)
     if (!mounted) return;
 
     setLoading(true);
 
-    // Safe localStorage access
     let token = null;
     if (typeof window !== "undefined") {
       token = localStorage.getItem("jwt_token");
@@ -52,16 +51,21 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("store_user_data");
     }
     setUser(userData);
+    setTimeout(() => {
+      fetchCartData();
+    }, 300);
   };
 
-  const logout = () => {
+  const logout = async () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("jwt_token");
     }
     setUser(null);
+    setTimeout(() => {
+      fetchCartData();
+    }, 300);
   };
 
-  // Auto-fetch user data on client mount
   useEffect(() => {
     if (mounted) {
       fetchUserData();

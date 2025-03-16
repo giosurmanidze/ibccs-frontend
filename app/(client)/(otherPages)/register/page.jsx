@@ -17,7 +17,6 @@ const socialPlatforms = [
 
 export default function Register() {
   const [selectRegisterOption, setSelectRegisterOption] = useState(true);
-
   const [selectedSocials, setSelectedSocials] = useState([]);
 
   const handleSocialChange = (event) => {
@@ -26,7 +25,7 @@ export default function Register() {
       checked ? [...prev, value] : prev.filter((item) => item !== value)
     );
   };
-
+  
   const schema = useMemo(
     () =>
       yup.object().shape({
@@ -42,16 +41,16 @@ export default function Register() {
           .string()
           .email("Invalid email")
           .required("Email is required"),
-        id_number: !selectRegisterOption // Only required when Physical person
+        id_number: !selectRegisterOption 
           ? yup.string().required("ID Number is required")
           : yup.string().notRequired(),
-        Identification_number: selectRegisterOption // Only required when Legal person
+        Identification_number: selectRegisterOption 
           ? yup.string().required("Identification Number is required")
           : yup.string().notRequired(),
         phone_number: yup
           .string()
           .matches(/^\d+$/, "Phone number must be numeric")
-          .min(10, "Phone number must be at least 10 digits")
+          .min(9, "Phone number must be at least 10 digits")
           .required("Phone number is required"),
         password: yup
           .string()
@@ -185,78 +184,103 @@ export default function Register() {
               {selectRegisterOption ? (
                 <>
                   <div className="tf-field style-1 mb_15">
+                    <label
+                      className="tf-field-label-top fw-4 text_black-2"
+                      htmlFor="property3"
+                    >
+                      Organization Name
+                    </label>
                     <input
-                      className="tf-field-input tf-input"
-                      placeholder=" "
+                      className="tf-field-input "
                       type="text"
                       {...register("organizationName")}
                     />
-                    <label className="tf-field-label">Organization Name</label>
                     <p className="error">{errors.organizationName?.message}</p>
                   </div>{" "}
                   <div className="tf-field style-1 mb_15">
+                    <label
+                      className="tf-field-label-top fw-4 text_black-2"
+                      htmlFor="property3"
+                    >
+                      First Name
+                    </label>
                     <input
-                      className="tf-field-input tf-input"
-                      placeholder=" "
+                      className="tf-field-input "
                       type="text"
                       {...register("name")}
                     />
-                    <label className="tf-field-label">First Name</label>
                     <p className="error">{errors.name?.message}</p>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="tf-field style-1 mb_15">
+                    <label
+                      className="tf-field-label-top fw-4 text_black-2"
+                      htmlFor="property3"
+                    >
+                      First Name
+                    </label>
                     <input
-                      className="tf-field-input tf-input"
-                      placeholder=" "
+                      className="tf-field-input "
                       type="text"
                       {...register("name")}
                     />
-                    <label className="tf-field-label">First Name</label>
                     <p className="error">{errors.name?.message}</p>
                   </div>{" "}
                   <div className="tf-field style-1 mb_15">
+                    <label
+                      className="tf-field-label-top fw-4 text_black-2"
+                      htmlFor="property3"
+                    >
+                      Passport Number
+                    </label>
                     <input
-                      className="tf-field-input tf-input"
-                      placeholder=" "
+                      className="tf-field-input "
                       type="text"
                       {...register("passport_number")}
                     />
-                    <label className="tf-field-label">Passport Number</label>
                     <p className="error">{errors.passport_number?.message}</p>
                   </div>
                 </>
               )}
               <div className="tf-field style-1 mb_15">
+                <label
+                  className="tf-field-label-top fw-4 text_black-2"
+                  htmlFor="property3"
+                >
+                  Last Name
+                </label>
                 <input
-                  className="tf-field-input tf-input"
-                  placeholder=" "
+                  className="tf-field-input "
                   type="text"
                   {...register("lastname")}
                 />
-                <label className="tf-field-label">Last Name</label>
                 <p className="error">{errors.lastname?.message}</p>
               </div>
               <div className="tf-field style-1 mb_15">
+                <label
+                  className="tf-field-label-top fw-4 text_black-2"
+                  htmlFor="property3"
+                >
+                  Email *
+                </label>
                 <input
-                  className="tf-field-input tf-input"
-                  placeholder=" "
+                  className="tf-field-input "
                   type="email"
                   {...register("email")}
                 />
-                <label className="tf-field-label">Email *</label>
                 <p className="error">{errors.email?.message}</p>
               </div>
               <div className="mb_15 checkbox">
-                <label className="tf-field-label platforms-checkbox-title">
+                <label   className="tf-field-label-top fw-4 text_black-2"
+                      htmlFor="property3">
                   Select Social Platforms:
                 </label>
                 {socialPlatforms.map((platform) => (
                   <div
                     key={platform.id}
-                    className="tf-checkbox platforms-checkbox"
+                    className="tf-checkbox platforms-checkbox mt-2!"
                   >
                     <input
                       type="checkbox"
@@ -271,15 +295,18 @@ export default function Register() {
               </div>
               {selectedSocials.map((social) => (
                 <div key={social} className="tf-field style-1 mb_15 checkbox">
+                  <label
+                    className="tf-field-label-top fw-4 text_black-2"
+                    htmlFor="property3"
+                  >
+                    {social} Phone Number *
+                  </label>
                   <input
-                    className="tf-field-input tf-input"
+                    className="tf-field-input "
                     placeholder={`Enter ${social} phone number`}
                     type="text"
                     {...register(`platforms_number.${social}`)}
                   />
-                  <label className="tf-field-label">
-                    {social} Phone Number *
-                  </label>
                   <p className="error">
                     {errors.platforms_number?.[social]?.message}
                   </p>
@@ -287,49 +314,63 @@ export default function Register() {
               ))}
               {selectRegisterOption ? (
                 <div className="tf-field style-1 mb_15">
+                  <label
+                    className="tf-field-label-top fw-4 text_black-2"
+                    htmlFor="property3"
+                  >
+                    Identification number
+                  </label>
                   <input
-                    className="tf-field-input tf-input"
-                    placeholder=" "
+                    className="tf-field-input "
                     type="text"
                     {...register("Identification_number")}
                   />
-                  <label className="tf-field-label">
-                    Identification number
-                  </label>
                   <p className="error">
                     {errors.Identification_number?.message}
                   </p>
                 </div>
               ) : (
                 <div className="tf-field style-1 mb_15">
+                  <label
+                    className="tf-field-label-top fw-4 text_black-2"
+                    htmlFor="property3"
+                  >
+                    ID Number
+                  </label>
                   <input
-                    className="tf-field-input tf-input"
-                    placeholder=" "
+                    className="tf-field-input "
                     type="text"
                     {...register("id_number")}
                   />
-                  <label className="tf-field-label">ID Number</label>
                   <p className="error">{errors.id_number?.message}</p>
                 </div>
               )}
               <div className="tf-field style-1 mb_15">
+                <label
+                  className="tf-field-label-top fw-4 text_black-2"
+                  htmlFor="property3"
+                >
+                  Phone Number
+                </label>
                 <input
-                  className="tf-field-input tf-input"
-                  placeholder=" "
+                  className="tf-field-input "
                   type="text"
                   {...register("phone_number")}
                 />
-                <label className="tf-field-label">Phone Number</label>
                 <p className="error">{errors.phone_number?.message}</p>
               </div>
               <div className="tf-field style-1 mb_30">
+                <label
+                  className="tf-field-label-top fw-4 text_black-2"
+                  htmlFor="property3"
+                >
+                  Password *
+                </label>
                 <input
-                  className="tf-field-input tf-input"
-                  placeholder=" "
+                  className="tf-field-input "
                   type="password"
                   {...register("password")}
                 />
-                <label className="tf-field-label">Password *</label>
                 <p className="error">{errors.password?.message}</p>
               </div>
               <p className="text_black-2 mb_20">
@@ -349,7 +390,7 @@ export default function Register() {
                   required
                   type="checkbox"
                   id="check-agree"
-                  className="tf-check"
+                  className="tf-check !border-gray-500"
                 />
                 <label htmlFor="check-agree" className="text_black-2">
                   I have read and agree to the website

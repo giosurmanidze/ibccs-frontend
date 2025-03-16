@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 
 export default function Shopcard28({ product }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
   return (
     <div className="h-full min-w-[300px] max-w-[400px] w-full min-h-[430px]">
       <Link
@@ -22,7 +24,39 @@ export default function Shopcard28({ product }) {
 
           <div className="flex flex-col h-full relative z-10">
             <div className="p-3 sm:p-4">
-              <p className="font-medium text-white !text-xl sm:text-xl">{product.name}</p>
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-white !text-xl sm:text-xl">{product.name}</p>
+                <div 
+                  className="relative"
+                  onMouseEnter={() => setShowTooltip(true)}
+                  onMouseLeave={() => setShowTooltip(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowTooltip(!showTooltip);
+                  }}
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="white" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="w-5 h-5 cursor-pointer"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                  
+                  {showTooltip && (
+                    <div className="absolute right-0 w-64 p-3 mt-2 text-sm bg-white rounded-lg shadow-lg text-gray-700 z-50">
+                      {product.description || "No description available for this product."}
+                    </div>
+                  )}
+                </div>
+              </div>
               <h5 className="text-md sm:text-2xl font-bold mt-1 text-white ">
                 {product.base_price} Euro
               </h5>

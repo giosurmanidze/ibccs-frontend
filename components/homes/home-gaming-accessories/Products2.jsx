@@ -18,7 +18,7 @@ export default function Products2() {
   }, [products]);
 
   return (
-    <section className="flat-spacing-15 py-10 md:py-16">
+    <section className=" md:py-16">
       <div className="container mx-auto px-4">
         <div className="flat-title mb-8 md:mb-12 text-center md:text-left">
           <span

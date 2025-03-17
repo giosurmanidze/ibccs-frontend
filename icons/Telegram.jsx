@@ -1,11 +1,11 @@
-export const Telegram = () => {
+export const Telegram = ({ height, width }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       x="0px"
       y="0px"
-      width="100"
-      height="100"
+      width={` ${width}`}
+      height={` ${height}`}
       viewBox="0 0 48 48"
     >
       <path fill="#29b6f6" d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"></path>

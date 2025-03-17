@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
+  // baseURL: "http://api.ibccsonline.ge/api/",
   baseURL: "http://localhost:8000/api/",
   headers: {
     Accept: "application/json",

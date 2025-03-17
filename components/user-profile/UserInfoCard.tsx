@@ -319,7 +319,7 @@ export default function UserInfoCard({ user, fetchUserData }) {
                 Close
               </Button>
               {/* onClick={handleSave} */}
-              <Button size="sm">Save Changes</Button>
+              <Button size="sm" >Save Changes</Button>
             </div>
           </form>
         </div>

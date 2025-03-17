@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Nav from "./Nav";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,6 +12,21 @@ import CategoriesDropdown from "./CategoriesDropdown";
 export default function Header22({ pageContent }) {
   const { data: categories } = useGetCategories();
   const { user, logout } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [data, setData] = useState([]);
@@ -224,12 +239,122 @@ export default function Header22({ pageContent }) {
                     ))}
                   </li>
                 ) : (
-                  <li className="nav-account">
-                    <i className="icon icon-account" />
-                    <span className="text">
-                      {user?.name} {user?.lastname}
-                    </span>
-                    <button onClick={logout}>Logout</button>
+                  <li className="nav-account relative" ref={dropdownRef}>
+                    <button
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="flex items-center gap-3 py-1.5 px-3 rounded-full  transition-all duration-300 shadow-md group"
+                      type="button"
+                    >
+                      <div className="flex items-center justify-center  text-white p-1.5 rounded-full h-8 w-8 shadow-inner overflow-hidden  transition-colors">
+                        <i className="icon icon-account" />
+                      </div>
+                      <span className="text text-white font-medium pr-1">
+                        {user?.name}
+                      </span>
+                      <div className="ml-1 h-5 w-5  flex items-center justify-center  transition-colors">
+                        <svg
+                          className="w-3 h-3  group-hover:translate-y-0.5 transition-transform"
+                          aria-hidden="true"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 10 6"
+                        >
+                          <path
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="m1 1 4 4 4-4"
+                          />
+                        </svg>
+                      </div>
+                    </button>
+                    {isDropdownOpen && (
+                      <div className="z-10 absolute !mt-12 bg-white divide-y divide-gray-100 rounded-lg shadow-md w-44 dark:bg-gray-700 dark:divide-gray-600">
+                        <div className="!px-4 !py-3 text-sm text-gray-900 dark:text-white">
+                          <div className="font-semibold">
+                            {user?.name} {user?.lastname}
+                          </div>
+                          <div className="font-medium truncate">
+                            {user?.email}
+                          </div>
+                        </div>
+                        <ul className="py-2 text-sm">
+                          <li className="w-full">
+                            <Link
+                              onClick={() => setIsDropdownOpen(false)}
+                              href="/my-profile"
+                              class="block !flex gap-1 !px-4 !py-2 w-full hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                            >
+                              <svg
+                                className="w-4 h-4 mr-3"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                              </svg>
+                              My profile
+                            </Link>
+                          </li>
+                          <li className="w-full">
+                            <Link
+                              onClick={() => setIsDropdownOpen(false)}
+                              href="/my-orders"
+                              class="block !flex gap-1 !px-4 w-full !py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                            >
+                              <svg
+                                className="w-4 h-4 mr-3"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <rect
+                                  x="2"
+                                  y="4"
+                                  width="20"
+                                  height="16"
+                                  rx="2"
+                                ></rect>
+                                <path d="M7 15h0M2 9.5h20"></path>
+                              </svg>
+                              My Orders
+                            </Link>
+                          </li>
+                        </ul>
+                        <div className="py-2 border-t border-gray-100 dark:border-gray-600">
+                          <a
+                            onClick={logout}
+                            className="!flex items-center !px-5 gap-1 !py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                          >
+                            <svg
+                              className="w-4 h-4 mr-3"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                              <polyline points="16 17 21 12 16 7"></polyline>
+                              <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Sign out
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </li>
                 )}
                 <li className="nav-cart cart-lg line-left-1">

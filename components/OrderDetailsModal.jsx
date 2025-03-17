@@ -1,7 +1,13 @@
 "use client";
 import React, { useEffect } from "react";
 
-const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
+const EnhancedOrderDetailsModal = ({
+  order,
+  isOpen,
+  onClose,
+  mtClass,
+  maxHeight,
+}) => {
   // Prevent scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -113,17 +119,17 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-gray-500 bg-opacity-25 backdrop-blur-sm transition-all duration-300 dark:bg-gray-700 dark:bg-opacity-40"
+      className={`fixed inset-0 ${mtClass} z-50 flex items-center justify-center overflow-auto  backdrop-blur-sm transition-all duration-300 dark:bg-gray-700 dark:bg-opacity-40`}
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all duration-300 dark:border dark:border-gray-700"
+        className="relative !w-full !max-w-4xl !mx-auto bg-white dark:bg-gray-800 !rounded-2xl !shadow-2xl transform transition-all duration-300 dark:border dark:border-gray-700"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-750 rounded-t-2xl">
-          <div className="flex items-center space-x-4">
+        <div className="flex  items-center justify-between !p-6 !border-b !border-gray-200 dark:border-gray-700 !bg-gradient-to-r !from-gray-50 !to-white dark:from-gray-800 dark:to-gray-750 !rounded-t-2xl">
+          <div className="flex items-center !space-x-4">
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${statusColors.bg}`}
+              className={`!w-10 !h-10 !rounded-full flex items-center justify-center ${statusColors.bg}`}
             >
               {order.status === "completed" ? (
                 <svg
@@ -181,28 +187,28 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h3 className="!text-xl font-bold text-gray-900 dark:text-white">
                 Order #{order.id}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="!text-sm text-gray-500 dark:text-gray-400">
                 Created on {formatDate(order.created_at)}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center !space-x-3">
             <span
-              className={`px-4 py-1.5 rounded-full text-sm font-medium ${statusColors.bg} ${statusColors.text} capitalize`}
+              className={`!px-4 !py-1.5 !rounded-full !text-sm font-medium ${statusColors.bg} ${statusColors.text} capitalize`}
             >
               {order.status || "Processing"}
             </span>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+              className="!p-2 text-gray-400 !bg-gray-100 dark:bg-gray-700 !rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
               aria-label="Close"
             >
               <svg
-                className="w-5 h-5"
+                className="!w-5 !h-5"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 xmlns="http://www.w3.org/2000/svg"
@@ -217,74 +223,10 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
           </div>
         </div>
 
-        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="flex items-center mb-4">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full mr-3">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-blue-600 dark:text-blue-400"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                  Customer Information
-                </h4>
-              </div>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="w-24 font-medium text-gray-500 dark:text-gray-400">
-                    Name:
-                  </span>
-                  <span className="flex-1 text-gray-900 dark:text-white font-medium">
-                    {order.firstname} {order.lastname}
-                  </span>
-                </div>
-                <div className="flex border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="w-24 font-medium text-gray-500 dark:text-gray-400">
-                    Email:
-                  </span>
-                  <span className="flex-1 text-gray-900 dark:text-white">
-                    {order.email}
-                  </span>
-                </div>
-                <div className="flex border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="w-24 font-medium text-gray-500 dark:text-gray-400">
-                    Phone:
-                  </span>
-                  <span className="flex-1 text-gray-900 dark:text-white">
-                    {order.phone_number}
-                  </span>
-                </div>
-                <div className="flex border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="w-24 font-medium text-gray-500 dark:text-gray-400">
-                    Address:
-                  </span>
-                  <span className="flex-1 text-gray-900 dark:text-white">
-                    {order.address}
-                  </span>
-                </div>
-                <div className="flex">
-                  <span className="w-24 font-medium text-gray-500 dark:text-gray-400">
-                    City:
-                  </span>
-                  <span className="flex-1 text-gray-900 dark:text-white">
-                    {order.city}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Order Information Card */}
+        <div
+          className={`!p-6 max-h-[70vh] ${maxHeight} overflow-y-auto custom-scrollbar`}
+        >
+          <div className="grid !grid-cols-1 !md:grid-cols-2 !gap-6">
             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300">
               <div className="flex items-center mb-4">
                 <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full mr-3">
@@ -302,71 +244,71 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
                     />
                   </svg>
                 </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                <h4 className="!text-lg ml-3! font-bold text-gray-900 dark:text-white">
                   Order Details
                 </h4>
               </div>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center border-b border-gray-100 dark:border-gray-700 pb-2">
-                  <span className="w-32 font-medium text-gray-500 dark:text-gray-400">
+              <div className="!space-y-3 !text-sm">
+                <div className="flex items-center !border-b !border-gray-100 !dark:border-gray-700 pb-2">
+                  <span className="!w-32 font-medium text-gray-500 dark:text-gray-400">
                     Delivery Option:
                   </span>
-                  <span className="flex-1 text-gray-900 dark:text-white">
+                  <span className="!flex-1 text-gray-900 dark:text-white">
                     {order.delivery_option || "Standard"}
                   </span>
                 </div>
 
                 {order.comment && (
-                  <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                    <span className="block w-32 font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  <div className="!border-b !border-gray-100 !dark:border-gray-700 !pb-2">
+                    <span className="!block !w-32 font-medium text-gray-500 dark:text-gray-400 !mb-1">
                       Note:
                     </span>
-                    <div className="ml-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-gray-700 dark:text-gray-300 italic">
+                    <div className="!ml-2 !p-2 !bg-gray-50 dark:bg-gray-700/50 rounded !text-gray-700 dark:text-gray-300 italic">
                       {order.comment}
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center pt-2">
-                  <span className="w-32 font-medium text-gray-500 dark:text-gray-400">
+                <div className="flex items-center !pt-2">
+                  <span className="!w-32 font-medium text-gray-500 dark:text-gray-400">
                     Total Amount:
                   </span>
-                  <span className="flex-1 text-xl font-bold text-green-600 dark:text-green-400">
+                  <span className="!flex-1 !text-xl font-bold text-green-600 dark:text-green-400">
                     {formatCurrency(calculateOrderTotal())}
                   </span>
                 </div>
               </div>
             </div>
           </div>
-          <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
-            <div className="flex items-center px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full mr-3">
+          <div className="!mt-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+            <div className="flex items-center !px-5 !py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+              <div className="!p-2 bg-green-100 dark:bg-green-900/30 rounded-full !mr-3">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-green-600 dark:text-green-400"
+                  className="!h-5 !w-5 text-green-600 dark:text-green-400"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
                   <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
                 </svg>
               </div>
-              <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h4 className="!text-lg !font-bold text-gray-900 dark:text-white">
                 Services Ordered
               </h4>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-100 dark:bg-gray-700">
+            <div className="!overflow-x-auto">
+              <table className="w-full !text-sm !text-left">
+                <thead className="!text-xs text-gray-700 dark:text-gray-300 uppercase !bg-gray-100 dark:bg-gray-700">
                   <tr>
-                    <th scope="col" className="px-6 py-3 font-semibold">
+                    <th scope="col" className="!px-6 !py-3 font-semibold">
                       Service
                     </th>
-                    <th scope="col" className="px-6 py-3 font-semibold">
+                    <th scope="col" className="!px-6 !py-3 font-semibold">
                       Details
                     </th>
-                    <th scope="col" className="px-6 py-3 font-semibold">
+                    <th scope="col" className="!px-6 !py-3 font-semibold">
                       Price
                     </th>
                   </tr>
@@ -381,15 +323,15 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
                         key={index}
                         className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                       >
-                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                        <td className="!px-6 !py-4 font-medium text-gray-900 dark:text-white">
                           {item.service?.name || `Service #${item.service_id}`}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-xs space-y-2 text-gray-600 dark:text-gray-300">
+                        <td className="!px-6 !py-4">
+                          <div className="!text-xs !space-y-2 text-gray-600 dark:text-gray-300">
                             {serviceDetails.fields?.map((field, fieldIndex) => (
                               <div key={fieldIndex} className="flex">
-                                <span className="font-medium min-w-[80px] mr-2">
-                                  {field.name}:
+                                <span className="font-medium !min-w-[80px] !mr-2">
+                                  {field.name.replace(/(_\d+)?:?$/, "")}:
                                 </span>
                                 {field.type === "file" ? (
                                   <a
@@ -410,8 +352,27 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
                                     </svg>
                                   </a>
                                 ) : (
-                                  <span className="text-gray-800 dark:text-gray-200">
-                                    {field.value}
+                                  <span className="!text-gray-800 dark:text-gray-200">
+                                    {(() => {
+                                      try {
+                                        if (
+                                          field.value &&
+                                          typeof field.value === "string" &&
+                                          field.value.startsWith("[") &&
+                                          field.value.endsWith("]")
+                                        ) {
+                                          const parsed = JSON.parse(
+                                            field.value
+                                          );
+                                          return Array.isArray(parsed)
+                                            ? parsed.join(", ")
+                                            : field.value;
+                                        }
+                                        return field.value;
+                                      } catch (e) {
+                                        return field.value;
+                                      }
+                                    })()}
                                   </span>
                                 )}
                               </div>
@@ -424,7 +385,7 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                        <td className="!px-6 !py-4 font-medium text-gray-900 dark:text-white">
                           {formatCurrency(getItemPrice(item))}
                         </td>
                       </tr>
@@ -436,11 +397,11 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
                     <th
                       scope="row"
                       colSpan="2"
-                      className="px-6 py-4 text-right"
+                      className="!px-6 !py-4 !text-right"
                     >
                       Total
                     </th>
-                    <td className="px-6 py-4">
+                    <td className="!px-6 !py-4">
                       {formatCurrency(calculateOrderTotal())}
                     </td>
                   </tr>
@@ -451,15 +412,15 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-between !p-6 !border-t !border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl">
+          <div className="!text-sm !text-gray-500 dark:text-gray-400">
             Order ID: <span className="font-mono font-medium">{order.id}</span>
           </div>
 
-          <div className="flex space-x-3">
+          <div className="flex !space-x-3">
             <button
               onClick={() => window.print()}
-              className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 flex items-center"
+              className="!px-4 !py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 flex items-center"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -477,7 +438,7 @@ const EnhancedOrderDetailsModal = ({ order, isOpen, onClose }) => {
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center"
+              className="!px-4 !py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

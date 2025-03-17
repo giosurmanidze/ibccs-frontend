@@ -1,8 +1,8 @@
-export const Botim = () => {
+export const Botim = ({ height, width }) => {
   return (
     <svg
-      width="80"
-      height="80"
+      width={` ${width}`}
+      height={` ${height}`}
       viewBox="0 0 122.88 122.39"
       xmlns="http://www.w3.org/2000/svg"
       className="fill-current"

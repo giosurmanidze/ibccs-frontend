@@ -215,7 +215,6 @@ export default function Header22({ pageContent }) {
                           <span className="italic text-gray-800">
                             {searchTerm}
                           </span>
-                          "
                         </span>
                       )}
                     </p>

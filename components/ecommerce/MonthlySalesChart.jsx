@@ -79,7 +79,7 @@ export default function MonthlySalesChart() {
     closeDropdown();
   };
 
-  const getChartOptions = (): ApexOptions => {
+  const getChartOptions = () => {
     return {
       colors: chartView === "sales" ? ["#465fff"] : ["#34d399"],
       chart: {
@@ -178,7 +178,7 @@ export default function MonthlySalesChart() {
           show: false,
         },
         y: {
-          formatter: (val: number) =>
+          formatter: (val) =>
             chartView === "sales" ? `$${val}` : `${val} orders`,
         },
         theme: "dark",
@@ -254,7 +254,7 @@ export default function MonthlySalesChart() {
             <MoreDotIcon className="h-4 w-4" />
           </button>
 
-          {/* {isOpen && (
+          {isOpen && (
             <Dropdown
               isOpen={isOpen}
               setIsOpen={setIsOpen}
@@ -269,7 +269,7 @@ export default function MonthlySalesChart() {
                 </DropdownItem>
               )}
             </Dropdown>
-          )} */}
+          )}
         </div>
       </div>
 

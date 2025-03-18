@@ -146,6 +146,10 @@ export default function RootLayout({ children }) {
     const getPageContent = async () => {
       const response = await axiosInstance.get("pages/header");
       setPageContent(JSON.parse(response.data?.dynamic_content));
+      console.log(
+        "JSON.parse(response.data?.dynamic_content)",
+        JSON.parse(response.data?.dynamic_content)
+      );
     };
     getPageContent();
   }, []);
@@ -179,7 +183,10 @@ export default function RootLayout({ children }) {
             </AuthProvider>
           </Context>
           <ScrollTop />
-          <Footer2 pageContent={pageContent?.footer} />
+          <Footer2
+            pageContent={pageContent?.footer}
+            headerLogo={pageContent.header?.header_logo}
+          />
         </body>
       </html>
     </QueryClientProvider>

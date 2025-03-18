@@ -55,6 +55,11 @@ export default function Header22({ pageContent }) {
     }
   };
 
+  const clearSearch = () => {
+    setSearchTerm("");
+    setData([]);
+  };
+
   const header_background = pageContent?.header?.background_color["value"];
   const placeholder_text =
     pageContent?.header?.search_placeholder_text["value"];
@@ -195,7 +200,48 @@ export default function Header22({ pageContent }) {
                     </div>
                   </div>
                 )}
-
+                {searchTerm && (
+                  <div className="search-results-meta bg-gray-50 rounded-md p-3 shadow-sm border border-gray-200 flex items-center justify-between mb-4 mt-2">
+                    <p className="text-gray-700 text-sm font-medium">
+                      Found{" "}
+                      <span className="font-bold text-blue-600">
+                        {data.length}
+                      </span>{" "}
+                      results
+                      {searchTerm && (
+                        <span>
+                          {" "}
+                          for "
+                          <span className="italic text-gray-800">
+                            {searchTerm}
+                          </span>
+                          "
+                        </span>
+                      )}
+                    </p>
+                    <button
+                      className="ml-2 px-3 py-1 text-xs bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors flex items-center"
+                      onClick={clearSearch}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="mr-1"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                      Clear Search
+                    </button>
+                  </div>
+                )}
                 {isLoading && searchTerm && (
                   <div className="search-suggests-results">
                     <p>Loading...</p>

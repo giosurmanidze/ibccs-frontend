@@ -1,329 +1,537 @@
 "use client";
-import { useModal } from "@/hooks/useModal";
-import { Modal } from "../ui/modal";
-import Button from "../ui/button/Button";
-import * as yup from "yup";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { useEffect, useState } from "react";
 import axiosInstance from "@/config/axios";
-import { toast } from "react-toastify";
+import { useState, useEffect, useRef } from "react";
+import { WhatsApp } from "@/icons/WhatsApp";
+import { Telegram } from "@/icons/Telegram";
+import { Botim } from "@/icons/Botim";
+import { Viber } from "@/icons/Viber";
+import { toast, ToastContainer } from "react-toastify";
 
-const ALL_SOCIAL_PLATFORMS = ["whatsapp", "telegram", "viber", "botim"];
+export default function MyProfile({ fetchUserData }) {
+  const [loading, setLoading] = useState(true);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
-export default function UserInfoCard({ user, fetchUserData }) {
-  const { isOpen, openModal, closeModal } = useModal();
-
-  const [socialPlatforms, setSocialPlatforms] = useState(
-    user?.platforms_number ? JSON.parse(user.platforms_number) : {}
-  );
-
-  const availablePlatforms = ALL_SOCIAL_PLATFORMS.filter(
-    (platform) => !Object.keys(socialPlatforms).includes(platform)
-  );
-
-  const validationSchema = yup.object().shape({
-    name: yup.string().required("Name is required"),
-    lastname: yup.string().required("Lastname is required"),
-    email: yup.string().required("Email is required"),
-    phone_number: yup.string().required("Phone number is required"),
-
-    ...Object.keys(socialPlatforms || {}).reduce(
-      (acc, platform) => ({
-        ...acc,
-        [platform]: yup.string().nullable(),
-      }),
-      {}
-    ),
+  const [formData, setFormData] = useState({
+    name: "",
+    lastname: "",
+    email: "",
+    phone_number: "",
+    Identification_number: "",
+    passport_number: "",
+    whatsapp: "",
+    telegram: "",
+    viber: "",
+    botim: "",
+    organization_name: "",
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-  } = useForm({
-    resolver: yupResolver(validationSchema),
-  });
+  const isOrganization = !!formData.organization_name;
 
-  const handleSave = async (data) => {
-    try {
-      const socialLinks = {
-        whatsapp: data.whatsapp || "",
-        telegram: data.telegram || "",
-        viber: data.viber || "",
-        botim: data.botim || "",
-      };
-
-      const filteredSocialLinks = Object.fromEntries(
-        Object.entries(socialLinks).filter(([_, value]) => value)
-      );
-
-      const formData = {
-        ...data,
-        social_links: JSON.stringify(filteredSocialLinks),
-      };
-
-      const response = await axiosInstance.post(
-        `users/update/${user?.id}`,
-        formData
-      );
-      fetchUserData();
-      toast.success("Profile updated successfully");
-      closeModal();
-    } catch (error) {
-      if (error.response?.data.errors?.email) {
-        toast.error("The email has already been taken");
-      }
-    }
+  const activePlatforms = {
+    whatsapp: formData.whatsapp,
+    telegram: formData.telegram,
+    viber: formData.viber,
+    botim: formData.botim,
   };
 
   useEffect(() => {
-    if (user?.platforms_number) {
-      const platforms = JSON.parse(user.platforms_number);
-      setSocialPlatforms(platforms);
-    }
-  }, [user?.platforms_number]);
+    const fetchUserData = async () => {
+      setLoading(true);
+      try {
+        const response = await axiosInstance("/user");
+        const userData = response.data.user;
 
-  useEffect(() => {
-    if (user) {
-      setValue("name", user.name);
-      setValue("lastname", user.lastname);
-      setValue("phone_number", user.phone_number);
-      setValue("email", user.email);
+        if (response.data.user.id) {
+          setUserId(response.data.user.id);
+        }
+        if (userData.platforms_number) {
+          try {
+            const platforms = JSON.parse(userData.platforms_number);
+            if (platforms.whatsapp) userData.whatsapp = platforms.whatsapp;
+            if (platforms.telegram) userData.telegram = platforms.telegram;
+            if (platforms.viber) userData.viber = platforms.viber;
+            if (platforms.botim) userData.botim = platforms.botim;
+          } catch (e) {
+            console.error("Error parsing platforms:", e);
+          }
+        }
+        if (userData.photo) {
+          setPhotoPreview(userData.photo);
+        }
 
-      if (user.platforms_number) {
-        const platforms = JSON.parse(user.platforms_number);
-        Object.entries(platforms).forEach(([platform, value]) => {
-          setValue(platform as any, value);
-        });
+        setFormData(userData);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
       }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    const updatedFormData = {
+      ...formData,
+      [name]: value,
+    };
+    setFormData(updatedFormData);
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (
+        !file.type.match("image/jpeg") &&
+        !file.type.match("image/png") &&
+        !file.type.match("image/jpg")
+      ) {
+        alert("Please select a valid image file (JPEG, JPG, or PNG)");
+        return;
+      }
+
+      setProfilePhoto(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
     }
-  }, [user, setValue]);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitLoading(true);
+
+    try {
+      if (!userId) {
+        throw new Error("User ID not found");
+      }
+
+      const formDataToSend = new FormData();
+
+      const platforms = {
+        whatsapp: formData.whatsapp || null,
+        telegram: formData.telegram || null,
+        viber: formData.viber || null,
+        botim: formData.botim || null,
+      };
+
+      const hasPlatformData = Object.values(platforms).some(
+        (val) => val !== null && val !== ""
+      );
+
+      Object.keys(formData).forEach((key) => {
+        if (
+          key !== "whatsapp" &&
+          key !== "telegram" &&
+          key !== "viber" &&
+          key !== "botim" &&
+          key !== "photo" &&
+          formData[key] !== null &&
+          formData[key] !== undefined
+        ) {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
+
+      if (hasPlatformData) {
+        formDataToSend.append("platforms_number", JSON.stringify(platforms));
+      }
+
+      if (profilePhoto) {
+        formDataToSend.append("photo", profilePhoto);
+      }
+      await axiosInstance.post(`/users/update/${userId}`, formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      fetchUserData();
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const platformIcons = {
+    whatsapp: <WhatsApp height={30} width={30} />,
+    telegram: <Telegram height={30} width={30} />,
+    viber: <Viber height={30} width={30} />,
+    botim: <Botim height={30} width={30} />,
+  };
 
   return (
-    <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">
-            Personal Information
-          </h4>
+    <section className="!py-10 my-auto dark:bg-gray-900">
+      <ToastContainer />
+      <div className="lg:w-[80%] md:w-[90%] w-[96%] mx-auto flex gap-4">
+        <div className="lg:w-[88%] sm:w-[88%] w-full mx-auto shadow-2xl p-4 rounded-xl h-fit self-center dark:bg-gray-800/40">
+          <div className="">
+            <h1 className="!lg:text-3xl !md:text-2xl !text-xl font-serif font-extrabold !mb-2 dark:text-white">
+              My Account
+            </h1>
+            <h2 className="text-grey !text-sm !mb-4 dark:text-gray-400">
+              {isOrganization ? "Organization Profile" : "Personal Profile"}
+            </h2>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                First Name
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.name}
-              </p>
-            </div>
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
+                  <div className="relative group">
+                    <div
+                      className="w-[141px] h-[141px] bg-blue-300/20 rounded-full bg-cover bg-center bg-no-repeat"
+                      style={{
+                        backgroundImage: photoPreview
+                          ? `url(${photoPreview})`
+                          : "url('https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NzEyNjZ8MHwxfHNlYXJjaHw4fHxwcm9maWxlfGVufDB8MHx8fDE3MTEwMDM0MjN8MA&ixlib=rb-4.0.3&q=80&w=1080')",
+                      }}
+                    >
+                      <div className="absolute bottom-1 right-1 bg-white/90 rounded-full w-8 h-8 flex items-center justify-center shadow-md">
+                        <input
+                          type="file"
+                          name="photo"
+                          id="upload_profile"
+                          accept="image/jpeg,image/png,image/jpg"
+                          hidden
+                          ref={fileInputRef}
+                          onChange={handlePhotoChange}
+                        />
 
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Last Name
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.lastname}
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Email address
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.email}
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Phone
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.phone_number}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={openModal}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
-        >
-          <svg
-            className="fill-current"
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-              fill=""
-            />
-          </svg>
-          Edit
-        </button>
-      </div>
-
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
-        <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-          <div className="px-2 pr-14">
-            <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Edit Personal Information
-            </h4>
-            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Update your details to keep your profile up-to-date.
-            </p>
-          </div>
-          <form onSubmit={handleSubmit(handleSave)} className="flex flex-col">
-            <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
-              <div>
-                <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
-                  Social Links
-                </h5>
-
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  {Object.entries(socialPlatforms).map(([platform, value]) => (
-                    <div key={platform} className="mb-5">
+                        <label
+                          htmlFor="upload_profile"
+                          className="cursor-pointer"
+                        >
+                          <svg
+                            data-slot="icon"
+                            className="w-5 h-5 text-blue-700"
+                            fill="none"
+                            strokeWidth="1.5"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
+                            ></path>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
+                            ></path>
+                          </svg>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 !mt-4 !md:mt-0">
+                    <div className="flex flex-wrap gap-3">
+                      {Object.entries(activePlatforms).some(
+                        ([_, value]) => value
+                      ) ? (
+                        Object.entries(activePlatforms).map(
+                          ([platform, value]) =>
+                            value && (
+                              <div
+                                key={platform}
+                                className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg"
+                              >
+                                <div className="flex h-8 w-8 min-w-8 items-center justify-center text-sm">
+                                  {platformIcons[platform]}
+                                </div>
+                                <span className="text-sm text-gray-600 dark:text-gray-300">
+                                  {value}
+                                </span>
+                              </div>
+                            )
+                        )
+                      ) : (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          No contact platforms added yet
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {isOrganization ? (
+                  <div className="flex flex-col !lg:flex-row !gap-2 justify-center w-full">
+                    <div className="w-full !mb-4 !mt-6">
                       <label
-                        htmlFor={platform}
-                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        htmlFor="organization_name"
+                        className="!mb-2 block dark:text-gray-300"
                       >
-                        {platform}
+                        Organization Name
                       </label>
                       <input
                         type="text"
-                        id={platform}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        placeholder={`Enter ${platform} number`}
-                        {...register(platform as any)}
+                        id="organization_name"
+                        name="organization_name"
+                        value={formData.organization_name}
+                        onChange={handleInputChange}
+                        className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                        placeholder="Organization Name"
                       />
-                      <p className="error">{errors[platform]?.message}</p>
                     </div>
-                  ))}
-
-                  {availablePlatforms.map((platform) => (
-                    <div key={platform} className="mb-5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSocialPlatforms((prev) => ({
-                            ...prev,
-                            [platform]: "",
-                          }));
-                          setValue(platform as any, "");
-                        }}
-                        className="flex items-center gap-2 p-2.5 w-full border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
+                    <div className="w-full !mb-4 !lg:mt-6">
+                      <label
+                        htmlFor="Identification_number"
+                        className="!mb-2 block dark:text-gray-300"
                       >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                          />
-                        </svg>
-                        <span className="capitalize">Add {platform}</span>
-                      </button>
+                        Organization ID Number
+                      </label>
+                      <input
+                        type="text"
+                        id="Identification_number"
+                        name="Identification_number"
+                        value={formData.Identification_number}
+                        onChange={handleInputChange}
+                        className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                        placeholder="Organization ID Number"
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-7">
-                <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
-                  Personal Information
-                </h5>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-col !lg:flex-row !gap-2 justify-center w-full">
+                      <div className="w-full !mb-4 !mt-6">
+                        <label
+                          htmlFor="name"
+                          className="!mb-2 block dark:text-gray-300"
+                        >
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          id="name"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                          placeholder="First Name"
+                        />
+                      </div>
+                      <div className="w-full !mb-4 !lg:mt-6">
+                        <label
+                          htmlFor="lastname"
+                          className="block dark:text-gray-300"
+                        >
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          id="lastname"
+                          name="lastname"
+                          value={formData.lastname}
+                          onChange={handleInputChange}
+                          className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                          placeholder="Last Name"
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div className="mb-5">
-                    <label
-                      htmlFor="lastname"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Lastname
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      placeholder="Please enter firstname"
-                      {...register("name")}
-                    />
-                    <p className="error">{errors.name?.message}</p>
-                  </div>
-                  <div className="mb-5">
-                    <label
-                      htmlFor="lastname"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Lastname
-                    </label>
-                    <input
-                      type="lastname"
-                      id="lastname"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      placeholder="Please enter lastname"
-                      {...register("lastname")}
-                    />
-                    <p className="error">{errors.lastname?.message}</p>
-                  </div>
-                  <div className="mb-5">
+                    <div className="flex flex-col !lg:flex-row !gap-2 justify-center w-full">
+                      <div className="w-full !mb-4">
+                        <label
+                          htmlFor="passport_number"
+                          className="!mb-2 block dark:text-gray-300"
+                        >
+                          Passport Number
+                        </label>
+                        <input
+                          type="text"
+                          id="passport_number"
+                          name="passport_number"
+                          value={formData.passport_number}
+                          onChange={handleInputChange}
+                          className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                          placeholder="Passport Number"
+                        />
+                      </div>
+                      <div className="w-full !mb-4">
+                        <label
+                          htmlFor="Identification_number"
+                          className="!mb-2 block dark:text-gray-300"
+                        >
+                          ID Number
+                        </label>
+                        <input
+                          type="text"
+                          id="Identification_number"
+                          name="Identification_number"
+                          value={formData.Identification_number}
+                          onChange={handleInputChange}
+                          className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                          placeholder="Identification Number"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Common fields for both account types */}
+                <div className="flex flex-col !lg:flex-row !gap-2 justify-center w-full">
+                  <div className="w-full !mb-4">
                     <label
                       htmlFor="email"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      className="!mb-2 block dark:text-gray-300"
                     >
-                      Email address
+                      Email
                     </label>
                     <input
                       type="email"
                       id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      placeholder="Please enter email"
-                      {...register("email")}
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                      placeholder="Email Address"
                     />
-                    <p className="error">{errors.email?.message}</p>
                   </div>
-                  <div className="mb-5">
+                  <div className="w-full !mb-4">
                     <label
                       htmlFor="phone_number"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      className="!mb-2 block dark:text-gray-300"
                     >
-                      Phone number
+                      Phone Number
                     </label>
                     <input
-                      type="text"
+                      type="tel"
                       id="phone_number"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      placeholder="Please enter Phone number"
-                      {...register("phone_number")}
+                      name="phone_number"
+                      value={formData.phone_number}
+                      onChange={handleInputChange}
+                      className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                      placeholder="Phone Number"
                     />
-                    <p className="error">{errors.phone_number?.message}</p>
                   </div>
                 </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={closeModal}>
-                Close
-              </Button>
-              {/* onClick={handleSave} */}
-              <Button size="sm" >Save Changes</Button>
-            </div>
-          </form>
+
+                {/* Communication platforms section */}
+                <h3 className="text-lg font-medium mt-6 mb-4 dark:text-white">
+                  Communication Platforms
+                </h3>
+                <div className="flex flex-col !lg:flex-row !gap-2 justify-center w-full">
+                  <div className="w-full !mb-4">
+                    <label
+                      htmlFor="whatsapp"
+                      className="!mb-2 block dark:text-gray-300"
+                    >
+                      <div className="flex items-center gap-2">
+                        <WhatsApp height={30} width={30} />
+                        WhatsApp
+                      </div>
+                    </label>
+                    <input
+                      type="tel"
+                      id="whatsapp"
+                      name="whatsapp"
+                      value={formData.whatsapp}
+                      onChange={handleInputChange}
+                      className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                      placeholder="WhatsApp Number"
+                    />
+                  </div>
+                  <div className="w-full !mb-4">
+                    <label
+                      htmlFor="telegram"
+                      className="!mb-2 block dark:text-gray-300"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Telegram height={30} width={30} />
+                        Telegram
+                      </div>
+                    </label>
+                    <input
+                      type="tel"
+                      id="telegram"
+                      name="telegram"
+                      value={formData.telegram}
+                      onChange={handleInputChange}
+                      className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                      placeholder="Telegram Number"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col !lg:flex-row !gap-2 justify-center w-full">
+                  <div className="w-full !mb-4">
+                    <label
+                      htmlFor="viber"
+                      className="!mb-2 block dark:text-gray-300"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Viber height={30} width={30} />
+                        Viber
+                      </div>
+                    </label>
+                    <input
+                      type="tel"
+                      id="viber"
+                      name="viber"
+                      value={formData.viber}
+                      onChange={handleInputChange}
+                      className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                      placeholder="Viber Number"
+                    />
+                  </div>
+                  <div className="w-full !mb-4">
+                    <label
+                      htmlFor="botim"
+                      className="!mb-2 block dark:text-gray-300"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Botim height={30} width={30} />
+                        Botim
+                      </div>
+                    </label>
+                    <input
+                      type="tel"
+                      id="botim"
+                      name="botim"
+                      value={formData.botim}
+                      onChange={handleInputChange}
+                      className="!mt-2 !p-4 w-full border-2 rounded-lg dark:text-gray-200 dark:border-gray-600 dark:bg-gray-800"
+                      placeholder="Botim Number"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col bg-black text-white !lg:flex-row !gap-2 justify-center w-full rounded-lg mt-6">
+                  <button
+                    type="submit"
+                    className="w-full !p-4 flex justify-center items-center"
+                    disabled={submitLoading}
+                  >
+                    {submitLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white !mr-2"></div>
+                        Updating...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
-      </Modal>
-    </div>
+      </div>
+    </section>
   );
 }

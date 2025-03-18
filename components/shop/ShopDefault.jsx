@@ -1,91 +1,151 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { layouts } from "@/data/shop";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import ProductGrid from "./ProductGrid";
-import ShopFilter from "./ShopFilter";
-import Sorting from "./Sorting";
-import { useGetCategory } from "@/hooks/useCategory";
-import { useGetCategories } from "@/hooks/useGetCategories";
+import SearchBar from "./SearchBar";
+import axiosInstance from "@/config/axios";
+import { X } from 'lucide-react';
 
 function ShopDefaultContent() {
-  const [gridItems, setGridItems] = useState();
-  const [products, setProducts] = useState([]);
-  const [finalSorted, setFinalSorted] = useState([]);
+  const [services, setServices] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
+  const router = useRouter();
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");
   const categoryName = searchParams.get("categoryName");
+  const urlSearchQuery = searchParams.get("search");
 
-  const { data: category } = useGetCategory(categoryId, {
-    enabled: !!categoryId,
-  });
+  useEffect(() => {
+    if (urlSearchQuery) {
+      setSearchQuery(urlSearchQuery);
+    }
 
-  const { data: categories } = useGetCategories({
-    enabled: !categoryId,
-  });
+  }, [urlSearchQuery]);
 
-  const servicesLength = categoryId
-    ? category?.services?.length
-    : categories?.reduce((acc, cat) => acc + (cat.services?.length || 0), 0);
+  const fetchServices = async () => {
+    setIsLoading(true);
 
-  const services = categoryId
-    ? category?.services
-    : categories?.flatMap((cat) => cat.services) || [];
+    try {
+      let endpoint = "/services";
+      let params = { sort: 'default' };
+
+      if (categoryId) {
+        params.categoryId = categoryId;
+      }
+
+      if (searchQuery) {
+        endpoint = "/services/search";
+        params.query = searchQuery;
+      }
+
+      const response = await axiosInstance.get(endpoint, { params });
+
+      if (response.data && response.data.services) {
+        setServices(response.data.services);
+      } else {
+        setServices([]);
+      }
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      setServices([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, [categoryId, searchQuery]);
+
+  const handleSearchResults = (query, results) => {
+    setSearchQuery(query);
+
+    if (results) {
+      setServices(results);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("search");
+    router.push(`/shop?${newParams.toString()}`);
+  };
 
   return (
     <>
       <section className="flat-spacing-2">
         <div className="container">
-          {(categoryName || category?.name) && (
+          <div className="search-container mb-4">
+            <SearchBar
+              initialQuery={searchQuery}
+              onSearch={handleSearchResults}
+            />
+            {searchQuery && (
+              <div className="bg-gray-50 rounded-md !p-3 shadow-sm border border-gray-200 flex items-center justify-between !mb-4">
+                <p className="text-gray-700 !text-sm font-medium">
+                  Found{" "}
+                  <span className="font-bold text-blue-600">
+                    {services.length}
+                  </span>{" "}
+                  results
+                  {searchQuery && (
+                    <span>
+                      {" "}
+                      for "
+                      <span className="italic text-gray-800">
+                        {searchQuery}
+                      </span>
+                      "
+                    </span>
+                  )}
+                </p>
+                <button
+                  className="!ml-2 !px-3 !py-1 !text-xs bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors flex items-center"
+                  onClick={clearSearch}
+                >
+                  <X size={14} className="!mr-1" /> Clear Search
+                </button>
+              </div>
+            )}
+          </div>
+          {!searchQuery && categoryName && (
             <div className="category-header mb-4">
               <div className="row">
                 <div className="col-12">
                   <div className="d-flex align-items-center">
                     <h2 className="category-title fs-3 fw-bold mb-0">
-                      {categoryName || category?.name}
+                      {categoryName}
                     </h2>
                     <span className="badge bg-secondary ms-3 rounded-pill">
-                      {servicesLength || 0} services
+                      {services.length || 0} services
                     </span>
                   </div>
-                  {category?.description && (
-                    <p className="category-description text-muted mt-2">
-                      {category.description}
-                    </p>
-                  )}
                 </div>
               </div>
               <hr className="my-3" />
             </div>
           )}
 
-          <div className="tf-shop-control grid-2 align-items-center">
-            <div className="tf-control-filter">
-              <a
-                href="#filterShop"
-                data-bs-toggle="offcanvas"
-                aria-controls="offcanvasLeft"
-                className="tf-btn-filter"
-              >
-                <span className="icon icon-filter" />
-                <span className="text">Filter</span>
-              </a>
-            </div>
-            <div className="tf-control-sorting d-flex justify-content-end">
-              <div className="tf-dropdown-sort" data-bs-toggle="dropdown">
-                <Sorting setFinalSorted={setFinalSorted} category={services} />
-              </div>
-            </div>
-          </div>
+        
           <div className="wrapper-control-shop">
             <div className="meta-filter-shop" />
-            <ProductGrid gridItems={gridItems} allproducts={services} />
+            {isLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : (
+              <ProductGrid  allproducts={services} />
+            )}
           </div>
         </div>
       </section>
-      <ShopFilter setProducts={setProducts} />
     </>
   );
 }

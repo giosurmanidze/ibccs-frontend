@@ -91,16 +91,34 @@ export default function EnhancedFileLibrary() {
     }
   };
 
-  const handleDownload = (fileId, filename) => {
-    const url = `http://localhost:8000/api/download/${fileId}`;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const handleDownload = async (fileId, filename) => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const url = `${baseUrl}/download/${fileId}`;
 
+    try {
+      // Fetch the file as a Blob with authorization headers
+      const response = await axiosInstance.get(url, {
+        responseType: "blob", // Important for handling file downloads
+      });
+
+      // Create a URL for the Blob
+      const downloadUrl = URL.createObjectURL(response.data);
+
+      // Create a temporary link and trigger the download
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Download failed. Please try again.");
+    }
+  };
   const renderFileIcon = (type) => {
     switch (type) {
       case "image":

@@ -1,8 +1,6 @@
 "use client";
 import Collections from "@/components/homes/home-gaming-accessories/Collections";
 import Hero from "@/components/homes/home-gaming-accessories/Hero";
-import Products2 from "@/components/homes/home-gaming-accessories/Products2";
-import Store from "@/components/homes/home-gaming-accessories/Store";
 import axiosInstance from "@/config/axios";
 import React, { useEffect, useState } from "react";
 
@@ -23,8 +21,6 @@ export default function Page() {
       <div >
         <Hero pageContent={pageContent} />
         <Collections />
-        <Products2 />
-        <Store />
       </div>
     </>
   );

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import axiosInstance from "@/config/axios";
 import EnhancedOrderDetailsModal from "@/components/OrderDetailsModal";
 
-const page = () => {
+const MyOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -494,4 +494,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default MyOrders;

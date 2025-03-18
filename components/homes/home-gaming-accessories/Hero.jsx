@@ -17,248 +17,186 @@ export default function Hero({ pageContent }) {
     setIsClient(true);
   }, []);
 
-  const sliderSettings = {
+  const settings = {
     dots: true,
     infinite: true,
-    speed: 500,
-    slidesToShow: 3,
-    slidesToScroll: 1,
-    centerMode: true,
-    centerPadding: '30px',
+    speed: 800,
+    slidesToShow: 2,
+    slidesToScroll: 2,
     autoplay: true,
-    autoplaySpeed: 2000,
+    autoplaySpeed: 3000,
+    arrows: true,
     responsive: [
       {
         breakpoint: 1200,
         settings: {
-          slidesToShow: 3,
-          centerPadding: '30px'
-        }
+          slidesToShow: 2,
+          slidesToScroll: 2,
+        },
+      },
+      {
+        breakpoint: 992,
+        settings: {
+          slidesToShow: 2,
+          slidesToScroll: 2,
+        },
       },
       {
         breakpoint: 768,
         settings: {
-          slidesToShow: 2,
-          centerPadding: '30px'
-        }
+          slidesToShow: 1,
+          slidesToScroll: 1,
+        },
       },
       {
         breakpoint: 480,
         settings: {
           slidesToShow: 1,
-          centerPadding: '20px'
-        }
-      }
+          slidesToScroll: 1,
+          arrows: false,
+        },
+      },
     ],
-    customPaging: (i) => (
-      <div className="custom-dot"></div>
-    )
+    prevArrow: <CustomPrevArrow />,
+    nextArrow: <CustomNextArrow />,
   };
 
   return (
     <section className="flat-spacing-5 slider-gaming-accessories position-relative">
-      {/* Background overlay */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "rgba(0, 0, 0, 0.3)",
-          zIndex: 1,
-        }}
-      ></div>
+      <div className="background-overlay"></div>
 
-      {/* Background Image */}
       <Image
-        alt="collection-img"
         src={banner_bg_image}
+        alt="collection-img"
         width={2000}
         height={855}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: 0,
-        }}
+        className="background-image"
+        priority
       />
 
       <div className="container position-relative" style={{ zIndex: 2 }}>
         {isClient && (
-          <Slider {...sliderSettings}>
-            {banner_cards.map((slide, index) => {
-              // Find the corresponding button for this card
-              const correspondingButton =
-                banner_buttons[index] || banner_buttons[0];
-
-              return (
-                <div key={index} className="px-2">
-                  <div
-                    className="card-container"
-                    style={{
-                      width: "100%",
-                      aspectRatio: "1 / 1",
-                      margin: "0 auto",
-                      borderRadius: "10px",
-                      overflow: "hidden",
-                      position: "relative",
-                      boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    {/* Image background */}
-                    {correspondingButton?.banner_img?.value && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: "100%",
-                        }}
-                      >
-                        <Image
-                          alt={slide.alt || "Card image"}
-                          src={correspondingButton.banner_img.value}
-                          fill
-                          style={{
-                            objectFit: "cover",
-                          }}
-                        />
-                        {/* Dark overlay for better text readability */}
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            background:
-                              "linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.6))",
-                            zIndex: 1,
-                          }}
-                        ></div>
-                      </div>
-                    )}
-
-                    {/* Content overlay (positioned above the image) */}
-                    <div
-                      className="collection-content text-center"
-                      style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        width: "100%",
-                        padding: "2rem",
-                        zIndex: 2,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "flex-end",
-                        height: "100%",
-                      }}
-                    >
-                      <div>
-                        <p
-                          className="subheading"
-                          style={{
-                            color: slide.top_text_color?.value || "#ffffff",
-                            margin: "0 0 0.5rem",
-                            fontSize: "0.9rem",
-                            textShadow: "0 1px 3px rgba(0,0,0,0.4)",
-                          }}
-                        >
-                          {slide.top_text?.value}
-                        </p>
-                        <h5
-                          className="heading fw-6 font-readex-pro"
-                          style={{
-                            color: slide.header_text_color?.value || "#ffffff",
-                            margin: "0 0 0.5rem",
-                            fontSize: "1.5rem",
-                            textShadow: "0 1px 3px rgba(0,0,0,0.4)",
-                          }}
-                        >
-                          {slide.header_text?.value}
-                        </h5>
-                        <p
-                          className="subtext"
-                          style={{
-                            color: slide.smaller_text_color?.value || "#ffffff",
-                            margin: "0 0 1.5rem",
-                            fontSize: "0.85rem",
-                            textShadow: "0 1px 3px rgba(0,0,0,0.4)",
-                          }}
-                        >
-                          {slide.smaller_text?.value}
-                        </p>
-                      </div>
-                      {correspondingButton && (
-                        <div style={{ textAlign: "center" }}>
+          <div className="slider-container">
+            <Slider {...settings} className="hero-slider">
+              {banner_cards.map((slide, index) => {
+                const buttonIndex = index % banner_buttons.length;
+                return (
+                  <div key={index} className="slide-item">
+                    <div className="collection-item">
+                      <div className="collection-inner">
+                        {banner_buttons[buttonIndex] && (
                           <Link
-                            href={
-                              correspondingButton.url || "/shop-collection-sub"
-                            }
-                            className="tf-btn style-3 fw-6 btn-light-icon radius-3 animate-hover-btn"
-                            style={{
-                              color: correspondingButton.text_color,
-                              backgroundColor:
-                                correspondingButton.background_color,
-                              display: "inline-block",
-                              padding: "0.6rem 1.8rem",
-                              boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-                            }}
+                            href={`/shop-collection-sub`}
+                            className="image-link"
                           >
-                            <span>{correspondingButton.text}</span>
+                            <Image
+                              src={
+                                banner_buttons[buttonIndex]?.banner_img?.value
+                              }
+                              alt={slide.alt || "Collection Image"}
+                              width={800}
+                              height={847}
+                              className="collection-img"
+                            />
                           </Link>
+                        )}
+
+                        <div className="collection-content">
+                          <p
+                            className="subheading"
+                            style={{ color: slide.top_text_color.value }}
+                          >
+                            {slide.top_text.value}
+                          </p>
+                          <h5
+                            className="heading"
+                            style={{ color: slide.header_text_color.value }}
+                          >
+                            {slide.header_text.value}
+                          </h5>
+                          <p
+                            className="subtext"
+                            style={{ color: slide.smaller_text_color.value }}
+                          >
+                            {slide.smaller_text.value}
+                          </p>
+                          {banner_buttons[buttonIndex] && (
+                            <Link
+                              href={`/shop-collection-sub`}
+                              className="button"
+                              style={{
+                                color: banner_buttons[buttonIndex]?.text_color,
+                                backgroundColor:
+                                  banner_buttons[buttonIndex]?.background_color,
+                              }}
+                            >
+                              {banner_buttons[buttonIndex]?.text}
+                            </Link>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </Slider>
+                );
+              })}
+            </Slider>
+          </div>
         )}
       </div>
-
-      {/* Add custom CSS for pagination bullets */}
-      <style jsx global>{`
-        /* Custom dot styles */
-        .slick-dots li {
-          margin: 0 5px;
-        }
-
-        .custom-dot {
-          width: 10px;
-          height: 10px;
-          background-color: rgba(255, 255, 255, 0.5);
-          border-radius: 50%;
-          display: inline-block;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .slick-dots li.slick-active .custom-dot {
-          background-color: white;
-          width: 12px;
-          height: 12px;
-        }
-
-        /* Text responsiveness */
-        @media (max-width: 768px) {
-          .heading {
-            font-size: 1.3rem !important;
-          }
-
-          .subheading,
-          .subtext {
-            font-size: 0.8rem !important;
-          }
-        }
-      `}</style>
     </section>
+  );
+}
+
+function CustomPrevArrow(props) {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={`${className} custom-prev-arrow`}
+      style={{ ...style, display: "flex" }}
+      onClick={onClick}
+    >
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M15 19L8 12L15 5"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function CustomNextArrow(props) {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={`${className} custom-next-arrow`}
+      style={{ ...style, display: "flex" }}
+      onClick={onClick}
+    >
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M9 5L16 12L9 19"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
   );
 }

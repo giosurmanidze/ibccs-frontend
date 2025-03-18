@@ -7,7 +7,7 @@ import { Botim } from "@/icons/Botim";
 import { Viber } from "@/icons/Viber";
 import { toast, ToastContainer } from "react-toastify";
 
-export default function page() {
+export default function MyProfile() {
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [userId, setUserId] = useState(null);

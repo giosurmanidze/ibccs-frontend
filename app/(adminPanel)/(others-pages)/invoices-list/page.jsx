@@ -38,7 +38,6 @@ const InvoicesList = () => {
         responseType: "blob",
       });
 
-      // Create a link to download the file
       const href = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = href;
@@ -46,44 +45,27 @@ const InvoicesList = () => {
       document.body.appendChild(link);
       link.click();
 
-      // Clean up
       document.body.removeChild(link);
       window.URL.revokeObjectURL(href);
     } catch (error) {
       console.error("Download failed", error);
-      // More detailed error handling
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        console.error("Error response:", error.response.data);
-        console.error("Error status:", error.response.status);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error("Error request:", error.request);
-      } else {
-        // Something happened in setting up the request
-        console.error("Error message:", error.message);
-      }
     }
   };
 
   const handleViewPdf = async (invoiceId) => {
     try {
-      // Fetch the PDF data
       const response = await axiosInstance({
         url: `/download-invoice/${invoiceId}`,
         method: "GET",
         responseType: "blob",
       });
 
-      // Create a URL for the PDF blob
       const pdfUrl = window.URL.createObjectURL(
         new Blob([response.data], { type: "application/pdf" })
       );
 
-      // Open PDF in a new tab
       window.open(pdfUrl, "_blank");
 
-      // Revoke the URL after a short delay to ensure the browser has time to open it
       setTimeout(() => {
         window.URL.revokeObjectURL(pdfUrl);
       }, 1000);

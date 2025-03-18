@@ -1,12 +1,12 @@
-import axios from "@/config/axios";
+import axiosInstance from "@/config/axios";
 import { useQuery } from "@tanstack/react-query";
 
-export const useGetUsers = () => {
+export const useGetUsers = (searchTerm = "") => {
   return useQuery({
-    queryKey: ["users"],
+    queryKey: ["users", searchTerm],
     queryFn: async () => {
-      const response = await axios.get(`/users`);
-      return response.data;
+      const response = await axiosInstance.get(`/users?search=${searchTerm}`);
+      return response.data.data;
     },
   });
 };

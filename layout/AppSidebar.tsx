@@ -348,7 +348,9 @@ const AppSidebar: React.FC = () => {
         className={`py-8 flex  ${
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
-      ></div>
+      >
+        <img src="../images/logo/ibccs logo.avif" alt="" />
+      </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">

@@ -131,7 +131,7 @@ export default function BlankPage() {
                 {...register("name")}
                 id="name"
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="John"
+                placeholder="Enter firstname"
               />
               {errors.name && <p className="error">{errors.name.message}</p>}
             </div>
@@ -147,7 +147,7 @@ export default function BlankPage() {
                 {...register("lastname")}
                 id="lastname"
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="Doe"
+                placeholder="Enter lastname"
               />
               {errors.lastname && (
                 <p className="error">{errors.lastname.message}</p>
@@ -165,7 +165,7 @@ export default function BlankPage() {
                 id="phone_number"
                 {...register("phone_number")}
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="Flowbite"
+                placeholder="Enter phone number"
               />
               {errors.phone_number && (
                 <p className="error">{errors.phone_number.message}</p>
@@ -183,7 +183,7 @@ export default function BlankPage() {
               id="email"
               {...register("email")}
               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              placeholder="john.doe@company.com"
+              placeholder="Enter email address"
             />
             {errors.email && <p className="error">{errors.email.message}</p>}
           </div>

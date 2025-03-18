@@ -2,7 +2,6 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Modal } from "@/components/ui/modal";
 import * as yup from "yup";
-
 import React, { useCallback, useEffect, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
@@ -15,15 +14,19 @@ import { useGetUser } from "@/hooks/useGetUser";
 import { useDeleteUser } from "@/hooks/useDeleteUser";
 import { toast, ToastContainer } from "react-toastify";
 import { useToggleActivation } from "@/hooks/useToggleActivation";
+import { useGetRoles } from "@/hooks/useGetRoles";
 
 const ALL_SOCIAL_PLATFORMS = ["whatsapp", "telegram", "viber", "botim"];
 
 export default function UsersListPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: users } = useGetUsers();
+  const { data: roles } = useGetRoles();
+  const { data: users } = useGetUsers(searchTerm);
   const { data: AuthUser } = useGetUser();
+
   const queryClient = useQueryClient();
 
   const [socialPlatforms, setSocialPlatforms] = useState(
@@ -36,11 +39,23 @@ export default function UsersListPage() {
     (platform) => !Object.keys(socialPlatforms).includes(platform)
   );
 
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      queryClient.invalidateQueries(["users"]);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, queryClient]);
   const validationSchema = yup.object().shape({
     name: yup.string().required("Name is required"),
     lastname: yup.string().required("Lastname is required"),
     email: yup.string().required("Email is required"),
     phone_number: yup.string().required("Phone number is required"),
+    role_id: yup.string().required("Role is required"),
 
     ...Object.keys(socialPlatforms || {}).reduce(
       (acc, platform) => ({
@@ -66,6 +81,8 @@ export default function UsersListPage() {
     setValue("lastname", user.lastname);
     setValue("phone_number", user.phone_number);
     setValue("email", user.email);
+    setValue("email", user.email);
+    setValue("role_id", user.role_id);
     setSelectedUser(user);
     setIsOpen(true);
   }, []);
@@ -97,6 +114,12 @@ export default function UsersListPage() {
         `users/update/${selectedUser.id}?from_user_list`,
         formData
       );
+
+      setSelectedUser((prev) => ({
+        ...prev,
+        ...data,
+        ...(response.data.user || {}),
+      }));
 
       closeModal();
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -140,8 +163,6 @@ export default function UsersListPage() {
   }, [selectedUser, setValue]);
 
   const handleCheckboxChange = (userId, userStatus) => {
-    console.log(userId, userStatus);
-
     toggleUserStatus.mutate(userId, {
       onSuccess: () => {
         const statusCheck =
@@ -165,30 +186,6 @@ export default function UsersListPage() {
         <ToastContainer />
         <div class="flex items-center justify-between flex-column md:flex-row flex-wrap space-y-4 md:space-y-0 py-4 bg-white dark:bg-gray-900 p-4">
           <div>
-            <button
-              id="dropdownActionButton"
-              data-dropdown-toggle="dropdownAction"
-              class="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-3 py-1.5 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
-              type="button"
-            >
-              <span class="sr-only">Action button</span>
-              Action
-              <svg
-                class="w-2.5 h-2.5 ms-2.5"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 10 6"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="m1 1 4 4 4-4"
-                />
-              </svg>
-            </button>
             <div
               id="dropdownAction"
               class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-gray-700 dark:divide-gray-600"
@@ -253,26 +250,16 @@ export default function UsersListPage() {
             <input
               type="text"
               id="table-search-users"
-              class="block ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              placeholder="Search for users"
+              value={searchTerm}
+              onChange={handleSearch}
+              className="block p-2 text-[12px] pl-10 text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="Search for users by name, lastname or email"
             />
           </div>
         </div>
         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
           <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
-              <th scope="col" class="p-4">
-                <div class="flex items-center">
-                  <input
-                    id="checkbox-all-search"
-                    type="checkbox"
-                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                  <label for="checkbox-all-search" class="sr-only">
-                    checkbox
-                  </label>
-                </div>
-              </th>
               <th scope="col" class="px-6 py-3">
                 Name
               </th>
@@ -299,18 +286,6 @@ export default function UsersListPage() {
                 key={user.id}
                 class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
-                <td class="w-4 p-4">
-                  <div class="flex items-center">
-                    <input
-                      id="checkbox-table-search-1"
-                      type="checkbox"
-                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <label for="checkbox-table-search-1" class="sr-only">
-                      checkbox
-                    </label>
-                  </div>
-                </td>
                 <th
                   scope="row"
                   class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
@@ -319,7 +294,7 @@ export default function UsersListPage() {
                     <Image
                       width={60}
                       height={60}
-                      src={`${process.env.NEXT_PUBLIC_STORAGE_URL}${user.photo}`}
+                      src={`${user.photo}`}
                       alt="user"
                       className="w-full h-full object-cover"
                     />
@@ -392,72 +367,68 @@ export default function UsersListPage() {
                   </button>
                 </td>
                 <td class="px-6 py-4">
-                  <label className="flex cursor-pointer select-none items-center">
-                    {console.log("user", user)}
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={user.is_activated ? "checked" : ""}
-                        disabled={AuthUser?.role?.name !== "Admin"}
-                        onChange={() =>
-                          handleCheckboxChange(user.id, user.is_activated)
-                        }
-                        className="sr-only"
-                      />
-                      <div
-                        className={`block h-7 w-14 rounded-full ${
-                          user.is_activated && AuthUser?.role.name === "Admin"
-                            ? "bg-orange-500"
-                            : "bg-[#E5E7EB]"
-                        }`}
-                      ></div>
-                      <div
-                        className={`dot absolute top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white transition-all duration-300 ${
-                          user.is_activated ? "left-7" : "left-1"
-                        }`}
-                      >
-                        <span
-                          className={`active ${
-                            user.is_activated ? "block" : "hidden"
+                  <button
+                    onClick={() =>
+                      handleCheckboxChange(user.id, user.is_activated)
+                    }
+                  >
+                    <label className="flex cursor-pointer select-none items-center">
+                      <div className="relative">
+                        <div
+                          className={`block h-7 w-14 rounded-full ${
+                            user.is_activated && AuthUser?.role.name === "Admin"
+                              ? "bg-orange-500"
+                              : "bg-[#E5E7EB]"
+                          }`}
+                        ></div>
+                        <div
+                          className={`dot absolute top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white transition-all duration-300 ${
+                            user.is_activated ? "left-7" : "left-1"
                           }`}
                         >
-                          <svg
-                            width="11"
-                            height="8"
-                            viewBox="0 0 11 8"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
+                          <span
+                            className={`active ${
+                              user.is_activated ? "block" : "hidden"
+                            }`}
                           >
-                            <path
-                              d="M10.0915 0.951972L10.0867 0.946075L10.0813 0.940568C9.90076 0.753564 9.61034 0.753146 9.42927 0.939309L4.16201 6.22962L1.58507 3.63469C1.40401 3.44841 1.11351 3.44879 0.932892 3.63584C0.755703 3.81933 0.755703 4.10875 0.932892 4.29224L0.932878 4.29225L0.934851 4.29424L3.58046 6.95832C3.73676 7.11955 3.94983 7.2 4.1473 7.2C4.36196 7.2 4.55963 7.11773 4.71406 6.9584L10.0468 1.60234C10.2436 1.4199 10.2421 1.1339 10.0915 0.951972ZM4.2327 6.30081L4.2317 6.2998C4.23206 6.30015 4.23237 6.30049 4.23269 6.30082L4.2327 6.30081Z"
-                              fill="white"
-                              stroke="white"
-                              strokeWidth="0.4"
-                            ></path>
-                          </svg>
-                        </span>
-                        <span
-                          className={`inactive text-body-color ${
-                            user.is_activated ? "hidden" : "block"
-                          }`}
-                        >
-                          <svg
-                            className="h-4 w-4 stroke-current"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
+                            <svg
+                              width="11"
+                              height="8"
+                              viewBox="0 0 11 8"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M10.0915 0.951972L10.0867 0.946075L10.0813 0.940568C9.90076 0.753564 9.61034 0.753146 9.42927 0.939309L4.16201 6.22962L1.58507 3.63469C1.40401 3.44841 1.11351 3.44879 0.932892 3.63584C0.755703 3.81933 0.755703 4.10875 0.932892 4.29224L0.932878 4.29225L0.934851 4.29424L3.58046 6.95832C3.73676 7.11955 3.94983 7.2 4.1473 7.2C4.36196 7.2 4.55963 7.11773 4.71406 6.9584L10.0468 1.60234C10.2436 1.4199 10.2421 1.1339 10.0915 0.951972ZM4.2327 6.30081L4.2317 6.2998C4.23206 6.30015 4.23237 6.30049 4.23269 6.30082L4.2327 6.30081Z"
+                                fill="white"
+                                stroke="white"
+                                strokeWidth="0.4"
+                              ></path>
+                            </svg>
+                          </span>
+                          <span
+                            className={`inactive text-body-color ${
+                              user.is_activated ? "hidden" : "block"
+                            }`}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            ></path>
-                          </svg>
-                        </span>
+                            <svg
+                              className="h-4 w-4 stroke-current"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M6 18L18 6M6 6l12 12"
+                              ></path>
+                            </svg>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </label>
+                    </label>
+                  </button>
                 </td>
               </tr>
             ))}
@@ -607,6 +578,29 @@ export default function UsersListPage() {
                         {...register("phone_number")}
                       />
                       <p className="error">{errors.phone_number?.message}</p>
+                    </div>
+                    <div>
+                      <label
+                        for="role_id"
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Choose role
+                      </label>
+                      <select
+                        {...register("role_id")}
+                        id="large"
+                        className="block w-full px-4 py-3  text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      >
+                        <option value="">Choose a role</option>
+                        {roles?.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.role_id && (
+                        <p className="error">{errors.role_id.message}</p>
+                      )}
                     </div>
                   </div>
                 </div>

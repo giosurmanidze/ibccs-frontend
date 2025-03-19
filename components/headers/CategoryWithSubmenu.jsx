@@ -37,7 +37,7 @@ export const CategoryWithSubmenu = ({ category: d }) => {
               <div className="d-inline-flex align-items-center me-4">
                 <div
                   className="rounded-circle bg-white p-1 d-flex justify-content-center align-items-center"
-                  style={{ width: "40px", height: "40px" }}
+                  style={{ width: "40px", height: "40px", flexShrink: 0 }}
                 >
                   <Image
                     alt="category icon"
@@ -46,10 +46,11 @@ export const CategoryWithSubmenu = ({ category: d }) => {
                     height={24}
                   />
                 </div>
-                <span className="ms-3 text-dark fw-medium">
-                  {d.name.length > 25
-                    ? `${d.name.substring(0, 20)}...`
-                    : d.name}
+                <span
+                  className="ms-3 text-dark fw-medium category-name"
+                  style={{ wordBreak: "normal", wordWrap: "break-word" }}
+                >
+                  {d.name}
                 </span>
               </div>
             </div>
@@ -57,8 +58,8 @@ export const CategoryWithSubmenu = ({ category: d }) => {
         </div>
         <a
           href={`#${uniqueId}`}
-          className="d-flex align-items-center justify-content-center text-secondary"
-          style={{ width: "30px", height: "30px" }}
+          className="d-flex align-items-center justify-content-center text-secondary ms-2"
+          style={{ width: "30px", height: "30px", flexShrink: 0 }}
           onClick={handleSubMenuClick}
         >
           <span className={`small ${subMenuOpen ? "rotate-180" : ""}`}>
@@ -88,7 +89,7 @@ export const CategoryWithSubmenu = ({ category: d }) => {
                 >
                   <div
                     className="d-flex align-items-center justify-content-center rounded bg-light me-3"
-                    style={{ width: "32px", height: "32px" }}
+                    style={{ width: "32px", height: "32px", flexShrink: 0 }}
                   >
                     <Image
                       alt="service icon"
@@ -97,10 +98,11 @@ export const CategoryWithSubmenu = ({ category: d }) => {
                       height={20}
                     />
                   </div>
-                  <span className="small">
-                    {s.name.length > 25
-                      ? `${s.name.substring(0, 20)}...`
-                      : s.name}
+                  <span
+                    className="small service-name"
+                    style={{ wordBreak: "normal", wordWrap: "break-word" }}
+                  >
+                    {s.name}
                   </span>
                 </Link>
               </li>
@@ -111,6 +113,22 @@ export const CategoryWithSubmenu = ({ category: d }) => {
       <style jsx>{`
         .rotate-180 {
           transform: rotate(180deg);
+        }
+
+        /* Prevent text truncation */
+        .category-name,
+        .service-name {
+          white-space: normal;
+          overflow: visible;
+          text-overflow: clip;
+          display: block;
+          width: auto;
+          max-width: none;
+        }
+
+        /* Ensure proper container sizing */
+        .d-inline-flex {
+          width: calc(100% - 40px);
         }
       `}</style>
     </li>

@@ -53,7 +53,7 @@ const AppSidebar: React.FC = () => {
       name: "Pages",
       icon: <PageIcon />,
       subItems: [
-        { name: "Create page", path: "/pages/create", pro: false },
+        // { name: "Create page", path: "/pages/create", pro: false },
         { name: "List Pages", path: "/pages/list", pro: false },
         {
           name: "Edit Layouts",

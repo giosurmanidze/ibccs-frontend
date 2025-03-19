@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import ProductGrid from "./ProductGrid";
 import SearchBar from "./SearchBar";
 import axiosInstance from "@/config/axios";
-import { X } from 'lucide-react';
+import { X } from "lucide-react";
 
 function ShopDefaultContent() {
   const [services, setServices] = useState([]);
@@ -14,7 +14,7 @@ function ShopDefaultContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const categoryId = searchParams.get("categoryId");
+  const categoryId = searchParams.get("categoryId") || "";
   const categoryName = searchParams.get("categoryName");
   const urlSearchQuery = searchParams.get("search");
 
@@ -22,7 +22,6 @@ function ShopDefaultContent() {
     if (urlSearchQuery) {
       setSearchQuery(urlSearchQuery);
     }
-
   }, [urlSearchQuery]);
 
   const fetchServices = async () => {
@@ -30,7 +29,7 @@ function ShopDefaultContent() {
 
     try {
       let endpoint = "/services";
-      let params = { sort: 'default' };
+      let params = { sort: "default" };
 
       if (categoryId) {
         params.categoryId = categoryId;
@@ -41,7 +40,14 @@ function ShopDefaultContent() {
         params.query = searchQuery;
       }
 
-      const response = await axiosInstance.get(endpoint, { params });
+      console.log("endpoint", endpoint);
+
+      const response = await axiosInstance.get(
+        `services/search?categoryId=${categoryId}`,
+        { params }
+      );
+
+      console.log("response.data", response.data);
 
       if (response.data && response.data.services) {
         setServices(response.data.services);
@@ -95,12 +101,10 @@ function ShopDefaultContent() {
                   results
                   {searchQuery && (
                     <span>
-                      {" "}
-                      for "
+                      for
                       <span className="italic text-gray-800">
                         {searchQuery}
                       </span>
-                      "
                     </span>
                   )}
                 </p>
@@ -130,8 +134,6 @@ function ShopDefaultContent() {
               <hr className="my-3" />
             </div>
           )}
-
-        
           <div className="wrapper-control-shop">
             <div className="meta-filter-shop" />
             {isLoading ? (
@@ -141,7 +143,7 @@ function ShopDefaultContent() {
                 </div>
               </div>
             ) : (
-              <ProductGrid  allproducts={services} />
+              <ProductGrid allproducts={services} />
             )}
           </div>
         </div>

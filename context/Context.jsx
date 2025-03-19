@@ -44,9 +44,6 @@ export default function Context({ children }) {
     setIsLoadingCart(true);
     try {
       const response = await axiosInstance.get("/carts");
-
-      console.log("carts", response);
-
       let cartItems = Array.isArray(response.data) ? response.data : [];
       const subTotal = cartItems.reduce(
         (sum, item) => sum + (item.total_price || 0),

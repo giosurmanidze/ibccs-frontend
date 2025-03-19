@@ -1094,7 +1094,7 @@ const ServiceFieldEditor = ({ service, onClose, onSave }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg max-w-5xl w-full shadow-xl overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg max-w-3xl my-5 w-full shadow-xl overflow-hidden">
       <div className="flex items-start justify-between p-5 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
           {service?.id ? `Edit Service: ${service.name}` : "Create New Service"}

@@ -203,15 +203,14 @@ export default function Header22({ pageContent }) {
                 {searchTerm && (
                   <div className="search-results-meta bg-gray-50 rounded-md p-3 shadow-sm border border-gray-200 flex items-center justify-between mb-4 mt-2">
                     <p className="text-gray-700 text-sm font-medium">
-                      Found{" "}
+                      Found
                       <span className="font-bold text-blue-600">
                         {data.length}
-                      </span>{" "}
+                      </span>
                       results
                       {searchTerm && (
                         <span>
-                          {" "}
-                          for "
+                          for
                           <span className="italic text-gray-800">
                             {searchTerm}
                           </span>

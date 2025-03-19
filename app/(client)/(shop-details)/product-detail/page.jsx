@@ -14,7 +14,7 @@ function ProductDetailContent() {
   const serviceId = searchParams.get("serviceId");
 
   const { data: product } = useGetService(serviceId);
-  const { data: category } = useGetCategory(categoryId);
+  const { data: category } = useGetCategory(5);
 
   return (
     <>

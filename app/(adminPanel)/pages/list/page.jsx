@@ -72,7 +72,7 @@ function PageManager() {
                 </svg>
               </div>
             </div>
-            <Link href="/admin/pages/create">
+            {/* <Link href="/admin/pages/create">
               <button className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">
                 <svg
                   className="h-5 w-5 mr-2"
@@ -89,7 +89,7 @@ function PageManager() {
                 </svg>
                 Create New Page
               </button>
-            </Link>
+            </Link> */}
           </div>
         </div>
 

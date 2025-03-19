@@ -39,8 +39,6 @@ export default function Login() {
     getPageContent();
   }, []);
 
-  console.log(pageContent);
-
   const {
     register,
     handleSubmit,

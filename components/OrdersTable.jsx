@@ -20,10 +20,11 @@ const OrdersTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const [perPage, setPerPage] = useState(10);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
   const [countries, setCountries] = useState([]);
   const [services, setServices] = useState([]);
 
@@ -63,7 +64,7 @@ const OrdersTable = () => {
   }, []);
 
   const getFilteredOrders = () => {
-    let filteredOrders = orders;
+    let filteredOrders = [...orders];
 
     if (statusFilter !== "all") {
       filteredOrders = filteredOrders.filter(
@@ -123,9 +124,14 @@ const OrdersTable = () => {
   };
   const fetchOrders = async (page = 1) => {
     try {
-      const response = await axiosInstance.get(`orders?page=${page}`);
+      setLoading(true);
+      console.log("debouncedSearchTerm", debouncedSearchTerm);
+      const response = await axiosInstance.get(
+        `orders?page=${page}&search=${debouncedSearchTerm}`
+      );
+
+      console.log("response.data.data", response.data.data);
       setOrders(response.data.data);
-      console.log(response.data.data);
       setLoading(false);
       setCurrentPage(response.data.meta.current_page || page);
       setLastPage(response.data.meta.last_page || 1);
@@ -134,6 +140,11 @@ const OrdersTable = () => {
       console.error("Error fetching orders:", error);
       setLoading(false);
     }
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    console.log("e.target.value", e.target.value);
   };
 
   useEffect(() => {
@@ -217,8 +228,19 @@ const OrdersTable = () => {
     return 0;
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    fetchOrders(currentPage);
+  }, [debouncedSearchTerm, currentPage]);
+
   const calculateOrderTotal = (order) => {
-    console.log(order);
     if (!order.order_items || order.order_items.length === 0) return 0;
 
     return order.order_items.reduce((total, item) => {
@@ -226,10 +248,11 @@ const OrdersTable = () => {
     }, 0);
   };
 
-  const handleStatusSubmit = async (orderId, newStatus) => {
+  const handleStatusSubmit = async (orderId, newStatus, email) => {
     try {
       await axiosInstance.patch(`orders/${orderId}/status`, {
         status: newStatus,
+        email: email,
       });
 
       const updatedOrders = orders.map((order) =>
@@ -378,8 +401,10 @@ const OrdersTable = () => {
             <input
               type="text"
               id="table-search-orders"
-              className="block w-full pl-10 py-3 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white bg-opacity-80 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              placeholder="Search orders by ID, customer, email..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="block p-2 text-sm pl-10 text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="Search by order ID, email, or customer name"
             />
           </div>
         </div>
@@ -623,23 +648,6 @@ const OrdersTable = () => {
               </svg>
             </div>
           </div>
-          <div className="mt-2 flex items-center text-xs text-green-600 dark:text-green-400">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 10l7-7m0 0l7 7m-7-7v18"
-              />
-            </svg>
-            <span>+12% from last month</span>
-          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
@@ -675,23 +683,6 @@ const OrdersTable = () => {
                 />
               </svg>
             </div>
-          </div>
-          <div className="mt-2 flex items-center text-xs text-green-600 dark:text-green-400">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 10l7-7m0 0l7 7m-7-7v18"
-              />
-            </svg>
-            <span>+8.5% from last month</span>
           </div>
         </div>
 
@@ -775,41 +766,12 @@ const OrdersTable = () => {
               </svg>
             </div>
           </div>
-          <div className="mt-2 flex items-center text-xs text-green-600 dark:text-green-400">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 10l7-7m0 0l7 7m-7-7v18"
-              />
-            </svg>
-            <span>+15% from last month</span>
-          </div>
         </div>
       </div>
       <div className="overflow-x-auto relative shadow-inner">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-300 sticky top-0">
             <tr>
-              <th scope="col" className="p-4 w-10">
-                <div className="flex items-center">
-                  <input
-                    id="checkbox-all-search"
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                  <label htmlFor="checkbox-all-search" className="sr-only">
-                    checkbox
-                  </label>
-                </div>
-              </th>
               <th
                 scope="col"
                 className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
@@ -895,21 +857,6 @@ const OrdersTable = () => {
                 key={order.id}
                 className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
               >
-                <td className="w-4 p-4">
-                  <div className="flex items-center">
-                    <input
-                      id={`checkbox-table-search-${order.id}`}
-                      type="checkbox"
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <label
-                      htmlFor={`checkbox-table-search-${order.id}`}
-                      className="sr-only"
-                    >
-                      checkbox
-                    </label>
-                  </div>
-                </td>
                 <th
                   scope="row"
                   className="px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white font-medium"
@@ -978,7 +925,11 @@ const OrdersTable = () => {
                       id={`order-status-${order.id}`}
                       value={selectedStatus?.[order.id] || order.status}
                       onChange={(e) => {
-                        handleStatusSubmit(order.id, e.target.value);
+                        handleStatusSubmit(
+                          order.id,
+                          e.target.value,
+                          order.email
+                        );
                       }}
                       className={`block w-full p-2.5 text-sm rounded-lg focus:ring-2 ${
                         order.status === "completed"

@@ -645,7 +645,6 @@ const ServicesTable = () => {
                         />
                       </svg>
                     </button>
-                    {console.log(AuthUser?.role?.name)}
                     <button
                       type="button"
                       onClick={() => openDeleteModal(service)}
@@ -681,8 +680,7 @@ const ServicesTable = () => {
               </tr>
             ))}
             {isEditorOpen && (
-              <div className="fixed inset-0 bg-black z-50 flex items-center justify-center p-4 overflow-y-auto">
-                {" "}
+              <div className="fixed inset-0 bg-transparent backdrop-blur-[2px]  z-50 flex items-center justify-center p-4 overflow-y-auto">
                 <ServiceFieldEditor
                   service={serviceToEdit}
                   onClose={closeEditorModal}
@@ -729,8 +727,11 @@ const ServicesTable = () => {
         </table>
       </div>
       {isModalOpen && selectedService && (
-        <div className="fixed inset-0 bg-black bg-opacity-10 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-3xl w-full shadow-xl overflow-hidden">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-[2px] flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full mx-auto transform transition-all duration-300 ease-in-out animate-modal-fade-in"
+            style={{ animation: "fadeInScale 0.3s ease-out" }}
+          >
             <div className="flex items-start justify-between p-5 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Service Details

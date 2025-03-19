@@ -197,14 +197,16 @@ const InvoicesList = () => {
                   <td className="p-4">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => handleViewPdf(invoice.id)}
+                        onClick={() => handleViewPdf(invoice.invoice.id)}
                         className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded inline-flex items-center text-sm transition-colors"
                       >
                         <Eye className="mr-1.5 w-4 h-4" />
                         View
                       </button>
                       <button
-                        onClick={() => handleDownloadInvoice(invoice.id)}
+                        onClick={() =>
+                          handleDownloadInvoice(invoice.invoice.id)
+                        }
                         className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded inline-flex items-center text-sm transition-colors"
                       >
                         <Download className="mr-1.5 w-4 h-4" />

@@ -48,7 +48,6 @@ export default function Cart() {
     setIsLoading(true);
     try {
       const response = await axiosInstance.get("/carts");
-      // console.log("test", response.data);
       setCartItems(response.data || []);
       calculateTotalPrice(response.data || []);
     } catch (error) {
@@ -64,10 +63,8 @@ export default function Cart() {
 
   const removeItem = async (id) => {
     try {
-      // Use the removeItemFromCart function from context
       await removeItemFromCart(id);
 
-      // After successful removal, fetch updated cart data for your component
       await fetchCartData();
     } catch (error) {
       console.error("Error removing item:", error);
@@ -77,38 +74,19 @@ export default function Cart() {
       });
     }
   };
-  // const removeItem = async (id) => {
-  //   try {
-  //     await axiosInstance.delete(`/carts/${id}`);
-  //     toast.success("Item removed from cart", {
-  //       position: "top-right",
-  //       autoClose: 3000,
-  //     });
-  //     fetchCartData(); // Refresh cart data
-  //   } catch (error) {
-  //     console.error("Error removing item from cart:", error);
-  //     toast.error("Failed to remove item from cart", {
-  //       position: "top-right",
-  //       autoClose: 3000,
-  //     });
-  //   }
-  // };
   function ensureDateFormat(dateStr) {
     if (!dateStr) return null;
 
-    // If already in YYYY-MM-DD format
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       return dateStr;
     }
 
-    // Try to parse MM/DD/YYYY format
     const mmddyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dateStr);
     if (mmddyyyy) {
       const [_, month, day, year] = mmddyyyy;
       return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
-    // Try to create a date and format it
     try {
       const date = new Date(dateStr);
       if (!isNaN(date.getTime())) {
@@ -118,19 +96,16 @@ export default function Cart() {
       console.error("Could not parse date:", dateStr);
     }
 
-    return dateStr; // Return original if we can't parse it
+    return dateStr;
   }
   function ensureTimeFormat(timeStr) {
     if (!timeStr) return "00:00";
 
-    // If already in HH:MM format
     if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
-      // Ensure hours have leading zero
       const [hours, minutes] = timeStr.split(":");
       return `${hours.padStart(2, "0")}:${minutes}`;
     }
 
-    // Handle 12-hour format with AM/PM
     const twelveHourFormat = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(timeStr);
     if (twelveHourFormat) {
       let [_, hours, minutes, period] = twelveHourFormat;
@@ -146,9 +121,7 @@ export default function Cart() {
       return `${hours.toString().padStart(2, "0")}:${minutes}`;
     }
 
-    // Try to use Date object to parse
     try {
-      // Create a date with the time string
       const today = new Date();
       const dateWithTime = new Date(
         `${formatDateToYYYYMMDD(today)} ${timeStr}`
@@ -167,7 +140,7 @@ export default function Cart() {
       console.error("Could not parse time:", timeStr);
     }
 
-    return timeStr; // Return original if we can't parse it
+    return timeStr;
   }
   function formatDateToYYYYMMDD(date) {
     const year = date.getFullYear();

@@ -62,7 +62,7 @@ export default function Hero({ pageContent }) {
   };
 
   return (
-    <section className="flat-spacing-5 slider-gaming-accessories position-relative">
+    <section className="hero-section">
       <div className="background-overlay"></div>
 
       <Image
@@ -74,7 +74,7 @@ export default function Hero({ pageContent }) {
         priority
       />
 
-      <div className="container position-relative" style={{ zIndex: 2 }}>
+      <div className="container">
         {isClient && (
           <div className="slider-container">
             <Slider {...settings} className="hero-slider">
@@ -84,6 +84,8 @@ export default function Hero({ pageContent }) {
                   <div key={index} className="slide-item">
                     <div className="collection-item">
                       <div className="collection-inner">
+                        <div className="slide-image-overlay"></div>
+
                         {banner_buttons[buttonIndex] && (
                           <Link
                             href={`/shop-collection-sub`}
@@ -95,7 +97,7 @@ export default function Hero({ pageContent }) {
                               }
                               alt={slide.alt || "Collection Image"}
                               width={800}
-                              height={847}
+                              height={650}
                               className="collection-img"
                             />
                           </Link>
@@ -152,7 +154,6 @@ function CustomPrevArrow(props) {
   return (
     <div
       className={`${className} custom-prev-arrow`}
-      style={{ ...style, display: "flex" }}
       onClick={onClick}
     >
       <svg
@@ -179,7 +180,6 @@ function CustomNextArrow(props) {
   return (
     <div
       className={`${className} custom-next-arrow`}
-      style={{ ...style, display: "flex" }}
       onClick={onClick}
     >
       <svg

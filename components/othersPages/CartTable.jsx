@@ -149,12 +149,8 @@ const CartTable = ({
               const basePrice = parseFloat(serviceData.base_price || 0).toFixed(
                 2
               );
-
-              // Get all extra tax fields (excluding word count)
               const extraTaxFields = getExtraTaxFields(elm);
               const hasExtraTaxes = Object.keys(extraTaxFields).length > 0;
-
-              // Calculate total extra taxes
               const totalExtraTax = hasExtraTaxes
                 ? Object.values(extraTaxFields).reduce(
                     (sum, field) => sum + parseFloat(field.extra_tax || 0),
@@ -167,7 +163,6 @@ const CartTable = ({
                   key={i}
                   className="border-b hover:bg-blue-50 transition group"
                 >
-                  {/* Service column - responsive for all screens */}
                   <td className="px-3 sm:px-6 py-4">
                     <div className="flex items-start space-x-3">
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -183,7 +178,7 @@ const CartTable = ({
                           className="rounded-md shadow-sm"
                         />
                       </Link>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col ml-4!">
                         <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
                           <Link
                             href={`/product-detail?serviceId=${serviceId}&categoryId=${categoryId}`}
@@ -208,15 +203,11 @@ const CartTable = ({
                       </div>
                     </div>
                   </td>
-
-                  {/* Price column - hidden on mobile */}
                   <td className="px-2 sm:px-3 py-4 text-center align-middle hidden sm:table-cell">
                     <span className="font-medium text-sm whitespace-nowrap">
                       {basePrice} euro
                     </span>
                   </td>
-
-                  {/* Quantity column - hidden on mobile */}
                   <td className="px-2 sm:px-3 py-4 text-center align-middle hidden sm:table-cell">
                     <div className="cart-quantity flex justify-center">
                       <div className="wg-quantity bg-gray-100 rounded-md px-1 py-1 inline-flex items-center">

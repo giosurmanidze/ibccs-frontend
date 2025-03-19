@@ -167,9 +167,6 @@ export default function RootLayout({ children }) {
                 buttons={pageContent?.sidebar_buttons}
                 content={pageContent?.sidebar_content}
               />
-              <AskQuestion />
-              <DeliveryReturn />
-              <FindSize />
               <Login />
               <MobileMenu />
               <Register />

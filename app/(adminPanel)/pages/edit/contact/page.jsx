@@ -9,7 +9,6 @@ import axiosInstance from "@/config/axios";
 import { useRouter } from "next/navigation";
 
 function EditPage() {
-  const router = useRouter();
   const [pageContent, setPageContent] = useState({});
   const [newFieldType, setNewFieldType] = useState("text");
   const [newFieldName, setNewFieldName] = useState("");
@@ -18,10 +17,10 @@ function EditPage() {
   const [detailCounter, setDetailCounter] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // For dynamic fields
   const [newDynamicFieldName, setNewDynamicFieldName] = useState("");
   const [newDynamicFieldType, setNewDynamicFieldType] = useState("text");
-  const [newDynamicFieldPlaceholder, setNewDynamicFieldPlaceholder] = useState("");
+  const [newDynamicFieldPlaceholder, setNewDynamicFieldPlaceholder] =
+    useState("");
   const [isDynamicRequired, setIsDynamicRequired] = useState(false);
 
   const {
@@ -57,6 +56,7 @@ function EditPage() {
       } else {
         content = { contact_details: {}, dynamic_fields: {} };
       }
+      fetchPageData;
 
       setPageContent(content);
 
@@ -102,7 +102,7 @@ function EditPage() {
         formData.contact_details[key] = {
           value: fieldData.value || "",
           type: fieldData.type || "text",
-          required: Boolean(fieldData.required), 
+          required: Boolean(fieldData.required),
         };
       });
     }
@@ -112,7 +112,7 @@ function EditPage() {
         formData.dynamic_fields[key] = {
           value: fieldData.value || "",
           type: fieldData.type || "text",
-          required: Boolean(fieldData.required), 
+          required: Boolean(fieldData.required),
           placeholder: fieldData.placeholder || "",
         };
       });
@@ -198,7 +198,7 @@ function EditPage() {
       type: newDynamicFieldType,
       value: "",
       required: isDynamicRequired,
-      placeholder: newDynamicFieldPlaceholder || "", 
+      placeholder: newDynamicFieldPlaceholder || "",
     };
 
     setPageContent(updatedContent);
@@ -260,6 +260,14 @@ function EditPage() {
       toast.success("Contact field removed successfully");
     }
   };
+  useEffect(() => {
+    if (pageContent?.header_texts) {
+      Object.entries(pageContent.header_texts).forEach(([key, fieldData]) => {
+        setValue(`header_texts.${key}.value`, fieldData.value);
+        setValue(`header_texts.${key}.type`, fieldData.type);
+      });
+    }
+  }, [pageContent, setValue]);
 
   const removeDynamicField = (key) => {
     const updatedContent = { ...pageContent };
@@ -297,7 +305,7 @@ function EditPage() {
     const details = [];
     const nameKeys = Object.keys(pageContent.contact_details).filter((key) =>
       key.match(/detail_name_\d+$/)
-    ); 
+    );
 
     nameKeys.forEach((nameKey) => {
       const match = nameKey.match(/detail_name_(\d+)$/);
@@ -327,7 +335,10 @@ function EditPage() {
     try {
       setLoading(true);
 
-      const updatedContent = { ...pageContent };
+      const updatedContent = {
+        ...pageContent,
+        header_texts: data.header_texts,
+      };
 
       updatedContent.contact_details = {};
       if (data.contact_details) {
@@ -365,8 +376,6 @@ function EditPage() {
         is_published: true,
       };
 
-      console.log("Submitting payload:", payload);
-
       const response = await axiosInstance.post(
         "pages/by-title/contact",
         payload
@@ -393,7 +402,8 @@ function EditPage() {
     <div>
       <ToastContainer
         position="top-left"
-        autoClose={2000}n
+        autoClose={2000}
+        n
         hideProgressBar={false}
         closeOnClick
         draggable
@@ -406,7 +416,83 @@ function EditPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* CONTACT DETAILS SECTION */}
+            <div className="mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                {Object.entries(pageContent?.header_texts || {}).map(
+                  ([key, fieldData]) => (
+                    <div key={key} className="mb-4">
+                      <label
+                        htmlFor={key}
+                        className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        {console.log(fieldData)}
+                        {key
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </label>
+
+                      {fieldData.type === "color" ? (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="color"
+                            id={`${key}-picker`}
+                            value={
+                              watch(`header_texts.${key}.value`) ||
+                              fieldData.value
+                            }
+                            onChange={(e) => {
+                              setValue(
+                                `header_texts.${key}.value`,
+                                e.target.value
+                              );
+                            }}
+                            className="p-1 h-10 w-14 block bg-white border border-gray-200 cursor-pointer rounded-lg disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700"
+                          />
+                          <input
+                            type="text"
+                            id={key}
+                            value={
+                              watch(`header_texts.${key}.value`) ||
+                              fieldData.value
+                            }
+                            onChange={(e) => {
+                              setValue(
+                                `header_texts.${key}.value`,
+                                e.target.value
+                              );
+                            }}
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 flex-1 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                          />
+                        </div>
+                      ) : fieldData.type === "text" ? (
+                        <input
+                          type="text"
+                          id={key}
+                          {...register(`header_texts.${key}.value`, {
+                            required: "This field is required",
+                          })}
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        />
+                      ) : fieldData.type === "textarea" ? (
+                        <textarea
+                          id={key}
+                          rows="4"
+                          {...register(`header_texts.${key}.value`, {
+                            required: "This field is required",
+                          })}
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        ></textarea>
+                      ) : null}
+                      {errors?.header_texts?.[key]?.value && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.header_texts[key].value.message}
+                        </p>
+                      )}
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
             <div className="mb-12">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-6 gap-4">
                 <h2 className="text-xl font-bold">Contact Details</h2>

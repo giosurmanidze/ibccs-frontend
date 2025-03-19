@@ -25,6 +25,7 @@ const MyOrders = () => {
       setLoading(true);
       try {
         const response = await axiosInstance("/user");
+        console.log("response.data.user", response.data.user);
         const userData = response.data.user;
         setOrders(userData.orders);
       } catch (error) {

@@ -2,18 +2,15 @@ import React from "react";
 import CardItem from "./CardItem";
 
 const BannerCardsSection = ({ pageContent, register, watch, setValue }) => {
-  // Use watched value or fallback to pageContent
   const bannerCards =
     watch("banner_cards") ||
     (pageContent.banner_cards && Array.isArray(pageContent.banner_cards)
       ? [...pageContent.banner_cards]
       : []);
 
-  // Method to add a new banner card
   const addNewBannerCard = () => {
     const currentCards = bannerCards || [];
 
-    // Create a new card object with default values
     const newCard = {
       top_text: {
         type: "text",
@@ -41,11 +38,9 @@ const BannerCardsSection = ({ pageContent, register, watch, setValue }) => {
       },
     };
 
-    // Update the entire banner_cards array
     setValue("banner_cards", [...currentCards, newCard]);
   };
 
-  // Method to remove a banner card
   const removeBannerCard = (indexToRemove) => {
     const updatedCards = bannerCards.filter(
       (_, index) => index !== indexToRemove

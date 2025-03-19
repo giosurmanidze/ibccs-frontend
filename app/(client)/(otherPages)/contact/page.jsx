@@ -28,8 +28,14 @@ export default function Page() {
 
   return (
     <>
-      <Map pageContent={pageContent?.contact_details} />
-      <ContactForm dynamicFields={pageContent?.dynamic_fields || {}} />
+      <Map
+        pageContent={pageContent?.contact_details}
+        header_texts={pageContent?.header_texts}
+      />
+      <ContactForm
+        dynamicFields={pageContent?.dynamic_fields || {}}
+        header_texts={pageContent?.header_texts}
+      />
     </>
   );
 }

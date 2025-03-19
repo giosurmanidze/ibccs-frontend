@@ -1,35 +1,35 @@
 import { socialLinksWithBorder } from "@/data/socials";
 import React from "react";
 
-export default function Map({ pageContent }) {
-  // Function to get pairs of name/value fields
+export default function Map({ pageContent, header_texts }) {
   const getContactPairs = () => {
     if (!pageContent) return [];
-    
+
     const pairs = [];
-    const nameKeys = Object.keys(pageContent).filter(key => 
-      key.match(/detail_name_\d+$/) && !key.includes('_value')
+    const nameKeys = Object.keys(pageContent).filter(
+      (key) => key.match(/detail_name_\d+$/) && !key.includes("_value")
     );
-    
-    nameKeys.forEach(nameKey => {
+
+    nameKeys.forEach((nameKey) => {
       const match = nameKey.match(/detail_name_(\d+)$/);
       if (match) {
         const index = match[1];
         const valueKey = `detail_name_${index}_value`;
-        
+
         if (pageContent[nameKey] && pageContent[valueKey]) {
           pairs.push({
             label: pageContent[nameKey].value,
-            value: pageContent[valueKey].value
+            value: pageContent[valueKey].value,
           });
         }
       }
     });
-    
+
     return pairs;
   };
-  
+
   const contactPairs = getContactPairs();
+  const contact_header = header_texts?.contact_header.value;
 
   return (
     <section className="flat-spacing-9">
@@ -64,8 +64,8 @@ export default function Map({ pageContent }) {
           </div>
           <div className="tf-content-left has-mt">
             <div className="sticky-top">
-              <h4 className="mb_20">Contact us</h4>
-              
+              <h4 className="mb_20">{contact_header}</h4>
+
               {contactPairs.length > 0 ? (
                 contactPairs.map((pair, index) => (
                   <div key={index} className="mb_20">
@@ -80,15 +80,6 @@ export default function Map({ pageContent }) {
                   <p>Contact information not available</p>
                 </div>
               )}
-              
-              {/* You can add social links here if needed */}
-              {/* <div className="social-item">
-                {socialLinksWithBorder.map((item, idx) => (
-                  <a key={idx} href={item.url} target="_blank">
-                    {item.icon}
-                  </a>
-                ))}
-              </div> */}
             </div>
           </div>
         </div>

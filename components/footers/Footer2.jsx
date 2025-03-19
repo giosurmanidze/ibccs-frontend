@@ -30,10 +30,8 @@ export default function Footer({ pageContent, headerLogo }) {
         toggle.addEventListener("click", () => {
           const content = toggle.nextElementSibling;
 
-          // Toggle active class
           toggle.classList.toggle("active");
 
-          // Toggle content visibility
           if (content.style.maxHeight) {
             content.style.maxHeight = null;
           } else {
@@ -42,25 +40,20 @@ export default function Footer({ pageContent, headerLogo }) {
         });
       });
     };
-
-    // Initialize accordions only on mobile
     if (window.innerWidth < 768) {
       handleFooterAccordion();
     }
 
-    // Update on resize
     const handleResize = () => {
       const accordionContents = document.querySelectorAll(
         ".footer-accordion-content"
       );
 
       if (window.innerWidth >= 768) {
-        // Reset all accordions on desktop
         accordionContents.forEach((content) => {
           content.style.maxHeight = null;
         });
       } else {
-        // Re-initialize on mobile
         handleFooterAccordion();
       }
     };
@@ -79,11 +72,25 @@ export default function Footer({ pageContent, headerLogo }) {
     };
   }, []);
 
+  const background_color = pageContent?.background_color.value;
+  const texts_color = pageContent?.texts_color.value;
+  const address = pageContent?.address.value;
+  const phone_number = pageContent?.phone_number.value;
+  const email = pageContent?.email.value;
+  const copyright_text = pageContent?.copyright_text.value;
+  const footer_quick_links = pageContent?.footer_quick_links;
+  const footer_social_links = pageContent?.footer_social_links;
+
   return (
-    <footer className="!bg-gray-200 !text-gray-800 !py-6 !lg:py-10">
-      <div className="!container !mx-auto !px-4 !sm:px-6 !lg:px-8">
+    <footer
+      className=" !text-gray-800 !py-6 !lg:py-10"
+      style={{ backgroundColor: background_color }}
+    >
+      <div
+        className="!container !mx-auto !px-4 !sm:px-6 !lg:px-8"
+        style={{ color: texts_color }}
+      >
         <div className="!grid md:grid-cols-2 lg:grid-cols-3 !gap-6 !lg:gap-8">
-          {/* Company info section */}
           <div className="!space-y-3 !md:space-y-4">
             <div className="!flex !items-center">
               <img
@@ -92,64 +99,65 @@ export default function Footer({ pageContent, headerLogo }) {
                 alt="Fashion Shop Logo"
               />
             </div>
-
-            <p className="!text-xs !md:text-sm !text-gray-600 !max-w-md">
-              Your go-to destination for the latest fashion trends, premium
-              quality clothing, and accessories.
-            </p>
-
             <div className="!space-y-2 !md:space-y-3 !mt-2">
               <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
-                <MapPin className="!text-gray-500 !flex-shrink-0 !h-4 !w-4" />
-                <p className="!text-gray-700">
-                  1234 Fashion Street, Suite 567, New York, NY 10001
-                </p>
+                <MapPin
+                  className="!flex-shrink-0 !h-4 !w-4"
+                  style={{ color: texts_color }}
+                />
+                <p style={{ color: texts_color }}>{address}</p>
               </div>
               <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
-                <Mail className="!text-gray-500 !flex-shrink-0 !h-4 !w-4" />
+                <Mail
+                  className="!flex-shrink-0 !h-4 !w-4"
+                  style={{ color: texts_color }}
+                />
                 <a
                   href="mailto:info@fashionshop.com"
-                  className="!text-gray-700 hover:text-blue-600 !transition-colors !duration-200"
+                  style={{ color: texts_color }}
                 >
-                  info@fashionshop.com
+                  {email}
                 </a>
               </div>
               <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
-                <Phone className="!text-gray-500 !flex-shrink-0 !h-4 !w-4" />
-                <a
-                  href="tel:+12125551234"
-                  className="!text-gray-700 hover:text-blue-600 !transition-colors !duration-200"
-                >
-                  (212) 555-1234
+                <Phone
+                  className="!flex-shrink-0 !h-4 !w-4"
+                  style={{ color: texts_color }}
+                />
+                <a href="tel:+12125551234" style={{ color: texts_color }}>
+                  {phone_number}
                 </a>
               </div>
             </div>
           </div>
-
-          {/* Quick Links section */}
           <div className="!md:px-4">
-            <h3 className="!text-base !md:text-lg !font-bold !mb-3 !flex !items-center !justify-between footer-accordion-toggle">
+            <h3
+              className="!text-base !md:text-lg !font-bold !mb-3 !flex !items-center !justify-between footer-accordion-toggle"
+              style={{ color: texts_color }}
+            >
               Quick Links
             </h3>
             <div className="footer-accordion-content !overflow-hidden !transition-all !duration-300 !space-y-2">
               <ul className="!space-y-1 !md:space-y-2">
-                {aboutLinks.map((link, index) => (
+                {(footer_quick_links || []).map((link, index) => (
                   <li key={index}>
                     <Link
-                      href={link.href}
-                      className="!text-xs !md:text-sm !text-gray-700 hover:text-blue-600 !transition-colors !duration-200 !inline-block"
+                      href={link.url}
+                      className="!text-xs !md:text-sm hover:opacity-80 !transition-colors !duration-200 !inline-block"
+                      style={{ color: texts_color }}
                     >
-                      {link.text}
+                      {link.name}
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
-
-          {/* Our Locations section */}
           <div>
-            <h3 className="!text-base !md:text-lg !font-bold !mb-3 flex items-center justify-between footer-accordion-toggle">
+            <h3
+              className="!text-base !md:text-lg !font-bold !mb-3 flex items-center justify-between footer-accordion-toggle"
+              style={{ color: texts_color }}
+            >
               Our Locations
             </h3>
             <div className="footer-accordion-content !overflow-hidden !transition-all !duration-300">
@@ -165,7 +173,10 @@ export default function Footer({ pageContent, headerLogo }) {
                     referrerPolicy="no-referrer-when-downgrade"
                     className="!hover:opacity-90 !transition-opacity"
                   ></iframe>
-                  <div className="!p-1 !text-center !text-gray-800 !bg-gray-100 !font-medium !text-xs">
+                  <div
+                    className="!p-1 !text-center !bg-gray-100 !font-medium !text-xs"
+                    style={{ color: "#333" }}
+                  >
                     Georgia, Tbilisi
                   </div>
                 </div>
@@ -180,7 +191,10 @@ export default function Footer({ pageContent, headerLogo }) {
                     referrerPolicy="no-referrer-when-downgrade"
                     className="!hover:opacity-90 !transition-opacity"
                   ></iframe>
-                  <div className="!p-1 !text-center !text-gray-800 !bg-gray-100 !font-medium !text-xs">
+                  <div
+                    className="!p-1 !text-center !bg-gray-100 !font-medium !text-xs"
+                    style={{ color: "#333" }}
+                  >
                     Georgia, Batumi
                   </div>
                 </div>
@@ -188,41 +202,29 @@ export default function Footer({ pageContent, headerLogo }) {
             </div>
           </div>
         </div>
-
-        {/* Bottom footer with copyright and social */}
-        <div className="!mt-6 !md:mt-8 !pt-4  !border-t !border-gray-300 !flex !flex-col !md:flex-row !justify-between !items-center">
-          <div className="!text-xs !text-gray-600">
-            © {new Date().getFullYear()} Fashion Shop. All Rights Reserved
+        <div className="!mt-6 !md:mt-8 !pt-4 !border-t !border-gray-300 !flex !justify-between !items-center">
+          <div className="!text-xs" style={{ color: texts_color }}>
+            {copyright_text}
           </div>
           <div className="!flex !space-x-4 !mt-3 !md:mt-0">
-            <a
-              href="#"
-              className="!text-gray-500 hover:text-blue-600 !transition-colors"
-              aria-label="Twitter"
-            >
-              <Twitter className="!h-4 !w-4" />
-            </a>
-            <a
-              href="#"
-              className="!text-gray-500 hover:text-blue-600 !transition-colors"
-              aria-label="Facebook"
-            >
-              <Facebook className="!h-4 !w-4" />
-            </a>
-            <a
-              href="#"
-              className="!text-gray-500 hover:text-blue-600 !transition-colors"
-              aria-label="Instagram"
-            >
-              <Instagram className="!h-4 !w-4" />
-            </a>
-            <a
-              href="#"
-              className="!text-gray-500 hover:text-blue-600 !transition-colors"
-              aria-label="LinkedIn"
-            >
-              <Linkedin className="!h-4 !w-4" />
-            </a>
+            {(footer_social_links || []).map((link, index) => (
+              <a
+                key={index}
+                href={link.url}
+                className="!hover:opacity-80 !transition-colors"
+                aria-label={link.name}
+                style={{ color: texts_color }}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {link.name === "Twitter" && <Twitter className="!h-4 !w-4" />}
+                {link.name === "Facebook" && <Facebook className="!h-4 !w-4" />}
+                {link.name === "Instagram" && (
+                  <Instagram className="!h-4 !w-4" />
+                )}
+                {link.name === "LinkedIn" && <Linkedin className="!h-4 !w-4" />}
+              </a>
+            ))}
           </div>
         </div>
       </div>

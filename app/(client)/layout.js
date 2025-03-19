@@ -20,7 +20,6 @@ import ToolbarShop from "@/components/modals/ToolbarShop";
 import { usePathname } from "next/navigation";
 import ShareModal from "@/components/modals/ShareModal";
 import ScrollTop from "@/components/common/ScrollTop";
-import RtlToggle from "@/components/common/RtlToggle";
 import Header22 from "@/components/headers/Header22";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Footer2 from "@/components/footers/Footer2";
@@ -163,9 +162,11 @@ export default function RootLayout({ children }) {
             <AuthProvider>
               <Header22 pageContent={pageContent} />
               <div id="wrapper">{children}</div>
-              <RtlToggle />
               <ProductSidebar />
-              <ShopCart pageContent={pageContent?.sidebar_buttons} />
+              <ShopCart
+                buttons={pageContent?.sidebar_buttons}
+                content={pageContent?.sidebar_content}
+              />
               <AskQuestion />
               <DeliveryReturn />
               <FindSize />

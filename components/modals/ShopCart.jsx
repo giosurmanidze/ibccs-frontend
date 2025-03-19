@@ -5,19 +5,24 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
-export default function ShopCart({ pageContent }) {
+export default function ShopCart({ buttons, content }) {
   const { cartProducts, isLoadingCart, fetchCartData, subtotal } =
     useContextElement();
 
   useEffect(() => {
     fetchCartData();
   }, []);
+
+  const headerText = content?.header_text.value;
+  const portfolio_condition = content?.portfolio_condition.value;
+  const total_price_text = content?.total_price_text.value;
+
   return (
     <div className="modal fullRight fade modal-shopping-cart" id="shoppingCart">
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="header">
-            <div className="title fw-5">Shopping cart</div>
+            <div className="title fw-5">{headerText}</div>
             <span
               className="icon-close icon-close-popup"
               data-bs-dismiss="modal"
@@ -83,20 +88,19 @@ export default function ShopCart({ pageContent }) {
                       <div className="container">
                         <div className="row align-items-center mt-5 mb-5">
                           <div className="col-12 fs-18">
-                            Your shop cart is empty
+                            {portfolio_condition}
                           </div>
                           <div className="col-12 mt-3">
-                            {Array.isArray(pageContent) && pageContent[1] && (
+                            {Array.isArray(buttons) && buttons[1] && (
                               <Link
-                                href={pageContent[1].url}
+                                href={buttons[1].url}
                                 className="tf-btn w-full mb-2"
                                 style={{
-                                  backgroundColor:
-                                    pageContent[1].background_color,
-                                  color: pageContent[1].text_color,
+                                  backgroundColor: buttons[1].background_color,
+                                  color: buttons[1].text_color,
                                 }}
                               >
-                                {pageContent[1].text}
+                                {buttons[1].text}
                               </Link>
                             )}
                           </div>
@@ -109,23 +113,23 @@ export default function ShopCart({ pageContent }) {
               <div className="tf-mini-cart-bottom">
                 <div className="tf-mini-cart-bottom-wrap">
                   <div className="tf-cart-totals-discounts">
-                    <div className="tf-cart-total">Subtotal</div>
+                    <div className="tf-cart-total">{total_price_text}</div>
                     <div className="tf-totals-total-value fw-6">
                       €{subtotal.toFixed(2)}
                     </div>
                   </div>
                   <div className="tf-mini-cart-line" />
                   <div className="tf-mini-cart-view-checkout">
-                    {Array.isArray(pageContent) && pageContent[0] && (
+                    {Array.isArray(buttons) && buttons[0] && (
                       <Link
-                        href={pageContent[0].url}
+                        href={buttons[0].url}
                         className="tf-btn w-full mb-2"
                         style={{
-                          backgroundColor: "#000000",
-                          color: "#ffffff",
+                          backgroundColor: buttons[0].background_color,
+                          color: buttons[0].text_color,
                         }}
                       >
-                        {pageContent[0].text}
+                        {buttons[0].text}
                       </Link>
                     )}
                   </div>

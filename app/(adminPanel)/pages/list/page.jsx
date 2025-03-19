@@ -92,8 +92,6 @@ function PageManager() {
             </Link> */}
           </div>
         </div>
-
-        {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-between">
@@ -247,14 +245,14 @@ function PageManager() {
                     page.slug !== "login" &&
                     page.slug !== "contact" &&
                     page.slug !== "home" &&
-                    page.slug !== "product-detail";
+                    page.slug !== "product-detail" &&
+                    page.slug !== "about";
 
                   return (
                     <tr
                       key={page.id}
                       className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
                     >
-                      
                       <th
                         scope="row"
                         className="px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
@@ -263,7 +261,9 @@ function PageManager() {
                           {page.title}
                         </div>
                       </th>
-                      <td className="px-6 py-4">/{page.slug}</td>
+                      <td className="px-6 py-4">
+                        /{page.slug === "about" ? "about-us" : page.slug}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           {page.is_published ? (
@@ -278,7 +278,11 @@ function PageManager() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <Link href={`/pages/edit/${page.slug}`}>
+                        <Link
+                          href={`/pages/edit/${
+                            page.slug === "about" ? "about-us" : page.slug
+                          }`}
+                        >
                           <button className="font-medium text-green-600 dark:text-green-500 hover:underline">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -338,7 +342,13 @@ function PageManager() {
                       </td>
                       <td className="px-6 py-4">
                         <Link
-                          href={`/${page.slug !== "home" ? page.slug : "/"}`}
+                          href={`/${
+                            page.slug === "about"
+                              ? "about-us"
+                              : page.slug !== "home"
+                              ? page.slug
+                              : "/"
+                          }`}
                           target="_blank"
                         >
                           <button

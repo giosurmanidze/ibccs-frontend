@@ -35,10 +35,17 @@ function SidebarLayout() {
         }
       );
     }
+    if (pageContent?.sidebar_content) {
+      Object.entries(pageContent.sidebar_content).forEach(
+        ([key, fieldData]) => {
+          setValue(`sidebar_content.${key}.value`, fieldData.value);
+          setValue(`sidebar_content.${key}.type`, fieldData.type);
+        }
+      );
+    }
   }, [pageContent, setValue]);
 
   const onSubmit = async (data) => {
-    console.log(data);
     try {
       const currentContent = pageContent
         ? JSON.parse(JSON.stringify(pageContent))
@@ -46,7 +53,8 @@ function SidebarLayout() {
 
       const dynamicContentData = {
         ...currentContent,
-        sidebar_buttons: data.sidebar_buttons, 
+        sidebar_buttons: data.sidebar_buttons,
+        sidebar_content: data.sidebar_content,
       };
 
       const payload = {
@@ -165,15 +173,18 @@ function SidebarLayout() {
                         <input
                           type="color"
                           id={`button-color-${index}`}
-                          {...register(`sidebar_buttons.${index}.background_color`)}
+                          {...register(
+                            `sidebar_buttons.${index}.background_color`
+                          )}
                           defaultValue={button.background_color}
                           className="p-1 h-10 w-14 block bg-white border border-gray-200 cursor-pointer rounded-lg dark:bg-gray-700"
                         />
                         <input
                           type="text"
                           value={
-                            watch(`sidebar_buttons.${index}.background_color`) ||
-                            button.background_color
+                            watch(
+                              `sidebar_buttons.${index}.background_color`
+                            ) || button.background_color
                           }
                           onChange={(e) => {
                             setValue(
@@ -189,6 +200,71 @@ function SidebarLayout() {
                 </div>
               ))}
             </div>
+          </div>{" "}
+          <div className="mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {Object.entries(pageContent?.sidebar_content || {}).map(
+            ([key, fieldData]) => (
+              <div key={key} className="mb-4">
+                <label
+                  htmlFor={key}
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  {key
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase())}
+                </label>
+
+                {fieldData.type === "color" ? (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      id={`${key}-picker`}
+                      value={
+                        watch(`sidebar_content.${key}.value`) || fieldData.value
+                      }
+                      onChange={(e) => {
+                        setValue(
+                          `sidebar_content.${key}.value`,
+                          e.target.value
+                        );
+                      }}
+                      className="p-1 h-10 w-14 block bg-white border border-gray-200 cursor-pointer rounded-lg disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700"
+                    />
+                    <input
+                      type="text"
+                      id={key}
+                      value={
+                        watch(`sidebar_content.${key}.value`) || fieldData.value
+                      }
+                      onChange={(e) => {
+                        setValue(
+                          `sidebar_content.${key}.value`,
+                          e.target.value
+                        );
+                      }}
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 flex-1 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    />
+                  </div>
+                ) : fieldData.type === "text" ? (
+                  <input
+                    type="text"
+                    id={key}
+                    {...register(`sidebar_content.${key}.value`, {
+                      required: "This field is required",
+                    })}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  />
+                ) : null}
+                {errors?.sidebar_content?.[key]?.value && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.sidebar_content[key].value.message}
+                  </p>
+                )}
+              </div>
+            )
+          )}
+          </div>
           </div>
           <div className="mt-6">
             <button
@@ -199,6 +275,7 @@ function SidebarLayout() {
             </button>
           </div>
         </form>
+       
       </div>
     </div>
   );

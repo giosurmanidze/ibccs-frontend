@@ -1,22 +1,31 @@
+"use client";
 import About from "@/components/othersPages/about/About";
-import Features from "@/components/othersPages/about/Features";
 import FlatTitle from "@/components/othersPages/about/FlatTitle";
-import ShopGram from "@/components/othersPages/about/ShopGram";
-import React from "react";
+import axiosInstance from "@/config/axios";
+import React, { useEffect, useState } from "react";
 
 export default function page() {
+  const [pageContent, setPageContent] = useState({});
+
+  useEffect(() => {
+    const getPageContent = async () => {
+      const response = await axiosInstance.get("pages/about");
+      setPageContent(JSON.parse(response.data?.dynamic_content));
+    };
+    getPageContent();
+  }, []);
+
   return (
     <>
-      <FlatTitle />
+      <FlatTitle pageContent={pageContent} />
       <div className="container">
         <div className="line"></div>
       </div>
-      <About />
-      <Features />
+      <About pageContent={pageContent} />
+      {/* <Features /> */}
       <div className="container">
         <div className="line"></div>
       </div>
-      <ShopGram />
     </>
   );
 }

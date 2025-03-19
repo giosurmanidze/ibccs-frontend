@@ -6,9 +6,12 @@ import { useForm } from "react-hook-form";
 import { toast, ToastContainer } from "react-toastify";
 import * as yup from "yup";
 
-export default function ContactForm({ dynamicFields = {} }) {
+export default function ContactForm({ dynamicFields = {}, header_texts }) {
   const formRef = useRef();
   const [validationSchema, setValidationSchema] = useState(null);
+
+  const email_form_header_text = header_texts?.email_form_header_text.value;
+  const email_form_bottom_text = header_texts?.email_form_bottom_text.value;
 
   useEffect(() => {
     let schema = yup.object().shape({});
@@ -156,13 +159,8 @@ export default function ContactForm({ dynamicFields = {} }) {
       <ToastContainer />
       <div className="container">
         <div className="flat-title">
-          <span className="title">Get in Touch With us</span>
-          <p className="sub-title text_black-2">Tell us about your needs</p>
-          <p className="sub-title text_black-2">
-            We love working individually with new clients and listening about
-            the challenges they are facing. Provide a few details below and we
-            will be happy to assist you.
-          </p>
+          <span className="title">{email_form_header_text}</span>
+          <p className="sub-title text_black-2">{email_form_bottom_text}</p>
         </div>
         <div>
           <form

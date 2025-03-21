@@ -11,14 +11,6 @@ import {
   Linkedin,
 } from "lucide-react";
 
-export const aboutLinks = [
-  { href: "/contact", text: "Contact Us" },
-  { href: "/about-us", text: "About Us" },
-  { href: "/faq", text: "FAQ" },
-  { href: "/shipping", text: "Shipping & Returns" },
-  { href: "/privacy-policy", text: "Privacy Policy" },
-];
-
 export default function Footer({ pageContent, headerLogo }) {
   useEffect(() => {
     const handleFooterAccordion = () => {
@@ -72,88 +64,122 @@ export default function Footer({ pageContent, headerLogo }) {
     };
   }, []);
 
-  const background_color = pageContent?.background_color.value;
-  const texts_color = pageContent?.texts_color.value;
-  const address = pageContent?.address.value;
-  const phone_number = pageContent?.phone_number.value;
-  const email = pageContent?.email.value;
-  const copyright_text = pageContent?.copyright_text.value;
+  const background_color = pageContent?.background_color?.value;
+  const texts_color = pageContent?.texts_color?.value;
+  const address = pageContent?.address?.value;
+  const phone_number = pageContent?.phone_number?.value;
+  const email = pageContent?.email?.value;
+  const copyright_text = pageContent?.copyright_text?.value;
   const footer_quick_links = pageContent?.footer_quick_links;
   const footer_social_links = pageContent?.footer_social_links;
+  const footer_qr_image = pageContent?.footer_qr_image;
+  const footer_qr_title = pageContent?.footer_qr_title;
 
   return (
     <footer
-      className=" !text-gray-800 !py-6 !lg:py-10"
+      className=" !text-gray-800 !py-6 !lg:py-10 mt-10!"
       style={{ backgroundColor: background_color }}
     >
       <div
         className="!container !mx-auto !px-4 !sm:px-6 !lg:px-8"
         style={{ color: texts_color }}
       >
-        <div className="!grid md:grid-cols-2 lg:grid-cols-3 !gap-6 !lg:gap-8">
-          <div className="!space-y-3 !md:space-y-4">
-            <div className="!flex !items-center">
-              <img
-                className="!h-7 !md:h-8"
-                src={headerLogo?.value || "/logo.png"}
-                alt="Fashion Shop Logo"
-              />
-            </div>
-            <div className="!space-y-2 !md:space-y-3 !mt-2">
-              <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
-                <MapPin
-                  className="!flex-shrink-0 !h-4 !w-4"
-                  style={{ color: texts_color }}
-                />
-                <p style={{ color: texts_color }}>{address}</p>
-              </div>
-              <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
-                <Mail
-                  className="!flex-shrink-0 !h-4 !w-4"
-                  style={{ color: texts_color }}
-                />
-                <a
-                  href="mailto:info@fashionshop.com"
+        <img
+          className="!h-7 !md:h-8"
+          src={headerLogo?.value || "/logo.png"}
+          alt="Fashion Shop Logo"
+        />
+<div className="!flex !flex-col max-lg:!flex-wrap lg:!flex-row !space-y-6 lg:!space-y-0 lg:!space-x-6 xl:!space-x-8 mt-10!">
+          <div className="!w-full lg:!w-[calc(100%_-_350px)] xl:!w-[calc(100%_-_650px)] !flex !flex-col lg:!flex-row !space-y-6 lg:!space-y-0 lg:!space-x-24">
+            {/* Contact Us Section */}
+            <div className="!w-full lg:!w-auto">
+              <div className="!space-y-2 !md:space-y-3 !mt-2">
+                <h3
+                  className="!text-base !md:text-lg !font-bold !mb-3 !flex !items-center !justify-between footer-accordion-toggle"
                   style={{ color: texts_color }}
                 >
-                  {email}
-                </a>
+                  Contact Us
+                </h3>
+                <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
+                  <MapPin
+                    className="!flex-shrink-0 !h-4 !w-4"
+                    style={{ color: texts_color }}
+                  />
+                  <p style={{ color: texts_color }}>{address}</p>
+                </div>
+                <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
+                  <Mail
+                    className="!flex-shrink-0 !h-4 !w-4"
+                    style={{ color: texts_color }}
+                  />
+                  <a
+                    href="mailto:info@fashionshop.com"
+                    style={{ color: texts_color }}
+                  >
+                    {email}
+                  </a>
+                </div>
+                <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
+                  <Phone
+                    className="!flex-shrink-0 !h-4 !w-4"
+                    style={{ color: texts_color }}
+                  />
+                  <a href="tel:+12125551234" style={{ color: texts_color }}>
+                    {phone_number}
+                  </a>
+                </div>
               </div>
-              <div className="!flex !items-center !space-x-3 !text-xs !md:text-sm">
-                <Phone
-                  className="!flex-shrink-0 !h-4 !w-4"
-                  style={{ color: texts_color }}
-                />
-                <a href="tel:+12125551234" style={{ color: texts_color }}>
-                  {phone_number}
-                </a>
+            </div>
+
+            {/* Quick Links Section */}
+            <div className="!w-full lg:!w-auto">
+              <h3
+                className="!text-base !md:text-lg !font-bold !mb-3 !flex !items-center !justify-between footer-accordion-toggle"
+                style={{ color: texts_color }}
+              >
+                Quick Links
+              </h3>
+              <div className="footer-accordion-content !overflow-hidden !transition-all !duration-300 !space-y-2">
+                <ul className="!space-y-1 !md:space-y-2">
+                  {(footer_quick_links || []).map((link, index) => (
+                    <li key={index}>
+                      <Link
+                        href={link.url}
+                        className="!text-xs !md:text-sm hover:opacity-80 !transition-colors !duration-200 !inline-block"
+                        style={{ color: texts_color }}
+                      >
+                        {link.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* QR Code Section */}
+            <div className="!w-full lg:!w-auto !space-y-2 !md:space-y-3 flex flex-col items-center">
+              <h3
+                className="!text-base !md:text-lg !font-bold !mb-3 !text-center"
+                style={{ color: texts_color }}
+              >
+                {footer_qr_title?.value || "Scan Our QR Code"}
+              </h3>
+              <div className="!flex !flex-col !items-center">
+                {footer_qr_image?.value && (
+                  <div className="!bg-white !p-2 !rounded-lg !mb-2 !shadow-sm !w-28 !h-28 !flex !items-center !justify-center">
+                    <img
+                      src={footer_qr_image.value}
+                      alt="QR Code"
+                      className="!max-w-full !max-h-full"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
-          <div className="!md:px-4">
-            <h3
-              className="!text-base !md:text-lg !font-bold !mb-3 !flex !items-center !justify-between footer-accordion-toggle"
-              style={{ color: texts_color }}
-            >
-              Quick Links
-            </h3>
-            <div className="footer-accordion-content !overflow-hidden !transition-all !duration-300 !space-y-2">
-              <ul className="!space-y-1 !md:space-y-2">
-                {(footer_quick_links || []).map((link, index) => (
-                  <li key={index}>
-                    <Link
-                      href={link.url}
-                      className="!text-xs !md:text-sm hover:opacity-80 !transition-colors !duration-200 !inline-block"
-                      style={{ color: texts_color }}
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div>
+
+          {/* Locations Section */}
+          <div className="!w-full lg:!w-[350px] xl:!w-[650px]">
             <h3
               className="!text-base !md:text-lg !font-bold !mb-3 flex items-center justify-between footer-accordion-toggle"
               style={{ color: texts_color }}

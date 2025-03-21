@@ -47,8 +47,6 @@ function ShopDefaultContent() {
         { params }
       );
 
-      console.log("response.data", response.data);
-
       if (response.data && response.data.services) {
         setServices(response.data.services);
       } else {

@@ -9,7 +9,7 @@ import axiosInstance from "@/config/axios";
 import {
   MapPin,
   Mail,
-  Phone,
+  Upload,
   Twitter,
   Facebook,
   Instagram,
@@ -24,13 +24,14 @@ function FooterLayout() {
   const [isAddingSocialLink, setIsAddingSocialLink] = useState(false);
   const [newSocialPlatform, setNewSocialPlatform] = useState("");
   const [newSocialUrl, setNewSocialUrl] = useState("");
+  const [qrImage, setQrImage] = useState(null);
+  const [previewQrImage, setPreviewQrImage] = useState("");
 
   useEffect(() => {
     const getPageContent = async () => {
       const response = await axiosInstance.get("pages/header");
       const parsedContent = JSON.parse(response.data?.dynamic_content);
 
-      // Initialize footer_quick_links array if it doesn't exist
       if (!parsedContent.footer.footer_quick_links) {
         parsedContent.footer.footer_quick_links = [];
       }
@@ -40,7 +41,13 @@ function FooterLayout() {
         parsedContent.footer.footer_social_links = [];
       }
 
-      // Convert legacy format to new array format if needed
+      if (
+        parsedContent.footer.footer_qr_image &&
+        parsedContent.footer.footer_qr_image.value
+      ) {
+        setPreviewQrImage(parsedContent.footer.footer_qr_image.value);
+      }
+
       if (
         Object.keys(parsedContent.footer).some((key) =>
           key.includes("quick_url_")
@@ -109,7 +116,6 @@ function FooterLayout() {
 
   useEffect(() => {
     if (pageContent?.footer) {
-      // Set regular footer fields
       Object.entries(pageContent.footer)
         .filter(
           ([key]) =>
@@ -120,7 +126,6 @@ function FooterLayout() {
           setValue(`footer.${key}.type`, fieldData.type);
         });
 
-      // Set quick links array
       if (pageContent.footer.footer_quick_links) {
         setValue(
           "footer.footer_quick_links",
@@ -128,7 +133,6 @@ function FooterLayout() {
         );
       }
 
-      // Set social links array
       if (pageContent.footer.footer_social_links) {
         setValue(
           "footer.footer_social_links",
@@ -144,19 +148,15 @@ function FooterLayout() {
       return;
     }
 
-    // Get current links
     const currentLinks = pageContent.footer.footer_quick_links || [];
 
-    // Add new link
     const updatedLinks = [
       ...currentLinks,
       { name: newUrlName, url: newUrlLink },
     ];
 
-    // Update form state
     setValue("footer.footer_quick_links", updatedLinks);
 
-    // Update page content state
     const updatedFooter = {
       ...pageContent.footer,
       footer_quick_links: updatedLinks,
@@ -167,7 +167,6 @@ function FooterLayout() {
       footer: updatedFooter,
     });
 
-    // Reset form
     setNewUrlName("");
     setNewUrlLink("");
     setIsAddingQuickUrl(false);
@@ -179,7 +178,6 @@ function FooterLayout() {
     const currentLinks = [...(pageContent.footer.footer_quick_links || [])];
     currentLinks.splice(index, 1);
 
-    // Update form state
     setValue("footer.footer_quick_links", currentLinks);
 
     // Update page content state
@@ -263,6 +261,63 @@ function FooterLayout() {
     toast.success("Social link removed successfully!");
   };
 
+  const handleQrImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.match("image.*")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setQrImage(file);
+
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewQrImage(reader.result);
+      // Also update the form value
+      setValue("footer.footer_qr_image.value", reader.result);
+      setValue("footer.footer_qr_image.type", "image");
+
+      // Update page content state
+      const updatedFooter = {
+        ...pageContent.footer,
+        footer_qr_image: {
+          value: reader.result,
+          type: "image",
+        },
+      };
+
+      setPageContent({
+        ...pageContent,
+        footer: updatedFooter,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+  const removeQrImage = () => {
+    setQrImage(null);
+    setPreviewQrImage("");
+    setValue("footer.footer_qr_image.value", "");
+
+    // Update page content state
+    const updatedFooter = {
+      ...pageContent.footer,
+    };
+
+    if (updatedFooter.footer_qr_image) {
+      updatedFooter.footer_qr_image.value = "";
+    }
+
+    setPageContent({
+      ...pageContent,
+      footer: updatedFooter,
+    });
+
+    toast.success("QR image removed successfully!");
+  };
+
   const onSubmit = async (data) => {
     try {
       const currentContent = pageContent
@@ -288,6 +343,10 @@ function FooterLayout() {
       // Add the links arrays
       footerObject.footer_quick_links = data.footer.footer_quick_links || [];
       footerObject.footer_social_links = data.footer.footer_social_links || [];
+
+      if (data.footer.footer_qr_image && data.footer.footer_qr_image.value) {
+        footerObject.footer_qr_image = data.footer.footer_qr_image;
+      }
 
       const dynamicContentData = {
         ...currentContent,
@@ -448,12 +507,103 @@ function FooterLayout() {
                 </button>
               </div>
             )}
-
+            <div className="mt-8 bg-gray-50 w-1/2 p-4 rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+              <h3 className="text-lg font-medium mb-4">Footer QR Code</h3>
+              <div className="grid grid-cols-1  gap-6">
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Upload QR Code Image
+                  </label>
+                  <div className="flex items-center justify-center w-full">
+                    <label
+                      htmlFor="qr-image-upload"
+                      className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+                    >
+                      {!previewQrImage ? (
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" />
+                          <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="font-semibold">
+                              Click to upload
+                            </span>{" "}
+                            or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            SVG, PNG, JPG or GIF (MAX. 800x800px)
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="relative flex flex-col items-center">
+                          <img
+                            src={previewQrImage}
+                            alt="QR Code Preview"
+                            className="max-h-52 max-w-full object-contain"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeQrImage}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      )}
+                      <input
+                        id="qr-image-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleQrImageChange}
+                      />
+                      <input
+                        type="hidden"
+                        {...register("footer.footer_qr_image.value")}
+                      />
+                      <input
+                        type="hidden"
+                        {...register("footer.footer_qr_image.type")}
+                        value="image"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-md font-medium mb-3">QR Code Settings</h4>
+                  <div className="mb-4">
+                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                      QR Code Title
+                    </label>
+                    <input
+                      type="text"
+                      {...register("footer.footer_qr_title.value", {
+                        required: "QR code title is required",
+                      })}
+                      className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      placeholder="Scan to visit our website"
+                    />
+                    <input
+                      type="hidden"
+                      {...register("footer.footer_qr_title.type")}
+                      value="text"
+                    />
+                    {errors?.footer?.footer_qr_title?.value && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.footer.footer_qr_title.value.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
               {Object.entries(pageContent?.footer || {})
                 .filter(
                   ([key]) =>
-                    key !== "footer_quick_links" && !key.includes("quick_url_")
+                    key !== "footer_quick_links" &&
+                    key !== "footer_social_links" &&
+                    !key.includes("quick_url_") &&
+                    key !== "footer_qr_image" &&
+                    key !== "footer_qr_title"
                 )
                 .map(([key, fieldData]) => (
                   <div key={key} className="mb-4">
@@ -521,7 +671,7 @@ function FooterLayout() {
           </div>
 
           <div className="mt-8 mb-8">
-            <h3 className="text-lg font-medium mb-4">Quick URLs</h3>
+            <h3 className="text-lg font-medium mb-4">Social Links</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {(pageContent?.footer?.footer_social_links || []).map(
                 (link, index) => (

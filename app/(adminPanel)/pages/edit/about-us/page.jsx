@@ -248,7 +248,7 @@ function EditPage() {
 
             {cardFields.length === 0 && (
               <div className="bg-gray-50 p-6 rounded-lg mb-6 border border-gray-200 text-center text-gray-500">
-                No cards added yet. Click "Add New Card" to create one.
+                No cards added yet. Click Add New Card to create one.
               </div>
             )}
 

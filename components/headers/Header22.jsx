@@ -129,8 +129,10 @@ export default function Header22({ pageContent }) {
                   alt="logo"
                   className="logo"
                   src={pageContent?.header?.header_logo["value"]}
-                  width={136}
-                  height={21}
+                  width={280}
+                  height={52}
+                  style={{ width: "165px", height: "auto" }}
+                  priority
                 />
               </Link>
             </div>
@@ -475,9 +477,13 @@ export default function Header22({ pageContent }) {
               </div>
               <div className="number d-grid">
                 <a
-                  href="#"
+                  href={`https://wa.me/${support_center_number?.replace(
+                    /[^0-9]/g
+                  )}`}
                   className="phone"
                   style={{ color: support_number_color }}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   {support_center_number}
                 </a>

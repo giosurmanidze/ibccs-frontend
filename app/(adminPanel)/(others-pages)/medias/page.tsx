@@ -96,12 +96,10 @@ export default function EnhancedFileLibrary() {
     const url = `${baseUrl}/download/${fileId}`;
 
     try {
-      // Fetch the file as a Blob with authorization headers
       const response = await axiosInstance.get(url, {
-        responseType: "blob", // Important for handling file downloads
+        responseType: "blob",
       });
 
-      // Create a URL for the Blob
       const downloadUrl = URL.createObjectURL(response.data);
 
       // Create a temporary link and trigger the download

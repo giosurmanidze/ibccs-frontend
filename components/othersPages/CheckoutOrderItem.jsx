@@ -3,28 +3,33 @@ import Image from "next/image";
 import Link from "next/link";
 
 const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
-  // Extract data from the item
   const serviceData = item.service || item;
-  const serviceId = item.service_id || item.id;
   const serviceName = serviceData.name || "Unknown Service";
-  const category = serviceData.category.name;
+  const category = serviceData.category?.name || "Service";
   const serviceIcon = serviceData.icon || "/placeholder-image.jpg";
   const basePrice = parseFloat(serviceData.base_price || 0).toFixed(2);
   const quantity = item.quantity || 1;
+  
+  const discount = item.discount || serviceData.discount || 0;
+  const hasDiscount = discount > 0;
+  
+  const discountedBasePrice = hasDiscount 
+    ? (parseFloat(basePrice) * (1 - (discount / 100))).toFixed(2)
+    : basePrice;
+  
+  const discountAmount = hasDiscount 
+    ? (parseFloat(basePrice) * (discount / 100)).toFixed(2)
+    : 0;
 
-  // Extract and format fields for extra taxes
   let extraTaxFields = {};
   let hasExtraTaxes = false;
 
-  // Helper function to extract extra tax fields
   const extractExtraTaxFields = () => {
-    // Check if item has fields with extra taxes
     if (item.fields) {
       const fields =
         typeof item.fields === "string" ? JSON.parse(item.fields) : item.fields;
 
       fields.forEach((field) => {
-        // Check if field value contains extra_tax
         if (
           field.value &&
           typeof field.value === "string" &&
@@ -50,9 +55,8 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
       });
     }
 
-    // If no extra taxes found, check for price difference
     if (!hasExtraTaxes && item.total_price && serviceData.base_price) {
-      const baseTotalPrice = parseFloat(serviceData.base_price) * quantity;
+      const baseTotalPrice = parseFloat(discountedBasePrice) * quantity; 
       const totalPrice = parseFloat(item.total_price);
       const difference = totalPrice - baseTotalPrice;
 
@@ -69,16 +73,12 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
 
     return { extraTaxFields, hasExtraTaxes };
   };
-
-  // Process extra tax fields
   const {
     extraTaxFields: processedExtraTaxFields,
     hasExtraTaxes: processedHasExtraTaxes,
   } = extractExtraTaxFields();
   extraTaxFields = processedExtraTaxFields;
   hasExtraTaxes = processedHasExtraTaxes;
-
-  // Calculate the total extra tax amount
   const totalExtraTax = hasExtraTaxes
     ? Object.values(extraTaxFields).reduce(
         (sum, field) => sum + parseFloat(field.extra_tax || 0),
@@ -89,7 +89,6 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
   return (
     <div className="checkout-product-item bg-white rounded-lg shadow-sm mb-4 overflow-hidden border border-gray-200">
       <div className="flex items-start p-4 gap-">
-        {/* Service image and basic info */}
         <div className="flex items-start space-x-3 gap-2">
           <div className="flex-shrink-0">
             <Image
@@ -105,6 +104,11 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
               {serviceName}
             </span>
             <span className="text-sm text-gray-500">{category}</span>
+            {hasDiscount && (
+              <span className="text-sm text-red-600 font-medium mt-1">
+                {discount}% discount applied
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -119,20 +123,32 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
                 <span className="text-gray-600">Base price:</span>
                 <span className="font-medium">{basePrice} euro</span>
               </div>
+              {hasDiscount && (
+                <div className="flex justify-between items-center">
+                  <span className="text-red-600 font-medium">Discount ({discount}%):</span>
+                  <span className="text-red-600 font-medium">-{discountAmount} euro</span>
+                </div>
+              )}
+              {hasDiscount && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Discounted price:</span>
+                  <span className="font-medium">{discountedBasePrice} euro</span>
+                </div>
+              )}
+              
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Quantity:</span>
                 <span className="font-medium">× {quantity}</span>
               </div>
+              
               <div className="flex justify-between items-center border-t border-gray-200 pt-1 mt-1">
                 <span className="text-gray-700 font-semibold">Subtotal:</span>
                 <span className="font-semibold">
-                  {(basePrice * quantity).toFixed(2)} euro
+                  {(parseFloat(discountedBasePrice) * quantity).toFixed(2)} euro
                 </span>
               </div>
             </div>
           </div>
-
-          {/* Extra charges */}
           {hasExtraTaxes && (
             <div className="bg-white p-3 rounded-md shadow-sm">
               <h6 className="text-xs font-semibold text-blue-700 mb-2 border-b border-blue-100 pb-1">
@@ -144,7 +160,7 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
                     key={fieldName}
                     className="flex justify-between items-center"
                   >
-                    <span className="text-blue-600  max-w-[170px]">
+                    <span className="text-blue-600 max-w-[170px]">
                       {field.displayName}:
                     </span>
                     <span className="text-green-600 font-medium">
@@ -152,8 +168,6 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
                     </span>
                   </div>
                 ))}
-
-                {/* Show subtotal if multiple charges */}
                 {Object.keys(extraTaxFields).length > 1 && (
                   <div className="flex justify-between items-center border-t border-gray-200 pt-1 mt-1">
                     <span className="text-gray-700 font-medium">
@@ -164,8 +178,6 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
                     </span>
                   </div>
                 )}
-
-                {/* Show calculation with quantity if > 1 */}
                 {quantity > 1 && (
                   <div className="flex justify-between items-center pt-1">
                     <span className="text-gray-700 font-medium">
@@ -180,15 +192,13 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
             </div>
           )}
         </div>
-
-        {/* Total for this item */}
         <div className="mt-3 bg-blue-50 p-2 rounded-md shadow-sm">
           <div className="flex justify-between items-center font-medium">
             <span className="text-gray-800">Item Total:</span>
             <span className="text-blue-700 text-lg">
               {item.total_price ||
                 (
-                  parseFloat(basePrice) * quantity +
+                  parseFloat(discountedBasePrice) * quantity +
                   totalExtraTax * quantity
                 ).toFixed(2)}{" "}
               euro
@@ -200,7 +210,6 @@ const CheckoutOrderItem = ({ item, getCleanFieldName }) => {
   );
 };
 
-// Main component for checkout order items list
 const CheckoutOrderItems = ({ cartProducts, getCleanFieldName }) => {
   if (!cartProducts || cartProducts.length === 0) {
     return (

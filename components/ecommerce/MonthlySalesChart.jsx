@@ -155,7 +155,7 @@ export default function MonthlySalesChart() {
           },
           formatter: (value) => {
             if (chartView === "sales") {
-              return `$${value}`;
+              return `${value} euro`;
             }
             return value.toString();
           },
@@ -179,7 +179,7 @@ export default function MonthlySalesChart() {
         },
         y: {
           formatter: (val) =>
-            chartView === "sales" ? `$${val}` : `${val} orders`,
+            chartView === "sales" ? `${val} Euro` : `${val} orders`,
         },
         theme: "dark",
       },

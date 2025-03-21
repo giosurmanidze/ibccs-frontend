@@ -10,8 +10,6 @@ import Badge from "../ui/badge/Badge";
 import axiosInstance from "@/config/axios";
 import Link from "next/link";
 
-
-
 export default function RecentOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,11 +111,11 @@ export default function RecentOrders() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                      #{order.id}
+                      #{order.order_identifier}
                     </span>
                     <div>
                       <h4 className="font-medium text-gray-800 dark:text-white/90">
-                        #{order.id}
+                        #{order.order_identifier}
                       </h4>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {formatDate(order.created_at)}
@@ -190,18 +188,15 @@ export default function RecentOrders() {
 
                 <div className="flex justify-between items-center border-t border-gray-100 pt-3 dark:border-gray-700">
                   <p className="text-base font-bold text-gray-800 dark:text-white">
-                    ${calculateTotalPrice(order.order_items)}
+                    {calculateTotalPrice(order.order_items)} Euro
                   </p>
                 </div>
               </div>
             </div>
           ))}
         </div>
-
-        {/* Desktop View - Table Layout */}
         <div className="hidden sm:block rounded-xl border border-gray-100 bg-white overflow-hidden dark:border-gray-700 dark:bg-gray-800/40">
           <Table className="w-full">
-            {/* Table Header */}
             <TableHeader className="bg-gray-50 dark:bg-gray-800/60">
               <TableRow>
                 <TableCell
@@ -243,7 +238,6 @@ export default function RecentOrders() {
               </TableRow>
             </TableHeader>
 
-            {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-gray-700">
               {orders?.map((order) => (
                 <TableRow
@@ -251,8 +245,8 @@ export default function RecentOrders() {
                   className="group hover:bg-gray-50 transition-colors dark:hover:bg-gray-800/60"
                 >
                   <TableCell className="py-4 px-4 text-gray-700 dark:text-gray-300">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 font-medium text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                      #{order.id}
+                    <span className="flex  items-center justify-center rounded-full bg-indigo-100 font-medium text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                      #{order.order_identifier}
                     </span>
                   </TableCell>
                   <TableCell className="py-4 px-4">
@@ -279,7 +273,7 @@ export default function RecentOrders() {
                     </div>
                   </TableCell>
                   <TableCell className="py-4 px-4 font-bold text-gray-800 dark:text-white">
-                    ${calculateTotalPrice(order.order_items)}
+                    {calculateTotalPrice(order.order_items)} Euro
                   </TableCell>
                   <TableCell className="py-4 px-4">
                     <Badge

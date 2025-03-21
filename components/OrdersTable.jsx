@@ -125,12 +125,10 @@ const OrdersTable = () => {
   const fetchOrders = async (page = 1) => {
     try {
       setLoading(true);
-      console.log("debouncedSearchTerm", debouncedSearchTerm);
       const response = await axiosInstance.get(
         `orders?page=${page}&search=${debouncedSearchTerm}`
       );
 
-      console.log("response.data.data", response.data.data);
       setOrders(response.data.data);
       setLoading(false);
       setCurrentPage(response.data.meta.current_page || page);
@@ -190,14 +188,6 @@ const OrdersTable = () => {
       month: "short",
       day: "numeric",
     });
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(parseFloat(amount) || 0);
   };
 
   const parseServiceDetails = (item) => {
@@ -545,10 +535,7 @@ const OrdersTable = () => {
                             Revenue
                           </span>
                           <span className="font-bold text-gray-800 dark:text-white">
-                            {new Intl.NumberFormat("en-US", {
-                              style: "currency",
-                              currency: "USD",
-                            }).format(service.total_revenue)}
+                            {service.total_revenue} Euro
                           </span>
                         </div>
                       </div>
@@ -657,14 +644,10 @@ const OrdersTable = () => {
                 Revenue
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(
-                  selectedCountry
-                    ? serviceData.totalRevenue
-                    : metricsData.totalRevenue
-                )}
+                {selectedCountry
+                  ? serviceData.totalRevenue
+                  : metricsData.totalRevenue}{" "}
+                Euro
               </p>
             </div>
             <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300">
@@ -777,16 +760,7 @@ const OrdersTable = () => {
                 className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 <div className="flex items-center">
-                  Order ID
-                  <svg
-                    className="w-3 h-3 ml-1.5"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M8.574 11.024h6.852a2.075 2.075 0 0 0 1.847-1.086 1.9 1.9 0 0 0-.11-1.986L13.736 2.9a2.122 2.122 0 0 0-3.472 0L6.837 7.952a1.9 1.9 0 0 0-.11 1.986 2.074 2.074 0 0 0 1.847 1.086Zm6.852 1.952H8.574a2.072 2.072 0 0 0-1.847 1.087 1.9 1.9 0 0 0 .11 1.985l3.426 5.05a2.123 2.123 0 0 0 3.472 0l3.427-5.05a1.9 1.9 0 0 0 .11-1.985 2.074 2.074 0 0 0-1.846-1.087Z" />
-                  </svg>
+                  Order
                 </div>
               </th>
               <th
@@ -795,15 +769,6 @@ const OrdersTable = () => {
               >
                 <div className="flex items-center">
                   Customer
-                  <svg
-                    className="w-3 h-3 ml-1.5"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M8.574 11.024h6.852a2.075 2.075 0 0 0 1.847-1.086 1.9 1.9 0 0 0-.11-1.986L13.736 2.9a2.122 2.122 0 0 0-3.472 0L6.837 7.952a1.9 1.9 0 0 0-.11 1.986 2.074 2.074 0 0 0 1.847 1.086Zm6.852 1.952H8.574a2.072 2.072 0 0 0-1.847 1.087 1.9 1.9 0 0 0 .11 1.985l3.426 5.05a2.123 2.123 0 0 0 3.472 0l3.427-5.05a1.9 1.9 0 0 0 .11-1.985 2.074 2.074 0 0 0-1.846-1.087Z" />
-                  </svg>
                 </div>
               </th>
               <th scope="col" className="px-6 py-3">
@@ -815,15 +780,6 @@ const OrdersTable = () => {
               >
                 <div className="flex items-center">
                   Total
-                  <svg
-                    className="w-3 h-3 ml-1.5"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M8.574 11.024h6.852a2.075 2.075 0 0 0 1.847-1.086 1.9 1.9 0 0 0-.11-1.986L13.736 2.9a2.122 2.122 0 0 0-3.472 0L6.837 7.952a1.9 1.9 0 0 0-.11 1.986 2.074 2.074 0 0 0 1.847 1.086Zm6.852 1.952H8.574a2.072 2.072 0 0 0-1.847 1.087 1.9 1.9 0 0 0 .11 1.985l3.426 5.05a2.123 2.123 0 0 0 3.472 0l3.427-5.05a1.9 1.9 0 0 0 .11-1.985 2.074 2.074 0 0 0-1.846-1.087Z" />
-                  </svg>
                 </div>
               </th>
               <th
@@ -832,15 +788,6 @@ const OrdersTable = () => {
               >
                 <div className="flex items-center">
                   Date
-                  <svg
-                    className="w-3 h-3 ml-1.5 text-gray-400"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M8.574 11.024h6.852a2.075 2.075 0 0 0 1.847-1.086 1.9 1.9 0 0 0-.11-1.986L13.736 2.9a2.122 2.122 0 0 0-3.472 0L6.837 7.952a1.9 1.9 0 0 0-.11 1.986 2.074 2.074 0 0 0 1.847 1.086Zm6.852 1.952H8.574a2.072 2.072 0 0 0-1.847 1.087 1.9 1.9 0 0 0 .11 1.985l3.426 5.05a2.123 2.123 0 0 0 3.472 0l3.427-5.05a1.9 1.9 0 0 0 .11-1.985 2.074 2.074 0 0 0-1.846-1.087Z" />
-                  </svg>
                 </div>
               </th>
               <th scope="col" className="px-6 py-3">
@@ -873,7 +820,7 @@ const OrdersTable = () => {
                           : "bg-blue-500"
                       }`}
                     ></div>
-                    #{order.id}
+                    #{order.order_identifier}
                   </div>
                 </th>
                 <td className="px-6 py-4">
@@ -907,14 +854,14 @@ const OrdersTable = () => {
                           </span>
                         </div>
                         <div className="ml-3 text-gray-500 dark:text-gray-400">
-                          {formatCurrency(getItemPrice(item))}
+                          {getItemPrice(item)} Euro
                         </div>
                       </div>
                     ))}
                   </div>
                 </td>
                 <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
-                  {formatCurrency(calculateOrderTotal(order))}
+                  {calculateOrderTotal(order)} Euro
                 </td>
                 <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                   {formatDate(order.created_at)}

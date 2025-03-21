@@ -508,7 +508,7 @@ export default function Checkout() {
           </div>
           <div className="tf-page-cart-footer">
             <div className="tf-cart-footer-inner">
-              <h5 className="fw-5 mb_20">Your order</h5>{" "}
+              <h5 className="fw-5 mb_20">Your order</h5>
               <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
                 <CheckoutOrderItems
                   cartProducts={order_details}

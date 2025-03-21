@@ -63,14 +63,6 @@ const EnhancedOrderDetailsModal = ({
     }, 0);
   };
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount || 0);
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString("en-US", {
       year: "numeric",
@@ -188,7 +180,7 @@ const EnhancedOrderDetailsModal = ({
 
             <div>
               <h3 className="!text-xl font-bold text-gray-900 dark:text-white">
-                Order #{order.id}
+                Order #{order.order_identifier}
               </h3>
               <p className="!text-sm text-gray-500 dark:text-gray-400">
                 Created on {formatDate(order.created_at)}
@@ -275,7 +267,7 @@ const EnhancedOrderDetailsModal = ({
                     Total Amount:
                   </span>
                   <span className="!flex-1 !text-xl font-bold text-green-600 dark:text-green-400">
-                    {formatCurrency(calculateOrderTotal())}
+                    {calculateOrderTotal()}
                   </span>
                 </div>
               </div>
@@ -386,7 +378,7 @@ const EnhancedOrderDetailsModal = ({
                           </div>
                         </td>
                         <td className="!px-6 !py-4 font-medium text-gray-900 dark:text-white">
-                          {formatCurrency(getItemPrice(item))}
+                          {getItemPrice(item)} Euro
                         </td>
                       </tr>
                     );
@@ -401,9 +393,7 @@ const EnhancedOrderDetailsModal = ({
                     >
                       Total
                     </th>
-                    <td className="!px-6 !py-4">
-                      {formatCurrency(calculateOrderTotal())}
-                    </td>
+                    <td className="!px-6 !py-4">{calculateOrderTotal()} Euro</td>
                   </tr>
                 </tfoot>
               </table>
@@ -411,10 +401,9 @@ const EnhancedOrderDetailsModal = ({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between !p-6 !border-t !border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl">
           <div className="!text-sm !text-gray-500 dark:text-gray-400">
-            Order ID: <span className="font-mono font-medium">{order.id}</span>
+            Order: <span className="font-mono font-medium">#{order.order_identifier}</span>
           </div>
 
           <div className="flex !space-x-3">

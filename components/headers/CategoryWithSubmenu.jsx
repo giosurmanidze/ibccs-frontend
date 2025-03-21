@@ -22,6 +22,7 @@ export const CategoryWithSubmenu = ({ category: d }) => {
 
   const handleSubMenuClick = (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Stop the event from bubbling up to parent handlers
     setSubMenuOpen(!subMenuOpen);
   };
 
@@ -58,7 +59,7 @@ export const CategoryWithSubmenu = ({ category: d }) => {
         </div>
         <a
           href={`#${uniqueId}`}
-          className="d-flex align-items-center justify-content-center text-secondary ms-2"
+          className="d-flex align-items-center justify-content-center text-secondary ms-2 submenu-toggle"
           style={{ width: "30px", height: "30px", flexShrink: 0 }}
           onClick={handleSubMenuClick}
         >
@@ -70,7 +71,7 @@ export const CategoryWithSubmenu = ({ category: d }) => {
 
       <div
         id={uniqueId}
-        className="bg-white"
+        className="bg-white submenu-content"
         style={{ display: subMenuOpen ? "block" : "none" }}
       >
         <ul
@@ -109,28 +110,6 @@ export const CategoryWithSubmenu = ({ category: d }) => {
             ))}
         </ul>
       </div>
-
-      <style jsx>{`
-        .rotate-180 {
-          transform: rotate(180deg);
-        }
-
-        /* Prevent text truncation */
-        .category-name,
-        .service-name {
-          white-space: normal;
-          overflow: visible;
-          text-overflow: clip;
-          display: block;
-          width: auto;
-          max-width: none;
-        }
-
-        /* Ensure proper container sizing */
-        .d-inline-flex {
-          width: calc(100% - 40px);
-        }
-      `}</style>
     </li>
   );
 };

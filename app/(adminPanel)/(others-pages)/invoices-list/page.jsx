@@ -31,7 +31,6 @@ const InvoicesList = () => {
 
   const handleDownloadInvoice = async (invoiceId) => {
     try {
-      // Use the new download route
       const response = await axiosInstance({
         url: `/download-invoice/${invoiceId}`,
         method: "GET",

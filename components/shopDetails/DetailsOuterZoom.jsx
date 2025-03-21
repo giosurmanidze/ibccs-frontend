@@ -15,20 +15,17 @@ import { useSearchParams } from "next/navigation";
 export default function DetailsOuterZoom({ product }) {
   const [quantity, setQuantity] = useState(1);
   const [resetQuantityTrigger, setResetQuantityTrigger] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [productData, setProductData] = useState(null);
   const [isInitialLoad, setIsInitialLoad] = useState(null);
   const [blockingErrors, setBlockingErrors] = useState({});
   const [selectedTimeSlots, setSelectedTimeSlots] = useState({});
 
-  const [extraInputs, setExtraInputs] = useState([]);
   const [wordCounts, setWordCounts] = useState({});
 
   const [files, setFiles] = useState({});
   const [conditionalOptions, setConditionalOptions] = useState({});
   const [tempCartChanges, setTempCartChanges] = useState(null);
 
-  const [loadingItemId, setLoadingItemId] = useState(null);
   const handleOptionWithValidation = (e, fieldName, fieldType) => {
     try {
       let selectedOption = null;
@@ -285,14 +282,7 @@ export default function DetailsOuterZoom({ product }) {
 
   const schema = createValidationSchema(parsedFields);
 
-  const {
-    addProductToCart,
-    isAddedToCartProducts,
-    fetchCartData,
-    cartProducts,
-    totalPrice,
-    setCartProducts,
-  } = useContextElement();
+  const { addProductToCart, fetchCartData, cartProducts } = useContextElement();
   const [pageContent, setPageContent] = useState({});
 
   useEffect(() => {
@@ -315,14 +305,30 @@ export default function DetailsOuterZoom({ product }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const handleDownload = (fileId, filename) => {
-    const url = `http://localhost:8000/api/download/${fileId}`;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (fileId, filename) => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const url = `${baseUrl}/download/${fileId}`;
+
+    try {
+      const response = await axiosInstance.get(url, {
+        responseType: "blob",
+      });
+
+      const downloadUrl = URL.createObjectURL(response.data);
+
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Download failed. Please try again.");
+    }
   };
 
   const {
@@ -338,11 +344,10 @@ export default function DetailsOuterZoom({ product }) {
   });
   const onSubmit = async (data) => {
     try {
-      // Handle validation errors
       if (Object.keys(blockingErrors).length > 0) {
         const firstErrorField = Object.keys(blockingErrors)[0];
         const errorMessage = blockingErrors[firstErrorField].message;
-
+  
         toast.error(
           errorMessage || "Please correct the errors before continuing",
           {
@@ -352,24 +357,24 @@ export default function DetailsOuterZoom({ product }) {
         );
         return;
       }
-
+  
       const serviceId = productData?.id;
       setTempCartChanges(null);
-
+  
       // Process all fields
       const updatedFields = await Promise.all(
         parsedFields.map(async (field) => {
           let value = data[field.name];
           let extraTaxInfo = null;
           let conditionalValues = {};
-
+  
           console.log("field", field);
-
+  
           // For dropdown and radio fields, store both the selected value and all options
           if ((field.type === "dropdown" || field.type === "radio") && value) {
             try {
               const selectedOption = JSON.parse(value);
-
+  
               // Check if the selected option has extra tax
               if (selectedOption.extra_tax) {
                 extraTaxInfo = {
@@ -378,27 +383,30 @@ export default function DetailsOuterZoom({ product }) {
                   extra_tax: selectedOption.extra_tax,
                 };
               }
-
+  
               // Capture conditional values for this field
               if (conditionalOptions[field.name]) {
-                const conditionalFieldOptions = conditionalOptions[field.name].options;
+                const conditionalFieldOptions =
+                  conditionalOptions[field.name].options;
                 conditionalFieldOptions.forEach((condOption, index) => {
                   const conditionalFieldName = `${field.name}_conditional_${index}`;
                   const conditionalValue = data[conditionalFieldName];
-                  
+  
                   if (conditionalValue) {
                     conditionalValues[condOption.text] = conditionalValue;
                   }
                 });
               }
-
+  
               // Store the complete options array/object with the field
               return {
                 name: field.name,
                 type: field.type,
                 value: value,
                 options: field.options, // Store all options
-                ...(Object.keys(conditionalValues).length > 0 && { conditional_values: conditionalValues }),
+                ...(Object.keys(conditionalValues).length > 0 && {
+                  conditional_values: conditionalValues,
+                }),
                 ...(extraTaxInfo && { extra_tax: extraTaxInfo }),
                 ...(field.title && { title: field.title }),
               };
@@ -406,7 +414,7 @@ export default function DetailsOuterZoom({ product }) {
               console.error("Error parsing option:", error);
             }
           }
-
+  
           // For timeslot fields, store the time_slots configuration
           if (field.type === "timeslot" && field.time_slots) {
             return {
@@ -417,7 +425,7 @@ export default function DetailsOuterZoom({ product }) {
               ...(field.title && { title: field.title }),
             };
           }
-
+  
           // For file fields, store any special attributes like calculation_fee
           if (field.type === "file") {
             const fileData = files[field.name];
@@ -440,7 +448,7 @@ export default function DetailsOuterZoom({ product }) {
               };
             }
           }
-
+  
           // Default handling for other field types
           return {
             name: field.name,
@@ -452,30 +460,35 @@ export default function DetailsOuterZoom({ product }) {
           };
         })
       );
-
+  
       const filteredFields = updatedFields.filter(
         (field) =>
           (typeof field.value === "string" && field.value.trim() !== "") ||
           (Array.isArray(field.value) && field.value.length > 0) ||
           (field.type === "file" && field.value)
       );
-
+  
+      // Get the total price with discount applied
+      const totalPrice = getProductTotal(product);
+      
       const cartData = {
         service_id: serviceId,
         fields: filteredFields,
-        total_price: getProductTotal(product),
+        total_price: totalPrice,
+        base_price: product?.base_price,
+        discount: product?.discount || 0,
         quantity: quantity,
         extra_tax_fields: filteredFields
           .filter((field) => field.extra_tax)
           .map((field) => field.extra_tax),
       };
-
-      console.log("cartData", cartData);
-
+  
+      console.log("Adding to cart with discount:", cartData);
+  
       addProductToCart(cartData);
       setTempCartChanges(null);
       fetchCartData();
-
+  
       reset();
       setResetQuantityTrigger((prev) => prev + 1);
     } catch (error) {
@@ -487,7 +500,6 @@ export default function DetailsOuterZoom({ product }) {
     }
   };
 
-  // Helper function to convert File to base64
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -715,13 +727,16 @@ export default function DetailsOuterZoom({ product }) {
   };
 
   const getProductTotal = (product) => {
-    // Ensure quantity is always at least 1
     const qty = Math.max(1, quantity);
 
-    // Calculate base price
-    const basePrice = product?.base_price * qty;
+    let basePrice = product?.base_price;
 
-    // Get extra tax fields, prioritizing temporary changes
+    if (product?.discount && product.discount !== 0) {
+      basePrice = basePrice * (1 - product.discount / 100);
+    }
+
+    let totalPrice = basePrice * qty;
+
     const extraTaxFields =
       tempCartChanges?.[product.id] || product?.extraTaxFields || {};
 
@@ -730,27 +745,23 @@ export default function DetailsOuterZoom({ product }) {
       0
     );
 
-    const totalPrice = basePrice + extraTaxTotal * qty;
-
+    totalPrice += extraTaxTotal * qty;
     return Number(totalPrice.toFixed(2));
   };
 
   function ensureDateFormat(dateStr) {
     if (!dateStr) return null;
 
-    // If already in YYYY-MM-DD format
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       return dateStr;
     }
 
-    // Try to parse MM/DD/YYYY format
     const mmddyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dateStr);
     if (mmddyyyy) {
       const [_, month, day, year] = mmddyyyy;
       return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
-    // Try to create a date and format it
     try {
       const date = new Date(dateStr);
       if (!isNaN(date.getTime())) {
@@ -760,7 +771,7 @@ export default function DetailsOuterZoom({ product }) {
       console.error("Could not parse date:", dateStr);
     }
 
-    return dateStr; // Return original if we can't parse it
+    return dateStr; 
   }
   function formatDateToYYYYMMDD(date) {
     const year = date.getFullYear();
@@ -769,7 +780,6 @@ export default function DetailsOuterZoom({ product }) {
     return `${year}-${month}-${day}`;
   }
 
-  // Format time display
   function formatTime(date) {
     return date.toLocaleTimeString([], {
       hour: "2-digit",
@@ -862,8 +872,6 @@ export default function DetailsOuterZoom({ product }) {
         }
       } catch (err) {
         console.error("API Error:", err);
-      } finally {
-        setLoadingItemId(null);
       }
     };
 
@@ -1074,6 +1082,7 @@ export default function DetailsOuterZoom({ product }) {
       </div>
     );
   };
+
   return (
     <section style={{ maxWidth: "100vw", overflow: "clip" }}>
       <div
@@ -1084,9 +1093,24 @@ export default function DetailsOuterZoom({ product }) {
           <div className="row">
             <div className="col-md-6">
               <div className="tf-product-media-wrap sticky-top">
-                <div className="thumbs-slider">
-                  <Slider1ZoomOuter firstImage={product?.icon} />
+                <div className="thumbs-slider mb-4">
+                  <Slider1ZoomOuter firstImage={product?.illustration} />
                 </div>
+
+                {product?.profile_description && (
+                  <div className="product-description-container p-4 bg-white rounded-lg shadow-sm">
+                    <h3 className="!text-lg font-semibold mb-3">
+                      {product?.profile_description_title}
+                    </h3>
+                    <div className="product-description-content leading-relaxed">
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: product.profile_description,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="col-md-6">
@@ -1131,15 +1155,17 @@ export default function DetailsOuterZoom({ product }) {
                     <div className="price-on-sale">
                       {product?.base_price} Euro
                     </div>
-                    <div
-                      className="badges-on-sale"
-                      style={{
-                        color: button3?.text_color,
-                        backgroundColor: button3?.background_color,
-                      }}
-                    >
-                      <span>{product?.discount}</span>% OFF
-                    </div>
+                    {product?.discount !== 0 && (
+                      <div
+                        className="badges-on-sale"
+                        style={{
+                          color: button3?.text_color,
+                          backgroundColor: button3?.background_color,
+                        }}
+                      >
+                        <span>{product?.discount}</span>% OFF
+                      </div>
+                    )}
                   </div>
                   {product?.delivery_time && (
                     <div className="tf-delivery-time mt-3 bg-blue-50 p-3 rounded-md">
@@ -1749,8 +1775,7 @@ export default function DetailsOuterZoom({ product }) {
                                 handleDownload(file.id, file.filename)
                               }
                               rel="noopener noreferrer"
-                              download
-                              className="download-btn bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition-colors"
+                              className="download-btn !bg-black text-white px-3 py-1 rounded-md hover:bg-blue-600 transition-colors"
                             >
                               Download
                             </button>
@@ -1766,12 +1791,6 @@ export default function DetailsOuterZoom({ product }) {
         </div>
       </div>
       <StickyItem />
-      {/* <CartModal
-        isOpen={isModalOpen}
-        loadingItemId={loadingItemId}
-        cartProducts={cartProducts}
-        totalPrice={totalPrice}
-      /> */}
     </section>
   );
 }

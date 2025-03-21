@@ -29,7 +29,7 @@ export default function Categories() {
       
       <div className="container !mx-auto relative z-10">
         <div className="text-center !mb-10">
-          <h2 className="!text-2xl font-semibold text-gray-800 mb-3">
+          <h2 className="!text-4xl font-semibold text-gray-800 mb-3">
             Our Categories
           </h2>
           <div className="flex items-center justify-center">
@@ -62,7 +62,7 @@ export default function Categories() {
                   
                   <div className="relative z-10 p-4 text-center flex-grow flex flex-col justify-center items-center">
                     <div className="flex flex-col items-center">
-                      <h3 className="!text-lg font-semibold text-white group-hover:text-[#5ca595] transition-colors duration-200 relative z-20 text-shadow">
+                      <h3 className="!text-xl font-semibold text-white group-hover:text-[#5ca595] transition-colors duration-200 relative z-20 text-shadow">
                         {item.name}
                       </h3>
                     </div>
@@ -107,7 +107,7 @@ export default function Categories() {
                     
                     <div className="relative z-10 p-4 text-center flex-grow flex flex-col justify-center items-center">
                       <div className="flex flex-col items-center">
-                        <h3 className="!text-lg font-semibold text-white group-hover:text-[#5ca595] transition-colors duration-200 relative z-20 text-shadow">
+                        <h3 className="!text-xl font-semibold text-white group-hover:text-[#5ca595] transition-colors duration-200 relative z-20 text-shadow">
                           {item.name}
                         </h3>
                       </div>

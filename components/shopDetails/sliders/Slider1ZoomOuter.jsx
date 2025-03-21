@@ -1,196 +1,39 @@
 "use client";
-import Drift from "drift-zoom";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { Gallery, Item } from "react-photoswipe-gallery";
-import { Navigation, Thumbs } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-const imagesDefault = [
-  {
-    id: 1,
-    src: "https://img.freepik.com/free-photo/photorealistic-lawyer-environment_23-2151151939.jpg?t=st=1741704058~exp=1741707658~hmac=5b56929274bf298ba099ac9d0d5b3e9cfb159656e89eb9798af256002c6ccaa7&w=1060",
-    alt: "",
-    width: 770,
-    height: 1075,
-    dataValue: "beige",
-  },
-  // {
-  //   id: 2,
-  //   src: "https://img.freepik.com/free-photo/photorealistic-lawyer-environment_23-2151151939.jpg?t=st=1741704058~exp=1741707658~hmac=5b56929274bf298ba099ac9d0d5b3e9cfb159656e89eb9798af256002c6ccaa7&w=1060",
-  //   alt: "",
-  //   width: 713,
-  //   height: 1070,
-  //   dataValue: "beige",
-  // },
-  // {
-  //   id: 3,
-  //   src: "https://img.freepik.com/free-photo/photorealistic-lawyer-environment_23-2151151939.jpg?t=st=1741704058~exp=1741707658~hmac=5b56929274bf298ba099ac9d0d5b3e9cfb159656e89eb9798af256002c6ccaa7&w=1060",
-  //   alt: "img-compare",
-  //   width: 713,
-  //   height: 1070,
-  //   dataValue: "beige",
-  // },
-];
+import { Item } from "react-photoswipe-gallery";
+
 export default function Slider1ZoomOuter({
-  currentColor = "Beige",
-  handleColor = () => {},
   firstImage,
-  images = imagesDefault,
+  width = 700,
+  height = 975,
 }) {
-  const [updatedImages, setfirst] = useState(
-    firstImage
-      ? [{ ...images[0], src: firstImage }, ...images.slice(1)]
-      : images
-  );
-
-  const [thumbsSwiper, setThumbsSwiper] = useState(null);
-  const swiperRef = useRef(null);
-  useEffect(() => {
-    const slideIndex =
-      updatedImages.filter(
-        (elm) => elm.dataValue?.toLowerCase() == currentColor.toLowerCase()
-      )[0]?.id - 1;
-    swiperRef.current.slideTo(slideIndex);
-  }, [currentColor]);
-  useEffect(() => {
-    // Function to initialize Drift
-    const imageZoom = () => {
-      const driftAll = document.querySelectorAll(".tf-image-zoom");
-      const pane = document.querySelector(".tf-zoom-main");
-
-      driftAll.forEach((el) => {
-        new Drift(el, {
-          zoomFactor: 2,
-          paneContainer: pane,
-          inlinePane: false,
-          handleTouch: false,
-          hoverBoundingBox: true,
-          containInline: true,
-        });
-      });
-    };
-    imageZoom();
-    const zoomElements = document.querySelectorAll(".tf-image-zoom");
-
-    const handleMouseOver = (event) => {
-      const parent = event.target.closest(".section-image-zoom");
-      if (parent) {
-        parent.classList.add("zoom-active");
-      }
-    };
-
-    const handleMouseLeave = (event) => {
-      const parent = event.target.closest(".section-image-zoom");
-      if (parent) {
-        parent.classList.remove("zoom-active");
-      }
-    };
-
-    zoomElements.forEach((element) => {
-      element.addEventListener("mouseover", handleMouseOver);
-      element.addEventListener("mouseleave", handleMouseLeave);
-    });
-
-    // Cleanup event listeners on component unmount
-    return () => {
-      zoomElements.forEach((element) => {
-        element.removeEventListener("mouseover", handleMouseOver);
-        element.removeEventListener("mouseleave", handleMouseLeave);
-      });
-    };
-  }, []); // Empty dependency array to run only once on mount
 
   return (
-    <>
-      <Swiper
-        dir="ltr"
-        direction="vertical"
-        spaceBetween={10}
-        slidesPerView={6}
-        className="tf-product-media-thumbs other-image-zoom"
-        onSwiper={setThumbsSwiper}
-        modules={[Thumbs]}
-        breakpoints={{
-          0: {
-            direction: "horizontal",
-          },
-          1150: {
-            direction: "vertical",
-          },
-        }}
-      >
-        {updatedImages.map((slide, index) => (
-          <SwiperSlide key={index} className="stagger-item">
-            <div className="item">
-              <Image
-                className="lazyload"
-                data-src={slide.src}
-                alt="img"
-                src={`https://img.freepik.com/free-photo/photorealistic-lawyer-environment_23-2151151939.jpg?t=st=1741704058~exp=1741707658~hmac=5b56929274bf298ba099ac9d0d5b3e9cfb159656e89eb9798af256002c6ccaa7&w=1060`} // Optional fallback for non-lazy loading
-                width={slide.width}
-                height={slide.height}
-              />
-            </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
-
-      <Gallery>
-        <Swiper
-          dir="ltr"
-          spaceBetween={10}
-          slidesPerView={1}
-          navigation={{
-            nextEl: ".swiper-button-next",
-            prevEl: ".swiper-button-prev",
-          }}
-          className="tf-product-media-main"
-          id="gallery-swiper-started"
-          thumbs={{ swiper: thumbsSwiper }}
-          modules={[Thumbs, Navigation]}
-          onSwiper={(swiper) => (swiperRef.current = swiper)}
-          onSlideChange={(swiper) => {
-            if (updatedImages[swiper.activeIndex]?.dataValue) {
-              handleColor(updatedImages[swiper.activeIndex].dataValue);
-            }
-          }}
+    <Item
+      original={firstImage}
+      thumbnail={firstImage}
+      width={width}
+      height={height}
+    >
+      {({ ref, open }) => (
+        <a
+          className="item"
+          data-pswp-width={width}
+          data-pswp-height={height}
+          onClick={open}
         >
-          {updatedImages.map((slide, index) => (
-            <SwiperSlide key={index}>
-              <Item
-                original={slide.src}
-                thumbnail={slide.src}
-                width={slide.width}
-                height={slide.height}
-              >
-                {({ ref, open }) => (
-                  <a
-                    className="item"
-                    data-pswp-width={slide.width}
-                    data-pswp-height={slide.height}
-                    onClick={open}
-                  >
-                    <Image
-                      className="tf-image-zoom lazyload"
-                      data-zoom={slide.src}
-                      data-src={slide.src}
-                      ref={ref}
-                      alt="image"
-                      width={slide.width}
-                      height={slide.height}
-                      src={slide.src} // Optional fallback for non-lazy loading
-                    />
-                  </a>
-                )}
-              </Item>
-            </SwiperSlide>
-          ))}
-
-          {/* Navigation buttons */}
-          <div className="swiper-button-next button-style-arrow thumbs-next"></div>
-          <div className="swiper-button-prev button-style-arrow thumbs-prev"></div>
-        </Swiper>{" "}
-      </Gallery>
-    </>
+          <Image
+            className="tf-image-zoom lazyload"
+            data-zoom={firstImage}
+            data-src={firstImage}
+            ref={ref}
+            alt="image"
+            width={width}
+            height={height}
+            src={firstImage}
+          />
+        </a>
+      )}
+    </Item>
   );
 }

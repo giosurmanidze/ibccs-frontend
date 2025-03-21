@@ -7,15 +7,22 @@ import { CategoryWithSubmenu } from "./CategoryWithSubmenu";
 const CategoriesDropdown = ({ categories, backgroundColor, textColor }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -23,16 +30,33 @@ const CategoriesDropdown = ({ categories, backgroundColor, textColor }) => {
 
   const handleMainMenuClick = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsOpen(!isOpen);
   };
 
+  // Handler to close dropdown when a LINK is clicked
+  // But NOT when a submenu toggle or container is clicked
+  const handleLinkClick = (e) => {
+    // Check if the clicked element is a submenu toggle button or its parent
+    const target = e.target;
+    const isSubmenuToggle = 
+      target.classList.contains('submenu-toggle') || 
+      target.closest('.submenu-toggle');
+
+    // Only close the main dropdown if we're not clicking a submenu toggle
+    if (!isSubmenuToggle) {
+      setIsOpen(false);
+    }
+  };
+
   return (
-    <div className="tf-list-categories" ref={dropdownRef}>
+    <div className={`tf-list-categories ${isOpen ? 'force-open' : ''}`}>
       <a
         href="#"
         className="categories-title"
         onClick={handleMainMenuClick}
         style={{ backgroundColor: backgroundColor }}
+        ref={buttonRef}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -49,33 +73,50 @@ const CategoriesDropdown = ({ categories, backgroundColor, textColor }) => {
         <span>{textColor || "Categories"}</span>
       </a>
 
-      {isOpen && (
-        <div
-          className="list-categories-inner toolbar-shop-mobile"
-          style={{ display: "block" }}
-        >
-          <ul className="nav-ul-mb" id="wrapper-menu-navigation">
-            {categories?.map((d) => {
-              if (Array.isArray(d?.services) && d.services.length === 0) {
-                return <SimpleCategory key={d?.id || d?.name} category={d} />;
-              } else {
-                return (
-                  <CategoryWithSubmenu key={d?.id || d?.name} category={d} />
-                );
-              }
-            })}
-          </ul>
-          <div className="categories-bottom">
-            <Link
-              href={`/shop-collection-sub`}
-              className="tf-btn btn-line collection-other-link"
-            >
-              <span>View all collection</span>
-              <i className="icon icon-arrow1-top-left" />
-            </Link>
-          </div>
+      <div
+        className="list-categories-inner toolbar-shop-mobile"
+        ref={dropdownRef}
+        onClick={handleLinkClick}
+      >
+        <ul className="nav-ul-mb" id="wrapper-menu-navigation">
+          {categories?.map((d) => {
+            if (Array.isArray(d?.services) && d.services.length === 0) {
+              return <SimpleCategory key={d?.id || d?.name} category={d} />;
+            } else {
+              return (
+                <CategoryWithSubmenu key={d?.id || d?.name} category={d} />
+              );
+            }
+          })}
+        </ul>
+        <div className="categories-bottom">
+          <Link
+            href={`/shop-collection-sub`}
+            className="tf-btn btn-line collection-other-link"
+          >
+            <span>View all collection</span>
+            <i className="icon icon-arrow1-top-left" />
+          </Link>
         </div>
-      )}
+      </div>
+
+      <style jsx>{`
+        /* Override the hover behavior */
+        .tf-list-categories:hover .list-categories-inner {
+          opacity: 0 !important;
+          visibility: hidden !important;
+          transform: translateY(15px) !important;
+          pointer-events: none !important;
+        }
+        
+        /* Force the dropdown to show when the force-open class is present */
+        .tf-list-categories.force-open .list-categories-inner {
+          opacity: 1 !important;
+          visibility: visible !important;
+          transform: none !important;
+          pointer-events: all !important;
+        }
+      `}</style>
     </div>
   );
 };

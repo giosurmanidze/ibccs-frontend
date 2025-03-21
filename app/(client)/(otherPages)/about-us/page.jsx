@@ -4,7 +4,7 @@ import FlatTitle from "@/components/othersPages/about/FlatTitle";
 import axiosInstance from "@/config/axios";
 import React, { useEffect, useState } from "react";
 
-export default function page() {
+export default function AboutUs() {
   const [pageContent, setPageContent] = useState({});
 
   useEffect(() => {

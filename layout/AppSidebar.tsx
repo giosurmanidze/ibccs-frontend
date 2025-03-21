@@ -53,7 +53,6 @@ const AppSidebar: React.FC = () => {
       name: "Pages",
       icon: <PageIcon />,
       subItems: [
-        // { name: "Create page", path: "/pages/create", pro: false },
         { name: "List Pages", path: "/pages/list", pro: false },
         {
           name: "Edit Layouts",
@@ -99,7 +98,8 @@ const AppSidebar: React.FC = () => {
     <ul className="flex flex-col gap-4">
       {navItems.map((nav, index) => (
         <li key={nav.name}>
-          {nav.subItems ? (
+          {nav.subItems && nav.subItems.length > 1 ? (
+            // Render dropdown for items with more than one subItem
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
               className={`menu-item group relative ${
@@ -149,41 +149,54 @@ const AppSidebar: React.FC = () => {
               )}
             </button>
           ) : (
-            nav.path && (
-              <Link
-                href={nav.path}
-                className={`menu-item group relative ${
-                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+            // Render single subItem or single path directly
+            <Link
+              href={
+                nav.subItems && nav.subItems.length === 1
+                  ? nav.subItems[0].path
+                  : nav.path || ""
+              }
+              className={`menu-item group relative ${
+                isActive(
+                  nav.subItems && nav.subItems.length === 1
+                    ? nav.subItems[0].path
+                    : nav.path || ""
+                )
+                  ? "menu-item-active"
+                  : "menu-item-inactive"
+              }`}
+            >
+              <span
+                className={`${
+                  isActive(
+                    nav.subItems && nav.subItems.length === 1
+                      ? nav.subItems[0].path
+                      : nav.path || ""
+                  )
+                    ? "menu-item-icon-active"
+                    : "menu-item-icon-inactive"
                 }`}
               >
-                <span
-                  className={`${
-                    isActive(nav.path)
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
-                  }`}
-                >
-                  {nav.icon}
-                </span>
-                {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
-                )}
+                {nav.icon}
+              </span>
+              {(isExpanded || isHovered || isMobileOpen) && (
+                <span className={`menu-item-text`}>{nav.name}</span>
+              )}
 
-                {nav.unreadCount > 0 && (
-                  <span
-                    className={`absolute ${
-                      isExpanded || isHovered || isMobileOpen
-                        ? "right-2"
-                        : "top-0 right-0"
-                    } flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full`}
-                  >
-                    {nav.unreadCount}
-                  </span>
-                )}
-              </Link>
-            )
+              {nav.unreadCount > 0 && (
+                <span
+                  className={`absolute ${
+                    isExpanded || isHovered || isMobileOpen
+                      ? "right-2"
+                      : "top-0 right-0"
+                  } flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full`}
+                >
+                  {nav.unreadCount}
+                </span>
+              )}
+            </Link>
           )}
-          {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
+          {nav.subItems && nav.subItems.length > 1 && (isExpanded || isHovered || isMobileOpen) && (
             <div
               ref={(el) => {
                 subMenuRefs.current[`${menuType}-${index}`] = el;

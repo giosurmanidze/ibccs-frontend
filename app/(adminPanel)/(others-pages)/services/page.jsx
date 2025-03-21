@@ -116,13 +116,6 @@ const ServicesTable = () => {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(parseFloat(amount) || 0);
-  };
 
   const handleStatusSubmit = async (serviceId, newStatus) => {
     try {
@@ -563,7 +556,7 @@ const ServicesTable = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
-                  {formatCurrency(service.base_price || 0)}
+                  {(service.base_price || 0)} Euro
                 </td>
                 <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                   {formatDate(service.created_at)}
@@ -770,7 +763,7 @@ const ServicesTable = () => {
                       Price
                     </h4>
                     <p className="text-gray-900 dark:text-white font-semibold">
-                      {formatCurrency(selectedService.base_price || 0)}
+                      {(selectedService.base_price || 0)}
                     </p>
                   </div>
                   <div className="mb-6">

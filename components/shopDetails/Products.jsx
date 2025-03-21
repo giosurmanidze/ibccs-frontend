@@ -9,7 +9,13 @@ import { useSearchParams } from "next/navigation";
 export default function Products() {
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");
+  const serviceId = searchParams.get("serviceId");
+
   const { data } = useGetCategory(categoryId);
+
+  const filteredServices =
+    data?.services?.filter((service) => service.id !== Number(serviceId)) || [];
+
   return (
     <section className="flat-spacing-1 mt-20!">
       <div className="container">
@@ -54,7 +60,7 @@ export default function Products() {
             }}
             pagination={{ clickable: true, el: ".spd307" }}
           >
-            {data?.services.map((product, i) => (
+            {filteredServices.map((product, i) => (
               <SwiperSlide key={i} className="h-auto w-[300px]">
                 <div className="px-1 py-2 h-full w-full">
                   <Shopcard28 product={product} />
@@ -69,11 +75,11 @@ export default function Products() {
             <span className="icon icon-arrow-right" />
           </div>
           <div className="sw-dots style-2 sw-pagination-product justify-content-center spd307" />
-        </div>{" "}
-        {(!data || data.length === 0) && (
+        </div>
+        {filteredServices.length === 0 && (
           <div className="text-center py-10">
             <p className="text-gray-500 text-lg">
-              No services available at the moment.
+              No other services available in this category.
             </p>
           </div>
         )}

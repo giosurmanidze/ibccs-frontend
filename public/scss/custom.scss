@@ -1468,3 +1468,31 @@ input[type="file"] {
     bottom: -15px;
   }
 }
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* Prevent text truncation */
+.category-name,
+.service-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  display: block;
+  width: auto;
+  max-width: none;
+}
+
+/* Ensure proper container sizing */
+.d-inline-flex {
+  width: calc(100% - 40px);
+}
+
+/* Additional styles to prevent event propagation issues */
+.submenu-toggle {
+  z-index: 2;
+}
+
+.submenu-content {
+  z-index: 1;
+}

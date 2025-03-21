@@ -14,8 +14,7 @@ export default function Shopcard28({ product }) {
         <div
           className="flex flex-col h-full rounded-2xl border-2 border-gray-300 shadow-lg shadow-blue-100/20 p-2 sm:p-3 relative overflow-hidden bg-cover bg-center"
           style={{
-            backgroundImage:
-              "url('https://img.freepik.com/free-photo/photorealistic-lawyer-environment_23-2151151939.jpg?t=st=1741704058~exp=1741707658~hmac=5b56929274bf298ba099ac9d0d5b3e9cfb159656e89eb9798af256002c6ccaa7&w=1060')",
+            backgroundImage: `url(${product.illustration})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}

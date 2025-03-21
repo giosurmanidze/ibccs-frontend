@@ -121,10 +121,10 @@ export default function Context({ children }) {
     }
   };
 
-  const updateQuantity = async (id, condition, basePrice) => {
+  const updateQuantity = async (id, condition, basePrice, discount = 0) => {
     try {
       const cartItem = cartProducts.find((item) => item.id == id);
-
+  
       if (!cartItem) {
         toast.error("Item not found in cart", {
           position: "top-right",
@@ -132,16 +132,21 @@ export default function Context({ children }) {
         });
         return Promise.reject(new Error("Item not found in cart"));
       }
-
+  
       if (!basePrice) {
         basePrice = cartItem.base_price;
       }
-
+  
+      if (!discount && discount !== 0) {
+        discount = cartItem.discount || 0;
+      }
+  
       const response = await axiosInstance.patch(`cart/${id}/update-quantity`, {
         condition: condition,
         base_price: basePrice,
+        discount: discount,
       });
-
+  
       return response;
     } catch (error) {
       console.error("Error updating cart quantity:", error);
@@ -152,7 +157,6 @@ export default function Context({ children }) {
       return Promise.reject(error);
     }
   };
-
   const removeItemFromCart = async (id) => {
     try {
       const response = await axiosInstance.delete(`/carts/${id}`);
